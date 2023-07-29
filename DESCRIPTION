@@ -1,0 +1,18 @@
+Package: deltadata
+Title: Various functions for acquiring data within the SFE
+Version: 0.0.0.9000
+Authors@R: 
+    person("Trinh", "Nguyen", , "trinh.nguyen@wildlife.ca.gov", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Workflow functions for IEP surveys to more efficiently work through the QAQC and publication process.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    DBI,
+    odbc,
+    httr
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
