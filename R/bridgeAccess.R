@@ -259,7 +259,8 @@ bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
                   out = out)
   } else {
     file <- shQuote(normalizePath(file, winslash = "\\", mustWork = T))
-    script <- shQuote(normalizePath("internal/connectAccessTerminal.R", winslash = "\\", mustWork = T))
+    script <- shQuote(normalizePath(system.file("internal", "connectAccessTerminal.R",
+                                                package = "deltadata"), winslash = "\\", mustWork = T))
     tables <- shQuote(tables)
 
     terminalOutput <- system2(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"),
