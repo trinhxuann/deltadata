@@ -7,13 +7,17 @@
 plotGPS(df, layerName = "Layer", dateName = "Date", ...)
 }
 \arguments{
-\item{df}{A dataframe with 6 required columns: date, station, legend, layer, lat, and lon.}
+\item{df}{A dataframe with 6 required columns: date, station, legend, layer,
+lat, and lon.}
 
-\item{layerName}{Character vector used to label the layer element within the pop up at each plotted point.}
+\item{layerName}{Character vector used to label the layer element within the
+pop up at each plotted point.}
 
-\item{dateName}{Character vector used to label the date element within the pop up at each plotted point.}
+\item{dateName}{Character vector used to label the date element within the
+pop up at each plotted point.}
 
-\item{...}{Optional. Currently only used to determine the \code{provider} argument within the addProviderTiles.}
+\item{...}{Optional. Currently only used to determine the \code{provider} argument
+within the addProviderTiles.}
 }
 \value{
 A leaflet plot.
@@ -22,7 +26,7 @@ A leaflet plot.
 A leaflet wrapper to plot station GPS coordinates with layer control.
 }
 \examples{
-\dontrun{
+\donttest{
 df <- data.frame(date = 2023,
 station = c(508, 513, 520, 801),
 legend = c("Theoretical"),

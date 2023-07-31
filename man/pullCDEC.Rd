@@ -18,24 +18,28 @@ pullCDEC(
 
 \item{sensor}{A singular sensor value of interest.}
 
-\item{duration}{The duration data, can be \code{event}, \code{hourly}, or \code{daily} and depends on data availability for the gage of interest.}
+\item{duration}{The duration data, can be \code{event}, \code{hourly}, or \code{daily} and
+depends on data availability for the gage of interest.}
 
 \item{dateStart}{Beginning date for the period of interest.}
 
-\item{dateEnd}{Ending date for the period of interest. Will default to today if left as \code{NULL}}
+\item{dateEnd}{Ending date for the period of interest. Will default to today
+if left as \code{NULL}}
 
-\item{verbose}{Logical. Should the function guide the user through the argument selection if arguments are missing? Defaults to \code{TRUE}.}
+\item{verbose}{Logical. Should the function guide the user through the
+argument selection if arguments are missing? Defaults to \code{TRUE}.}
 }
 \value{
 A data frame of the requested data pull.
 }
 \description{
-This function will first pull the metadata of a CDEC gage. This allows the function to direct the user accordingly if various arguments are missing. Once all arguments are provided, the query is created and data downloaded.
+This function will first pull the metadata of a CDEC gage. This allows the
+function to direct the user accordingly if various arguments are missing.
+Once all arguments are provided, the query is created and data downloaded.
 }
 \examples{
-\dontrun {
+\donttest {
 pullCDEC("MAL")
 pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
 }
-
 }

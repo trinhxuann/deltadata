@@ -1,8 +1,11 @@
 #' Checks the architectures of your R and Microsoft Access programs.
 #'
-#' @param officeBit NULL, the architecture (32 or 64-bit) of your Microsoft Access program. If you are on Windows, this will automatically be detected; on a Linux system, you will have to provide this manually.
+#' @param officeBit NULL, the architecture (32 or 64-bit) of your Microsoft
+#' Access program. If you are on Windows, this will automatically be detected;
+#' on a Linux system, you will have to provide this manually.
 #'
-#' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access architectures match.
+#' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access
+#' architectures match.
 #' @noRd
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
@@ -52,7 +55,7 @@ architectureCheck <- function(officeBit = NULL) {
        officeBit = officeBit)
 }
 
-#' Facilitates connection from R to Access. This is meant to run on the back end.
+#' Facilitates connection from R to Access. This is meant to run on the backend.
 #'
 #' @param path File path to database.
 #' @param driver ODBC driver. Defaults to using the Access drivers.
@@ -92,8 +95,11 @@ connectAccess <- function(path,
 #' Extract tables from a connection
 #'
 #' @param con A DBIConnection object.
-#' @param tables The tables that you wish to pull from the database. This can be left as its default, equal to "check", to return a list of tables to choose from.
-#' @param out File path to store the rds file. This is required if you are on 64-bit R but have a 32-bit version of your database application, e.g., Access.
+#' @param tables The tables that you wish to pull from the database. This can
+#' be left as its default, equal to "check", to return a list of tables to
+#' choose from.
+#' @param out File path to store the rds file. This is required if you are on
+#' 64-bit R but have a 32-bit version of your database application, e.g., Access
 #'
 #' @return A list of data tables.
 #'
@@ -144,13 +150,13 @@ extractTables <- function(con, tables, rBit, officeBit, out = out) {
   }
 }
 
-#' Grab the file from a website link, or provide the file path if a file path is provided. Optionality to open the file.
+#' Grab the file from a website link, or provide the file path if a file path
+#' is provided. Optionality to open the file.
 #'
 #' @param file File path to the file, most useful if provided as a URL.
 #' @param open T/F if the file should be opened or not.
 #'
 #' @return A file path or opens the file if open is `TRUE`
-#' @export
 #'
 #' @noRd
 #' @importFrom httr headers HEAD
@@ -201,10 +207,25 @@ getFile <- function(file, open = F, method) {
 }
 
 
-#' Create the connection to an Access database and pull the requested tables. This function will attempt to account for mismatched architectures (R vs Microsoft Access) but will take longer to execute if so.
+#' Create the connection to an Access database and pull the requested tables.
+#' This function will attempt to account for mismatched architectures
+#' (R vs Microsoft Access) but will take longer to execute if so.
 #'
-#' @param file File path to the Access database file. Can be a path to a hard drive or a URL.
-#' @param tables A vector of table names to determine which relational tables to pull. This can be left blank to provide a list of options. If a system table is provided, you may need to provide read permission before it will work. This has to be done in the Access DB itself. Open the file, select "Enable Content" if prompted, `Ctrl + G`, paste in the "Immediate" window: `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, and run the command by pressing `Enter` before exiting Access database.
+#' @param file File path to the Access database file. Can be a path to a hard
+#' drive or a URL.
+#' @param tables A vector of table names to determine which relational tables
+#' to pull. This can be left blank to provide a list of options. If a system
+#' table is provided, you may need to provide read permission before it will
+#' work. This has to be done in the Access DB itself. Open the file, select
+#' "Enable Content" if prompted, `Ctrl + G`, paste in the "Immediate" window:
+#' `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`,
+#' and run the command by pressing `Enter` before exiting Access database.
+#' @param method `method` argument for `download.file`. Defaults to `auto` and
+#' it is recommended to not change this. See `download.file` for additional
+#' details if your downloaded file(s) cannot be read correctly.
+#' @param ... Additional arguments to be passed onto `connectAccess()`. Used to
+#' pass on a specific driver if the default Access driver does not work, a user
+#' name, or password.
 #'
 #' @importFrom httr HEAD headers
 #'
@@ -212,11 +233,13 @@ getFile <- function(file, open = F, method) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip")
-#' bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip", tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections", "SLS Stations", "Tow Info", "Water Info"))
-#' }
 #'
+#' bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
+#' tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
+#' "SLS Stations", "Tow Info", "Water Info"))
+#' }
 bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
 
   # First, check architecture. If ok then just source the script; if not then invoke system2

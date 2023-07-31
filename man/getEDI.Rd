@@ -9,18 +9,24 @@ getEDI(url, files, version = "newest")
 \arguments{
 \item{url}{URL of the EDI package}
 
-\item{files}{Vector of file names of interest. Should match exactly what is on the website. Leave this blank to see the options.}
+\item{files}{Vector of file names of interest. Should match exactly what
+is on the website. Leave this blank to see the options.}
 
-\item{version}{Version of interest for the package at hand. Defaults to \code{newest}, which pulls data from the newest version.}
+\item{version}{Version of interest for the package at hand. Defaults to
+\code{newest}, which pulls data from the newest version.}
 }
 \value{
-A list of the data files requested. If it is a CSV, this will be read directly into R via the \code{read.csv()} function. If any other file types, the file will be downloaded and the file path will be provided as an output for that element.
+A list of the data files requested. If it is a CSV, this will be
+read directly into R via the \code{read.csv()} function. If any other file types,
+the file will be downloaded and the file path will be provided as an
+output for that element.
 }
 \description{
 Pull files from an EDI package
 }
 \examples{
-\dontrun {
-getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.7", files = c("Catch.csv", "SLSTables", "SLS_Metadata"))
+\donttest {
+getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.7",
+files = c("Catch.csv", "SLSTables", "SLS_Metadata"))
 }
 }

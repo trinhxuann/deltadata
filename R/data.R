@@ -8,8 +8,7 @@
 #'   \item{latitude}{latitude value in degrees}
 #'   \item{longitude}{longitude value in degree}
 #'   }
-
-"cdecGPSCoordinates"
+"CDECGPS"
 
 #' CDEC gage metadata
 #'
@@ -25,5 +24,4 @@
 #'   \item{dataAvailable}{Range of data availability}
 #'   \item{gage}{CDEC gage name}
 #'   }
-
-"cdecMetadataData"
+"CDECMetadata"

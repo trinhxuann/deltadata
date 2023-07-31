@@ -12,13 +12,14 @@ pullMetadataCDEC(station, list = T)
 \item{list}{Logical, should the output be provided as a list or data.frame?}
 }
 \value{
-A list or data frame of the metadata associated with the requested CDEC gage.
+A list or data frame of the metadata associated with the requested
+CDEC gage.
 }
 \description{
 A function to pull the metadata table associated with a CDEC gage.
 }
 \examples{
-\dontrun {
+\donttest {
 pullMetadataCDEC("MAL")
 }
 }

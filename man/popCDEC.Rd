@@ -12,23 +12,37 @@ popCDEC(
 )
 }
 \arguments{
-\item{df}{A data frame with your station name (\code{station}), latitude (\code{lat}), longitude (\code{lon}), and time (\code{time}). Ensure that \code{time} is a date-time format, YYYY-MM-DD HH:MM:SS.}
+\item{df}{A data frame with your station name (\code{station}), latitude (\code{lat}),
+longitude (\code{lon}), and time (\code{time}). Ensure that \code{time} is a date-time
+format, YYYY-MM-DD HH:MM:SS.}
 
-\item{cdecClosest}{A list of the closest stations per coordinate of interest. If not provided, \code{calcNearestCDEC()} will be used on the provided \code{df}.}
+\item{cdecClosest}{A list of the closest stations per coordinate of interest.
+If not provided, \code{calcNearestCDEC()} will be used on the provided \code{df}.}
 
-\item{variable}{Which water quality variable are you after. Supports only water temperature (\code{temp}), turbidity (\code{turbidity}), or electroconductivity (\code{ec}). Will default to \code{temp}.}
+\item{variable}{Which water quality variable are you after. Supports only
+water temperature (\code{temp}), turbidity (\code{turbidity}), or electroconductivity
+(\code{ec}). Will default to \code{temp}.}
 
-\item{waterColumn}{Where in the water column to look for sensor data, top (\code{top}) or bottom (\code{bottom})? Will default to \code{top}}
+\item{waterColumn}{Where in the water column to look for sensor data, top
+(\code{top}) or bottom (\code{bottom})? Will default to \code{top}}
 }
 \value{
-A data frame with water quality of interest from the closest CDEC gage at the closest time stamp.
+A data frame with water quality of interest from the closest CDEC
+gage at the closest time stamp.
 }
 \description{
-This function will search for the closest CDEC station to each point within your data frame and retrieve water tempearture, turbidity, or electroconductivity data from the closest time point to the sampling time of your point of interest. If a CDEC gage does not have data of interest, either in terms of the sensor of interest or at the time point of interest, \code{NA} or the value of the next closest time point for that station will be provided, if available.
+This function will search for the closest CDEC station to each point within
+your data frame and retrieve water tempearture, turbidity, or
+electroconductivity data from the closest time point to the sampling time of
+your point of interest. If a CDEC gage does not have data of interest, either
+in terms of the sensor of interest or at the time point of interest, \code{NA} or
+the value of the next closest time point for that station will be provided,
+if available.
 }
 \examples{
-\dontrun {
-df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136, time = "2023-01-01 10:00:00")
+\donttest {
+df <- data.frame(station = "306", lat = 38.00064,
+lon = -122.4136, time = "2023-01-01 10:00:00")
 
 calcNearestCDEC(df)
 }

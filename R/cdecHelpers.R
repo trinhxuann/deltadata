@@ -1,25 +1,31 @@
 #' Pulling CDEC gage data
 #'
 #' @description
-#' This function will first pull the metadata of a CDEC gage. This allows the function to direct the user accordingly if various arguments are missing. Once all arguments are provided, the query is created and data downloaded.
+#' This function will first pull the metadata of a CDEC gage. This allows the
+#' function to direct the user accordingly if various arguments are missing.
+#' Once all arguments are provided, the query is created and data downloaded.
 #'
 #'
 #' @param station A character vector of station names. Can be multiple stations.
 #' @param sensor A singular sensor value of interest.
-#' @param duration The duration data, can be `event`, `hourly`, or `daily` and depends on data availability for the gage of interest.
+#' @param duration The duration data, can be `event`, `hourly`, or `daily` and
+#' depends on data availability for the gage of interest.
 #' @param dateStart Beginning date for the period of interest.
-#' @param dateEnd Ending date for the period of interest. Will default to today if left as `NULL`
-#' @param verbose Logical. Should the function guide the user through the argument selection if arguments are missing? Defaults to `TRUE`.
+#' @param dateEnd Ending date for the period of interest. Will default to today
+#' if left as `NULL`
+#' @param verbose Logical. Should the function guide the user through the
+#' argument selection if arguments are missing? Defaults to `TRUE`.
 #'
 #' @return A data frame of the requested data pull.
 #' @export
 #'
+#' @importFrom rvest session html_elements html_text html_table
+#'
 #' @examples
-#' \dontrun {
+#' \donttest {
 #' pullCDEC("MAL")
 #' pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
 #' }
-#'
 pullCDEC <- function(station, sensor = NULL,
                      duration = c("event", "hourly", "daily"),
                      dateStart, dateEnd = NULL,
@@ -62,7 +68,7 @@ pullCDEC <- function(station, sensor = NULL,
 
       availableData <- setNames(availableData, tableNames)
       availableData <- availableData[order(availableData[["sensorNumber"]]), ]
-      availableData$duration <- gsub("\\(|\\)", "", availableData$duration)
+      availableData$duration <- gsub("\\(|\\)", "", availableData[["duration"]])
       availableData$gage <- station
 
     }
@@ -128,19 +134,19 @@ pullCDEC <- function(station, sensor = NULL,
   names(df) <- gsub("((?<=[_\\s])+.)", "\\U\\1", tolower(names(df)), perl = T)
   names(df) <- gsub("_|\\s", "", names(df))
 
-  df$value <- as.double(ifelse(df$value == "---", NA, df$value))
-  df$dataFlag <- as.character(df$dataFlag)
-  df$dateTime <- as.POSIXct(df$dateTime, format = "%Y%m%d %H%M", tz = "America/Los_Angeles")
-  df$obsDate <- as.Date(df$obsDate, format = "%Y%m%d %H%M")
+  df$value <- as.double(ifelse(df[["value"]] == "---", NA, df[["value"]]))
+  df$dataFlag <- as.character(df[["dataFlag"]])
+  df$dateTime <- as.POSIXct(df[["dateTime"]], format = "%Y%m%d %H%M", tz = "America/Los_Angeles")
+  df$obsDate <- as.Date(df[["obsDate"]], format = "%Y%m%d %H%M")
 
   if (nrow(df) == 0) {
     warning("No data available for station ", station, " as specified.")
     return()
   }
 
-  if (any(unique(df$units) %in% "DEG F")) {
-    df$value <- ifelse(df$units == "DEG F", (df$value - 32) * 5/9, df$value)
-    df$units <- ifelse(df$units == "DEG F", "DEG C", df$value)
+  if (any(unique(df[["units"]]) %in% "DEG F")) {
+    df$value <- ifelse(df[["units"]] == "DEG F", (df[["value"]] - 32) * 5/9, df[["value"]])
+    df$units <- ifelse(df[["units"]] == "DEG F", "DEG C", df[["value"]])
   }
   df
 }
@@ -153,11 +159,12 @@ pullCDEC <- function(station, sensor = NULL,
 #' @param station A character vector that supports one or more CDEC gage.
 #' @param list Logical, should the output be provided as a list or data.frame?
 #'
-#' @return A list or data frame of the metadata associated with the requested CDEC gage.
+#' @return A list or data frame of the metadata associated with the requested
+#' CDEC gage.
 #' @export
 #'
 #' @examples
-#' \dontrun {
+#' \donttest {
 #' pullMetadataCDEC("MAL")
 #' }
 pullMetadataCDEC <- function(station, list = T) {
@@ -177,7 +184,7 @@ pullMetadataCDEC <- function(station, list = T) {
 #' @export
 #'
 #' @examples
-#' \dontrun {
+#' \donttest {
 #' pullCoordinates("MAL")
 #' }
 pullCoordinates <- function(gage) {
@@ -194,26 +201,40 @@ pullCoordinates <- function(gage) {
 #' Find the closest CDEC gage
 #'
 #' @description
-#' Identifies the nearest CDEC gage to a lat/lon of interest. This function requires metadata of all CDEC stations of interest. By default, all CDEC stations are used.
+#' Identifies the nearest CDEC gage to a lat/lon of interest. This function
+#' requires metadata of all CDEC stations of interest. By default, all CDEC
+#' stations are used.
 #'
 #'
-#' @param df A data frame that contains at least the lat/lon of station(s) of interest, named as `lat` and `lon`.
-#' @param cdecGPS A data frame containing the GPS coordinates of the CDEC gages of interest, as `lat` and `lon`.
-#' @param cdecMetadata A data frame containing the metadata table of the CDEC gages of interest. This table must match the format provided by the DWR website. It is recommended to use `pullMetadataCDEC()` to get this data.
-#' @param variable The water quality variable of interest. Currently only supports water temperature as `temp`, turbidity as `turbidity`, and electro-conductivity as `ec`. This defaults to water temperature.
-#' @param waterColumn Where in the water column should the variable of interest be prioritized? Supports only `top` and `bottom`, defaulting to `top`. For now, top data will be used in the calculation even if you ask for bottom data.
+#' @param df A data frame that contains at least the lat/lon of station(s) of
+#' interest, named as `lat` and `lon`.
+#' @param cdecGPS A data frame containing the GPS coordinates of the CDEC gages
+#' of interest, as `lat` and `lon`.
+#' @param cdecMetadata A data frame containing the metadata table of the CDEC
+#' gages of interest. This table must match the format provided by the DWR
+#' website. It is recommended to use `pullMetadataCDEC()` to get this data.
+#' @param variable The water quality variable of interest. Currently only
+#' supports water temperature as `temp`, turbidity as `turbidity`, and
+#' electro-conductivity as `ec`. This defaults to water temperature.
+#' @param waterColumn Where in the water column should the variable of interest
+#' be prioritized? Supports only `top` and `bottom`, defaulting to `top`. For
+#' now, top data will be used in the calculation even if you ask for bottom
+#' data.
 #'
-#' @return A data frame of the metadata of the closest CDEC station to your point of interest that has data for the variable of interest.
+#' @return A data frame of the metadata of the closest CDEC station to your
+#' point of interest that has data for the variable of interest.
 #' @export
 #'
+#' @importFrom geosphere distm distVincentyEllipsoid
+#'
 #' @examples
-#' \dontrun {
+#' \donttest {
 #' df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
 #'
 #' calcNearestCDEC(df)
 #' }
-calcNearestCDEC <- function(df, cdecGPS = cdecGPSCoordinates,
-                            cdecMetadata = cdecMetadataData,
+calcNearestCDEC <- function(df, cdecGPS = CDECGPS,
+                            cdecMetadata = CDECMetadata,
                             variable = c("temp", "turbidity", "ec"),
                             waterColumn = c("top", "bottom")) {
 
@@ -270,24 +291,37 @@ calcNearestCDEC <- function(df, cdecGPS = cdecGPSCoordinates,
   })
 }
 
-# Function to populate cdec values (temp, turb, ec) to a list of date time of a survey station
 #' Populate the closest CDEC station data.
 #'
 #' @description
-#' This function will search for the closest CDEC station to each point within your data frame and retrieve water tempearture, turbidity, or electroconductivity data from the closest time point to the sampling time of your point of interest. If a CDEC gage does not have data of interest, either in terms of the sensor of interest or at the time point of interest, `NA` or the value of the next closest time point for that station will be provided, if available.
+#' This function will search for the closest CDEC station to each point within
+#' your data frame and retrieve water tempearture, turbidity, or
+#' electroconductivity data from the closest time point to the sampling time of
+#' your point of interest. If a CDEC gage does not have data of interest, either
+#' in terms of the sensor of interest or at the time point of interest, `NA` or
+#' the value of the next closest time point for that station will be provided,
+#' if available.
 #'
 #'
-#' @param df A data frame with your station name (`station`), latitude (`lat`), longitude (`lon`), and time (`time`). Ensure that `time` is a date-time format, YYYY-MM-DD HH:MM:SS.
-#' @param cdecClosest A list of the closest stations per coordinate of interest. If not provided, `calcNearestCDEC()` will be used on the provided `df`.
-#' @param variable Which water quality variable are you after. Supports only water temperature (`temp`), turbidity (`turbidity`), or electroconductivity (`ec`). Will default to `temp`.
-#' @param waterColumn Where in the water column to look for sensor data, top (`top`) or bottom (`bottom`)? Will default to `top`
+#' @param df A data frame with your station name (`station`), latitude (`lat`),
+#' longitude (`lon`), and time (`time`). Ensure that `time` is a date-time
+#' format, YYYY-MM-DD HH:MM:SS.
+#' @param cdecClosest A list of the closest stations per coordinate of interest.
+#' If not provided, `calcNearestCDEC()` will be used on the provided `df`.
+#' @param variable Which water quality variable are you after. Supports only
+#' water temperature (`temp`), turbidity (`turbidity`), or electroconductivity
+#' (`ec`). Will default to `temp`.
+#' @param waterColumn Where in the water column to look for sensor data, top
+#' (`top`) or bottom (`bottom`)? Will default to `top`
 #'
-#' @return A data frame with water quality of interest from the closest CDEC gage at the closest time stamp.
+#' @return A data frame with water quality of interest from the closest CDEC
+#' gage at the closest time stamp.
 #' @export
 #'
 #' @examples
-#' \dontrun {
-#' df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136, time = "2023-01-01 10:00:00")
+#' \donttest {
+#' df <- data.frame(station = "306", lat = 38.00064,
+#' lon = -122.4136, time = "2023-01-01 10:00:00")
 #'
 #' calcNearestCDEC(df)
 #' }
@@ -296,6 +330,7 @@ popCDEC <- function(df,
                     variable = c("temp", "turbidity", "ec"),
                     waterColumn = c("top", "bottom")) {
 
+  originalNames <- names(df)
   names(df) <- tolower(names(df))
 
   if (any(!c("station", "lat", "lon", "time") %in% names(df))) {
@@ -328,14 +363,14 @@ popCDEC <- function(df,
                                                            waterColumn = waterColumnWanted)
 
   cdecClosest <- lapply(cdecClosest, function(x) {
-    x$duration <- factor(x$duration, levels = c("event", "hourly", "daily"))
-    x <- x[order(x$duration), ]
+    x$duration <- factor(x[["duration"]], levels = c("event", "hourly", "daily"))
+    x <- x[order(x[["duration"]]), ]
     x[1, ]
   })
 
   cdecClosestDF <- do.call(rbind, cdecClosest)
 
-  if (!inherits(df$time, "POSIXct")) df$time <- as.POSIXct(df$time)
+  if (!inherits(df[["time"]], "POSIXct")) df[["time"]] <- as.POSIXct(df[["time"]])
   df$rowIndex <- 1:nrow(df)
 
   dfMerged <- merge(df[c(which(names(df) %in% c("station", "lat", "lon", "time", "rowIndex")),

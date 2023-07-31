@@ -2,23 +2,27 @@
 % Please edit documentation in R/gpsHelpers.R
 \name{gpsOutlier}
 \alias{gpsOutlier}
-\title{Identify stations that are more than \code{d} distance in miles, defaulting to 0.5, away from the theoretical coordinate.}
+\title{Identify stations that are more than \code{d} distance in miles, defaulting to
+0.5, away from the theoretical coordinate.}
 \usage{
 gpsOutlier(df, d = 0.5)
 }
 \arguments{
-\item{df}{A dataframe with 6 required columns: date, station, legend, layer, lat, and lon. See \code{plotGPS()} for details.}
+\item{df}{A dataframe with 6 required columns: date, station, legend, layer,
+lat, and lon. See \code{plotGPS()} for details.}
 
-\item{d}{Miles threshold to call a coordinate outlying. This distance is measured as the crow flies.}
+\item{d}{Miles threshold to call a coordinate outlying. This distance is
+measured as the crow flies.}
 }
 \value{
 A data frame with all outlying coordinates.
 }
 \description{
-Identify stations that are more than \code{d} distance in miles, defaulting to 0.5, away from the theoretical coordinate.
+Identify stations that are more than \code{d} distance in miles, defaulting to
+0.5, away from the theoretical coordinate.
 }
 \examples{
-\dontrun{
+\donttest{
 df <- data.frame(date = 2023,
 station = c(508, 513, 520, 801, 801),
 legend = c(rep("Theoretical", 4), "StartTow"),

@@ -1,15 +1,22 @@
 #' A leaflet wrapper to plot station GPS coordinates with layer control.
 #'
-#' @param df A dataframe with 6 required columns: date, station, legend, layer, lat, and lon.
-#' @param layerName Character vector used to label the layer element within the pop up at each plotted point.
-#' @param dateName Character vector used to label the date element within the pop up at each plotted point.
-#' @param ... Optional. Currently only used to determine the `provider` argument within the addProviderTiles.
+#' @param df A dataframe with 6 required columns: date, station, legend, layer,
+#' lat, and lon.
+#' @param layerName Character vector used to label the layer element within the
+#' pop up at each plotted point.
+#' @param dateName Character vector used to label the date element within the
+#' pop up at each plotted point.
+#' @param ... Optional. Currently only used to determine the `provider` argument
+#' within the addProviderTiles.
 #'
 #' @return A leaflet plot.
 #' @export
 #'
+#' @importFrom leaflet leaflet colorFactor providers addProviderTiles
+#' addCircleMarkers labelOptions addLegend addLayersControl layersControlOptions
+#'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' df <- data.frame(date = 2023,
 #' station = c(508, 513, 520, 801),
 #' legend = c("Theoretical"),
@@ -73,16 +80,21 @@ plotGPS <- function(df, layerName = "Layer", dateName = "Date", ...) {
                             options = leaflet::layersControlOptions(collapsed = FALSE))
 }
 
-#' Identify stations that are more than `d` distance in miles, defaulting to 0.5, away from the theoretical coordinate.
+#' Identify stations that are more than `d` distance in miles, defaulting to
+#' 0.5, away from the theoretical coordinate.
 #'
-#' @param df A dataframe with 6 required columns: date, station, legend, layer, lat, and lon. See `plotGPS()` for details.
-#' @param d Miles threshold to call a coordinate outlying. This distance is measured as the crow flies.
+#' @param df A dataframe with 6 required columns: date, station, legend, layer,
+#' lat, and lon. See `plotGPS()` for details.
+#' @param d Miles threshold to call a coordinate outlying. This distance is
+#' measured as the crow flies.
 #'
 #' @return A data frame with all outlying coordinates.
 #' @export
 #'
+#' @importFrom geosphere distVincentyEllipsoid
+#'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' df <- data.frame(date = 2023,
 #' station = c(508, 513, 520, 801, 801),
 #' legend = c(rep("Theoretical", 4), "StartTow"),

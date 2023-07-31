@@ -11,20 +11,30 @@ schemaJoin(schema, data, start = NULL)
 
 \item{data}{A list of data tables to be joined}
 
-\item{start}{The starting relational table to begin construction. If NULL, will start at the first table specified by the schema.}
+\item{start}{The starting relational table to begin construction. If NULL,
+will start at the first table specified by the schema.}
 }
 \value{
 A data frame joined according to the relationship schema.
 }
 \description{
-This function pulls the system table within an Access database that dictates the join order and types. It will then attempt to apply those joining rules to the provided tables. Users can specify which tables they would like to join through the tables that they provide the function. Ensure that the names of the tables provided matches those required in the relationship table.
+This function pulls the system table within an Access database that dictates
+the join order and types. It will then attempt to apply those joining rules
+to the provided tables. Users can specify which tables they would like to
+join through the tables that they provide the function. Ensure that the names
+of the tables provided matches those required in the relationship table.
 }
 \examples{
-\dontrun {
-slsTables <- bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip", tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections", "SLS Stations", "Tow Info", "Water Info"))
+\donttest {
+slsTables <- bridgeAccess(
+"https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip",
+tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
+"SLS Stations", "Tow Info", "Water Info")
+)
 
-schema <- schema <- bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip", tables = c("MSysRelationships"))
-
-schemaJoin(schema, tablesToJoin)
+schema <- bridgeAccess(
+"https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip",
+tables = c("MSysRelationships")
+)
 }
 }

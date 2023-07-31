@@ -6,31 +6,43 @@
 \usage{
 calcNearestCDEC(
   df,
-  cdecGPS = cdecGPSCoordinates,
-  cdecMetadata = cdecMetadataData,
+  cdecGPS = CDECGPS,
+  cdecMetadata = CDECMetadata,
   variable = c("temp", "turbidity", "ec"),
   waterColumn = c("top", "bottom")
 )
 }
 \arguments{
-\item{df}{A data frame that contains at least the lat/lon of station(s) of interest, named as \code{lat} and \code{lon}.}
+\item{df}{A data frame that contains at least the lat/lon of station(s) of
+interest, named as \code{lat} and \code{lon}.}
 
-\item{cdecGPS}{A data frame containing the GPS coordinates of the CDEC gages of interest, as \code{lat} and \code{lon}.}
+\item{cdecGPS}{A data frame containing the GPS coordinates of the CDEC gages
+of interest, as \code{lat} and \code{lon}.}
 
-\item{cdecMetadata}{A data frame containing the metadata table of the CDEC gages of interest. This table must match the format provided by the DWR website. It is recommended to use \code{pullMetadataCDEC()} to get this data.}
+\item{cdecMetadata}{A data frame containing the metadata table of the CDEC
+gages of interest. This table must match the format provided by the DWR
+website. It is recommended to use \code{pullMetadataCDEC()} to get this data.}
 
-\item{variable}{The water quality variable of interest. Currently only supports water temperature as \code{temp}, turbidity as \code{turbidity}, and electro-conductivity as \code{ec}. This defaults to water temperature.}
+\item{variable}{The water quality variable of interest. Currently only
+supports water temperature as \code{temp}, turbidity as \code{turbidity}, and
+electro-conductivity as \code{ec}. This defaults to water temperature.}
 
-\item{waterColumn}{Where in the water column should the variable of interest be prioritized? Supports only \code{top} and \code{bottom}, defaulting to \code{top}. For now, top data will be used in the calculation even if you ask for bottom data.}
+\item{waterColumn}{Where in the water column should the variable of interest
+be prioritized? Supports only \code{top} and \code{bottom}, defaulting to \code{top}. For
+now, top data will be used in the calculation even if you ask for bottom
+data.}
 }
 \value{
-A data frame of the metadata of the closest CDEC station to your point of interest that has data for the variable of interest.
+A data frame of the metadata of the closest CDEC station to your
+point of interest that has data for the variable of interest.
 }
 \description{
-Identifies the nearest CDEC gage to a lat/lon of interest. This function requires metadata of all CDEC stations of interest. By default, all CDEC stations are used.
+Identifies the nearest CDEC gage to a lat/lon of interest. This function
+requires metadata of all CDEC stations of interest. By default, all CDEC
+stations are used.
 }
 \examples{
-\dontrun {
+\donttest {
 df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
 
 calcNearestCDEC(df)

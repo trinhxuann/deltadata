@@ -17,5 +17,6 @@ cdecStations <- lapply(gageNames, pullCoordinates) %>%
 
 cdecMetadata <- pullMetadataCDEC(cdecStations$station, list = F)
 
-save(cdecStations, cdecMetadata, file = file.path("data", paste0("cdecStations_", format(Sys.time(), "%Y-%m-%d"), ".RData")))
+save(cdecStations, file = file.path("data", "CDECGPS.RData"))
+save(cdecMetadata, file = file.path("data", "CDECMetadata.RData"))
 

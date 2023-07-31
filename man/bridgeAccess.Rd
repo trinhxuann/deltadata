@@ -2,25 +2,46 @@
 % Please edit documentation in R/bridgeAccess.R
 \name{bridgeAccess}
 \alias{bridgeAccess}
-\title{Create the connection to an Access database and pull the requested tables. This function will attempt to account for mismatched architectures (R vs Microsoft Access) but will take longer to execute if so.}
+\title{Create the connection to an Access database and pull the requested tables.
+This function will attempt to account for mismatched architectures
+(R vs Microsoft Access) but will take longer to execute if so.}
 \usage{
 bridgeAccess(file, tables = "check", method = "auto", ...)
 }
 \arguments{
-\item{file}{File path to the Access database file. Can be a path to a hard drive or a URL.}
+\item{file}{File path to the Access database file. Can be a path to a hard
+drive or a URL.}
 
-\item{tables}{A vector of table names to determine which relational tables to pull. This can be left blank to provide a list of options. If a system table is provided, you may need to provide read permission before it will work. This has to be done in the Access DB itself. Open the file, select "Enable Content" if prompted, \code{Ctrl + G}, paste in the "Immediate" window: \verb{CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"}, and run the command by pressing \code{Enter} before exiting Access database.}
+\item{tables}{A vector of table names to determine which relational tables
+to pull. This can be left blank to provide a list of options. If a system
+table is provided, you may need to provide read permission before it will
+work. This has to be done in the Access DB itself. Open the file, select
+"Enable Content" if prompted, \code{Ctrl + G}, paste in the "Immediate" window:
+\verb{CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"},
+and run the command by pressing \code{Enter} before exiting Access database.}
+
+\item{method}{\code{method} argument for \code{download.file}. Defaults to \code{auto} and
+it is recommended to not change this. See \code{download.file} for additional
+details if your downloaded file(s) cannot be read correctly.}
+
+\item{...}{Additional arguments to be passed onto \code{connectAccess()}. Used to
+pass on a specific driver if the default Access driver does not work, a user
+name, or password.}
 }
 \value{
 A list of relational tables read from the Access database connection.
 }
 \description{
-Create the connection to an Access database and pull the requested tables. This function will attempt to account for mismatched architectures (R vs Microsoft Access) but will take longer to execute if so.
+Create the connection to an Access database and pull the requested tables.
+This function will attempt to account for mismatched architectures
+(R vs Microsoft Access) but will take longer to execute if so.
 }
 \examples{
-\dontrun{
+\donttest{
 bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip")
-bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip", tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections", "SLS Stations", "Tow Info", "Water Info"))
-}
 
+bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip",
+tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
+"SLS Stations", "Tow Info", "Water Info"))
+}
 }

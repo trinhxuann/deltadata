@@ -1,10 +1,11 @@
-#' Produce a translation of the joining type and order of the underlying system schema.
+#' Produce a translation of the joining type and order of the underlying system
+#' schema.
 #'
 #' @param schema A schema table that mirrors that structure of an Access schema.
-#' @param verbose T/F, a logical argument to print the relationship within the schema or not.
+#' @param verbose T/F, a logical argument to print the relationship within the
+#' schema or not.
 #'
 #' @return A table of the schema without the system tables.
-#' @export
 #'
 #' @noRd
 #' @keywords internal
@@ -57,22 +58,32 @@ translateSchema <- function(schema, verbose = F) {
 #' Applies the joins in accordance to a relationship schema.
 #'
 #' @description
-#' This function pulls the system table within an Access database that dictates the join order and types. It will then attempt to apply those joining rules to the provided tables. Users can specify which tables they would like to join through the tables that they provide the function. Ensure that the names of the tables provided matches those required in the relationship table.
+#' This function pulls the system table within an Access database that dictates
+#' the join order and types. It will then attempt to apply those joining rules
+#' to the provided tables. Users can specify which tables they would like to
+#' join through the tables that they provide the function. Ensure that the names
+#' of the tables provided matches those required in the relationship table.
 #'
 #' @param schema A schema table that mirrors the structure of an Access schema.
 #' @param data A list of data tables to be joined
-#' @param start The starting relational table to begin construction. If NULL, will start at the first table specified by the schema.
+#' @param start The starting relational table to begin construction. If NULL,
+#' will start at the first table specified by the schema.
 #'
 #' @return A data frame joined according to the relationship schema.
 #' @export
 #'
 #' @examples
-#' \dontrun {
-#' slsTables <- bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip", tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections", "SLS Stations", "Tow Info", "Water Info"))
+#' \donttest {
+#' slsTables <- bridgeAccess(
+#' "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
+#' tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
+#' "SLS Stations", "Tow Info", "Water Info")
+#' )
 #'
-#' schema <- schema <- bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip", tables = c("MSysRelationships"))
-#'
-#' schemaJoin(schema, tablesToJoin)
+#' schema <- bridgeAccess(
+#' "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
+#' tables = c("MSysRelationships")
+#' )
 #' }
 schemaJoin <- function(schema, data, start = NULL) {
 
