@@ -17,6 +17,5 @@ cdecStations <- lapply(gageNames, pullCoordinates) %>%
 
 cdecMetadata <- pullMetadataCDEC(cdecStations$station, list = F)
 
-save(cdecStations, file = file.path("data", "CDECGPS.RData"))
-save(cdecMetadata, file = file.path("data", "CDECMetadata.RData"))
-
+usethis::use_data(cdecStations, overwrite = TRUE, compress = 'xz')
+usethis::use_data(cdecMetadata, overwrite = TRUE, compress = 'xz')
