@@ -22,7 +22,7 @@
 #' @importFrom rvest session html_elements html_text html_table
 #'
 #' @examples
-#' \donttest {
+#' \donttest{
 #' pullCDEC("MAL")
 #' pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
 #' }
@@ -164,7 +164,7 @@ pullCDEC <- function(station, sensor = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest {
+#' \donttest{
 #' pullMetadataCDEC("MAL")
 #' }
 pullMetadataCDEC <- function(station, list = T) {
@@ -183,15 +183,17 @@ pullMetadataCDEC <- function(station, list = T) {
 #' @return A data frame containing the station name, lat, and lon.
 #' @export
 #'
+#' @importFrom rvest session html_element html_text
+#'
 #' @examples
-#' \donttest {
+#' \donttest{
 #' pullCoordinates("MAL")
 #' }
 pullCoordinates <- function(gage) {
 
-  dataString <- session(paste0("https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=", gage))
-  dataString <- html_element(dataString, "table")
-  dataString <- html_text(dataString)
+  dataString <- rvest::session(paste0("https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=", gage))
+  dataString <- rvest::html_element(dataString, "table")
+  dataString <- rvest::html_text(dataString)
 
   data.frame(station = regmatches(dataString, regexpr("(?<=Station ID)(.*)(?=Elevation)", dataString, perl = T)),
              latitude = regmatches(dataString, regexpr("(?<=Latitude)([\\d.-]+)", dataString, perl = T)),
@@ -228,7 +230,7 @@ pullCoordinates <- function(gage) {
 #' @importFrom geosphere distm distVincentyEllipsoid
 #'
 #' @examples
-#' \donttest {
+#' \donttest{
 #' df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
 #'
 #' calcNearestCDEC(df)
@@ -319,24 +321,24 @@ calcNearestCDEC <- function(df, cdecGPS = CDECGPS,
 #' @export
 #'
 #' @examples
-#' \donttest {
+#' \donttest{
 #' df <- data.frame(station = "306", lat = 38.00064,
-#' lon = -122.4136, time = "2023-01-01 10:00:00")
+#' lon = -122.4136, time = "2023-01-01 10:00:00", temp = 10)
 #'
-#' calcNearestCDEC(df)
+#' popCDEC(df)
 #' }
 popCDEC <- function(df,
                     cdecClosest = NULL,
                     variable = c("temp", "turbidity", "ec"),
                     waterColumn = c("top", "bottom")) {
 
-  originalNames <- names(df)
   names(df) <- tolower(names(df))
 
   if (any(!c("station", "lat", "lon", "time") %in% names(df))) {
     stop("Your `df` must contain columns `station`, `lat`, lon`, and` `time`", call. = F)
   }
 
+  variable <- match.arg(variable)
   if (!variable %in% names(df)) {
     stop("You are asking for ", shQuote(variable), ", which does not exist in your provided df.", call. = F)
   }
@@ -345,8 +347,6 @@ popCDEC <- function(df,
     message("Data frame has no data.")
     return(data.frame())
   }
-
-  variable <- match.arg(variable)
   waterColumn <- match.arg(waterColumn)
 
   if (variable == "ec") {
@@ -417,6 +417,7 @@ popCDEC <- function(df,
                           "sensorDescription", "units", "duration.x", "dataAvailable")]
 
   names(dfFin)[which(names(dfFin) %in% c("value", "sensorNumber.x", "duration.x"))] <- c(paste0(variable, "CDEC"), "sensorNumber", "duration")
+
   dfFin
 }
 

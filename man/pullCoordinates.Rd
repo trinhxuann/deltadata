@@ -16,7 +16,7 @@ A data frame containing the station name, lat, and lon.
 Pull CDEC gage lat/lon
 }
 \examples{
-\donttest {
+\donttest{
 pullCoordinates("MAL")
 }
 }

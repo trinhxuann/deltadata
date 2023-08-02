@@ -25,7 +25,7 @@ join through the tables that they provide the function. Ensure that the names
 of the tables provided matches those required in the relationship table.
 }
 \examples{
-\donttest {
+\dontrun{
 slsTables <- bridgeAccess(
 "https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip",
 tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",

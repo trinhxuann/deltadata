@@ -37,7 +37,7 @@ This function will attempt to account for mismatched architectures
 (R vs Microsoft Access) but will take longer to execute if so.
 }
 \examples{
-\donttest{
+\dontrun{
 bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip")
 
 bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip",

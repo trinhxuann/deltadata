@@ -18,7 +18,7 @@ tableNamesEDI <- function(url, version = "newest") {
   currentNewestVersion <- max(read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageID))[1])
 
   if (as.numeric(versionNumber) != currentNewestVersion & version == "newest") {
-    warning("Your current version is ", versionNumber, " but the newest version available is ", currentNewestVersion,
+    warning("Your current version is ", versionNumber, " but the newest version available is ", currentNewestVersion, ". Pulling from the newest version, otherwise, specify the `version` argument.",
             call. = F)
   }
 
@@ -53,9 +53,9 @@ tableNamesEDI <- function(url, version = "newest") {
 #' @export
 #'
 #' @examples
-#' \donttest {
-#' getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.7",
-#' files = c("Catch.csv", "SLSTables", "SLS_Metadata"))
+#' \donttest{
+#' getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.8",
+#' files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
 #' }
 getEDI <- function(url, files, version = "newest") {
 
@@ -64,6 +64,17 @@ getEDI <- function(url, files, version = "newest") {
   if (missing(files))  {
     cat("Specify files to download: \n")
     return(print(tables))
+  }
+
+  matchedTables <- files %in% tables$name
+
+  if (!all(matchedTables)) {
+    unmatchedNames <- files[!which(matchedTables)]
+    print(tables)
+
+    stop("The specified table(s) cannot be found in the EDI publication: ",
+            paste(files[which(!matchedTables)], collapse = ", "),
+            ". Please check your spelling.", call. = F)
   }
 
   tables <- subset(tables, name %in% files)

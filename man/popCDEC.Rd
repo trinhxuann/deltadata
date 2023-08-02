@@ -40,10 +40,10 @@ the value of the next closest time point for that station will be provided,
 if available.
 }
 \examples{
-\donttest {
+\donttest{
 df <- data.frame(station = "306", lat = 38.00064,
-lon = -122.4136, time = "2023-01-01 10:00:00")
+lon = -122.4136, time = "2023-01-01 10:00:00", temp = 10)
 
-calcNearestCDEC(df)
+popCDEC(df)
 }
 }

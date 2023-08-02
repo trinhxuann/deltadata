@@ -73,7 +73,7 @@ translateSchema <- function(schema, verbose = F) {
 #' @export
 #'
 #' @examples
-#' \donttest {
+#' \dontrun{
 #' slsTables <- bridgeAccess(
 #' "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
 #' tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",

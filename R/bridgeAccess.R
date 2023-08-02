@@ -6,6 +6,7 @@
 #'
 #' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access
 #' architectures match.
+#'
 #' @noRd
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
@@ -233,7 +234,7 @@ getFile <- function(file, open = F, method) {
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip")
 #'
 #' bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",

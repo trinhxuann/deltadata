@@ -6,6 +6,7 @@
 #' pop up at each plotted point.
 #' @param dateName Character vector used to label the date element within the
 #' pop up at each plotted point.
+#' @param height Height of the leaflet map.
 #' @param ... Optional. Currently only used to determine the `provider` argument
 #' within the addProviderTiles.
 #'
@@ -26,7 +27,7 @@
 #'
 #' plotGPS(df, layerName = "Survey", dateName = "Year")
 #' }
-plotGPS <- function(df, layerName = "Layer", dateName = "Date", ...) {
+plotGPS <- function(df, layerName = "Layer", dateName = "Date", height = 1200, ...) {
 
   names(df) <- tolower(names(df))
 
@@ -39,7 +40,7 @@ plotGPS <- function(df, layerName = "Layer", dateName = "Date", ...) {
 
   dfSplit <- split(df, df$layer)
 
-  l <- leaflet::leaflet(width = "100%", height = "1200")
+  l <- leaflet::leaflet(width = "100%", height = as.character(height))
 
   additionalArgs <- list(...)
 

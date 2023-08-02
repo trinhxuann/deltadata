@@ -4,7 +4,7 @@
 \alias{plotGPS}
 \title{A leaflet wrapper to plot station GPS coordinates with layer control.}
 \usage{
-plotGPS(df, layerName = "Layer", dateName = "Date", ...)
+plotGPS(df, layerName = "Layer", dateName = "Date", height = 1200, ...)
 }
 \arguments{
 \item{df}{A dataframe with 6 required columns: date, station, legend, layer,
@@ -15,6 +15,8 @@ pop up at each plotted point.}
 
 \item{dateName}{Character vector used to label the date element within the
 pop up at each plotted point.}
+
+\item{height}{Height of the leaflet map.}
 
 \item{...}{Optional. Currently only used to determine the \code{provider} argument
 within the addProviderTiles.}

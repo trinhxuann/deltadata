@@ -38,7 +38,7 @@ function to direct the user accordingly if various arguments are missing.
 Once all arguments are provided, the query is created and data downloaded.
 }
 \examples{
-\donttest {
+\donttest{
 pullCDEC("MAL")
 pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
 }

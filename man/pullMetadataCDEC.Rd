@@ -19,7 +19,7 @@ CDEC gage.
 A function to pull the metadata table associated with a CDEC gage.
 }
 \examples{
-\donttest {
+\donttest{
 pullMetadataCDEC("MAL")
 }
 }

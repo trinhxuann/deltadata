@@ -25,8 +25,8 @@ output for that element.
 Pull files from an EDI package
 }
 \examples{
-\donttest {
-getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.7",
-files = c("Catch.csv", "SLSTables", "SLS_Metadata"))
+\donttest{
+getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.8",
+files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
 }
 }
