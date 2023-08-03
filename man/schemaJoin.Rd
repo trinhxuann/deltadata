@@ -34,7 +34,8 @@ tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
 
 schema <- bridgeAccess(
 "https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/SLS.zip",
-tables = c("MSysRelationships")
-)
+tables = c("MSysRelationships"))[[1]]
+
+schemaJoin(schema, slsTables)
 }
 }

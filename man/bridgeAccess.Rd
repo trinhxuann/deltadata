@@ -6,7 +6,7 @@
 This function will attempt to account for mismatched architectures
 (R vs Microsoft Access) but will take longer to execute if so.}
 \usage{
-bridgeAccess(file, tables = "check", method = "auto", ...)
+bridgeAccess(file, tables = "check", method = "auto", retry = F, ...)
 }
 \arguments{
 \item{file}{File path to the Access database file. Can be a path to a hard
@@ -23,6 +23,8 @@ and run the command by pressing \code{Enter} before exiting Access database.}
 \item{method}{\code{method} argument for \code{download.file}. Defaults to \code{auto} and
 it is recommended to not change this. See \code{download.file} for additional
 details if your downloaded file(s) cannot be read correctly.}
+
+\item{retry}{Logical. If \code{TRUE}, the function will retry extracting after waiting 25 seconds.}
 
 \item{...}{Additional arguments to be passed onto \code{connectAccess()}. Used to
 pass on a specific driver if the default Access driver does not work, a user

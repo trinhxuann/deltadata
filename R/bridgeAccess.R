@@ -7,6 +7,7 @@
 #' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access
 #' architectures match.
 #'
+#' @importFrom utils readRegistry
 #' @noRd
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
@@ -101,6 +102,7 @@ connectAccess <- function(path,
 #' choose from.
 #' @param out File path to store the rds file. This is required if you are on
 #' 64-bit R but have a 32-bit version of your database application, e.g., Access
+#' @param retry Logical. If `TRUE`, the function will retry extracting after waiting 25 seconds.
 #'
 #' @return A list of data tables.
 #'
@@ -108,7 +110,7 @@ connectAccess <- function(path,
 #' @importFrom DBI dbReadTable dbDisconnect dbGetInfo
 #' @noRd
 #' @keywords internal
-extractTables <- function(con, tables, rBit, officeBit, out = out) {
+extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
 
   on.exit(dbDisconnect(con))
   # Pulling just the table names
@@ -137,6 +139,17 @@ extractTables <- function(con, tables, rBit, officeBit, out = out) {
                                  message('You are asking for a system table but do not have permissions. Opening the database file to allow you to do so.')
 
                                  shell.exec(dbGetInfo(con)$dbname)
+
+                                 if (isTRUE(retry)) {
+                                   message('Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`, exit file, and rerun this code.')
+                                   Sys.sleep(25)
+                                   cat("Retrying...")
+                                   df <- mapply(dbReadTable,
+                                                name = tables,
+                                                MoreArgs = list(conn = con),
+                                                SIMPLIFY = F)
+                                   return(df)
+                                 }
                                  stop('Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`, exit file, and rerun this code.', call. = F)
 
                                } else {
@@ -161,6 +174,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out) {
 #'
 #' @noRd
 #' @importFrom httr headers HEAD
+#' @importFrom utils unzip
 #' @keywords internal
 getFile <- function(file, open = F, method) {
 
@@ -224,6 +238,7 @@ getFile <- function(file, open = F, method) {
 #' @param method `method` argument for `download.file`. Defaults to `auto` and
 #' it is recommended to not change this. See `download.file` for additional
 #' details if your downloaded file(s) cannot be read correctly.
+#' @param retry Logical. If `TRUE`, the function will retry extracting after waiting 25 seconds.
 #' @param ... Additional arguments to be passed onto `connectAccess()`. Used to
 #' pass on a specific driver if the default Access driver does not work, a user
 #' name, or password.
@@ -241,7 +256,7 @@ getFile <- function(file, open = F, method) {
 #' tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
 #' "SLS Stations", "Tow Info", "Water Info"))
 #' }
-bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
+bridgeAccess <- function(file, tables = "check", method = "auto", retry = F, ...) {
 
   # First, check architecture. If ok then just source the script; if not then invoke system2
   bitCheck <- architectureCheck()
@@ -257,7 +272,8 @@ bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
                   tables = tables,
                   rBit = bitCheck$rBit,
                   officeBit = bitCheck$officeBit,
-                  out = out)
+                  out = out,
+                  retry = retry)
   } else {
     file <- shQuote(normalizePath(file, winslash = "\\", mustWork = T))
     script <- shQuote(normalizePath(system.file("internal", "connectAccessTerminal.R",
@@ -266,7 +282,7 @@ bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
 
     terminalOutput <- system2(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"),
                               args = c(script,
-                                       file, bitCheck, out, tables))
+                                       file, bitCheck, out, retry, tables))
 
     # All is needed here in case length(tables) > 1 (throws warning)
 

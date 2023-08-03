@@ -7,6 +7,7 @@
 #' @return A table of file names, hash values, and associated url of all files
 #' available in the data package.
 #'
+#' @importFrom utils read.table
 #' @noRd
 #' @keywords internal
 tableNamesEDI <- function(url, version = "newest") {
@@ -52,6 +53,8 @@ tableNamesEDI <- function(url, version = "newest") {
 #' output for that element.
 #' @export
 #'
+#' @importFrom utils read.csv download.file
+#' @importFrom stats setNames
 #' @examples
 #' \donttest{
 #' getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.8",
@@ -77,12 +80,12 @@ getEDI <- function(url, files, version = "newest") {
             ". Please check your spelling.", call. = F)
   }
 
-  tables <- subset(tables, name %in% files)
+  tables <- tables[tables[["name"]] %in% files, ]
 
   # For files that are csv, read them in directly
   # For files that are NOT csvs, download them to the temp dir and provide the users with the file path?
   downloadedFiles <- lapply(tables[["name"]], function(x) {
-    url <- subset(tables, name == x)[["url"]]
+    url <- (tables[tables[["name"]] == x, ])[["url"]]
 
     if (grepl("\\.csv$", x)) {
       read.csv(url)

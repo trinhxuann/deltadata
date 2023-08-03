@@ -82,7 +82,7 @@ pullCDEC <- function(station, sensor = NULL,
     }
 
     if (length(duration) > 1) {
-      returnDF <- subset(availableData, sensorNumber == sensor)
+      returnDF <- availableData[availableData[["sensorNumber"]] == sensor, ]
 
       if (isTRUE(verbose)) {
         print(returnDF, n = Inf, width = Inf)
@@ -92,7 +92,7 @@ pullCDEC <- function(station, sensor = NULL,
     }
 
     if (missing(dateStart)) {
-      returnDF <- subset(availableData, sensorNumber == sensor)
+      returnDF <- availableData[availableData[["sensorNumber"]] == sensor, ]
 
       if (isTRUE(verbose)) {
         print(returnDF, n = Inf, width = Inf)
@@ -235,8 +235,8 @@ pullCoordinates <- function(gage) {
 #'
 #' calcNearestCDEC(df)
 #' }
-calcNearestCDEC <- function(df, cdecGPS = CDECGPS,
-                            cdecMetadata = CDECMetadata,
+calcNearestCDEC <- function(df, cdecGPS = deltadata::CDECGPS,
+                            cdecMetadata = deltadata::CDECMetadata,
                             variable = c("temp", "turbidity", "ec"),
                             waterColumn = c("top", "bottom")) {
 
@@ -262,9 +262,10 @@ calcNearestCDEC <- function(df, cdecGPS = CDECGPS,
                            variableWanted)
 
   # Closest gages with the required data for variable of interest
-  closestGages <- subset(cdecMetadata, grepl(variableWanted, sensorDescription, ignore.case = T))
+  closestGages <- cdecMetadata[grepl(variableWanted, cdecMetadata[["sensorDescription"]], ignore.case = T), ]
 
-  cdecGPSFiltered <- subset(cdecGPS, station %in% closestGages[["gage"]])
+
+  cdecGPSFiltered <- cdecGPS[cdecGPS[["station"]] %in% closestGages[["gage"]], ]
 
   lapply(1:nrow(df), function(x) {
 
@@ -282,7 +283,8 @@ calcNearestCDEC <- function(df, cdecGPS = CDECGPS,
     # If you are asking for top temperature, removing sensors that are on the bottom; if you are asking for
     # bottom sensors, will also give you top sensor--very few bottom sensors out there.
     if (waterColumn != "bottom") {
-      gageWaterColumn <- subset(closestGages, !grepl("(lower|bottom)", x = sensorDescription, ignore.case = T))
+      gageWaterColumn <- closestGages[!grepl("(lower|bottom)", x = closestGages[["sensorDescription"]],
+                                             ignore.case = T), ]
     }
 
     metadata <- merge(distanceData[which.min(distanceData[["distance"]]),  ], gageWaterColumn,

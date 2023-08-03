@@ -7,11 +7,12 @@
 #'
 #' @return A table of the schema without the system tables.
 #'
+#' @importFrom stats aggregate
 #' @noRd
 #' @keywords internal
 translateSchema <- function(schema, verbose = F) {
 
-  filteredData <- subset(schema, !grepl("^MSys.*", szRelationship))
+  filteredData <- schema[!grepl("^MSys.*", schema[["szRelationship"]]), ]
 
   if (is.null(schema$joinType)) {
     groupedData <- aggregate(cbind(szColumn, szReferencedColumn) ~ grbit + szObject + szReferencedObject + szRelationship,
@@ -82,29 +83,23 @@ translateSchema <- function(schema, verbose = F) {
 #'
 #' schema <- bridgeAccess(
 #' "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
-#' tables = c("MSysRelationships")
-#' )
+#' tables = c("MSysRelationships"))[[1]]
+#'
+#' schemaJoin(schema, slsTables)
 #' }
 schemaJoin <- function(schema, data, start = NULL) {
-
-
+browser()
   if (class(schema) == "list") stop("Your schema is not provided as a data.frame.", call. = F)
 
   schema <- translateSchema(schema)
-
-  missingTable <- subset(schema, szObject %in% names(data) | szReferencedObject %in% names(data))
+  missingTable <- schema[(schema[["szObject"]] %in% names(data) | schema[["szReferencedObject"]] %in% names(data)), ]
   missingTable$score <- missingTable$szObject %in% names(data) + missingTable$szReferencedObject %in% names(data)
   schema <- missingTable[1:max(which(missingTable$score %in% 2)), ]
   if (any(schema$score %in% 1)) {
-    missingScore <- subset(schema, score == 1)
+    missingScore <- schema[schema[["score"]] == 1, ]
     schema <- c(missingScore[["szObject"]][which(!missingScore[["szObject"]] %in% names(data))],
                        missingScore[["szReferencedObject"]][which(!missingScore[["szReferencedObject"]] %in% names(data))])
     stop("You are missing intermediate table(s): ", unique(schema), call. = F)
-  }
-
-  if (missing(data)) {
-    stop("Provide the needed tables, which are: ",
-         paste(c(filteredData$szObject, filteredData$szReferencedObject), collapse = ", "), call. = F)
   }
 
   startTable <- data[[schema$szReferencedObject[1]]]

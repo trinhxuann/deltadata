@@ -115,30 +115,26 @@ gpsOutlier <- function(df, d = 0.5) {
          call. = F)
   }
 
-  theoretical <- subset(df, legend == "Theoretical")
+  theoretical <- df[df[["legend"]] == "Theoretical", ]
 
   # Finish translating this over to base R.
   outlierDF <- lapply(unique(df$station), function(x) {
 
-    tows <- subset(df, legend != "Theoretical" & station == x)
-
-    theoretical <- subset(df, legend == "Theoretical" & station == x)
+    tows <- df[(df[["legend"]] != "Theoretical" & df[["station"]] == x), ]
+    theoretical <- df[(df[["legend"]] == "Theoretical" & df[["station"]] == x), ]
 
     if (nrow(theoretical) > 0 & nrow(tows) > 0) {
 
       df <- tows
-
       # Add new columns with values from 'theoretical'
       df$lonTheoretical <- theoretical$lon
       df$latTheoretical <- theoretical$lat
-
       df$distance <- geosphere::distVincentyEllipsoid(cbind(df$lon, df$lat),
                                                       cbind(df$lonTheoretical, df$latTheoretical))
       df$distance <- df$distance/1609.34
-
       # Add outlier column based on condition
       df$outlier <- ifelse(df$distance > d, TRUE, FALSE)
-      df <- subset(df, outlier == TRUE)
+      df <- df[(df[["outlier"]] == TRUE), ]
 
     } else df <- NULL
 
@@ -147,7 +143,7 @@ gpsOutlier <- function(df, d = 0.5) {
 
   outlierDF <- do.call(rbind, outlierDF)
 
-  finTheoreticalStations <- subset(df, legend == "Theoretical" & station %in% unique(outlierDF[["station"]]))
+  finTheoreticalStations <- df[(df[["legend"]] == "Theoretical" & df[["station"]] %in% unique(outlierDF[["station"]])), ]
   finTheoreticalStations$lonTheoretical <- NA
   finTheoreticalStations$latTheoretical <- NA
   finTheoreticalStations$distance <- NA

@@ -12,7 +12,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-load(file.path("..", "data-raw", "slsSchemaVignette.RData"))
 ```
 
 ```{r setup}
@@ -55,10 +54,10 @@ slsTables <- bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/
 
 We can also download the relationship table. This is an important table that reflects the relational structure of the relational tables. Unfortunately, this table does require special permissions, but fortunately, we can easily give ourselves the necessary permission. When we first try to pull the table, an error is given and the Access file will be opened. The function will output in the console's error message isntructions on how to give ourselves permissions: "Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`, exit file, and rerun this code."
 
-```{r, eval=F}
+```{r}
 schema <- bridgeAccess(
   "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
-  tables = c("MSysRelationships")
+  tables = c("MSysRelationships"), retry = T
   )
 
 # The function outputs a list, of which we can index to grab just the table
