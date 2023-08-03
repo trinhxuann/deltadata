@@ -88,7 +88,7 @@ translateSchema <- function(schema, verbose = F) {
 #' schemaJoin(schema, slsTables)
 #' }
 schemaJoin <- function(schema, data, start = NULL) {
-browser()
+
   if (class(schema) == "list") stop("Your schema is not provided as a data.frame.", call. = F)
 
   schema <- translateSchema(schema)
