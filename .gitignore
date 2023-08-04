@@ -51,3 +51,6 @@ rsconnect/
 inst/doc
 /doc/
 /Meta/
+
+# Readme files
+/README_files/
