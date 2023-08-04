@@ -14,31 +14,26 @@ This package contains various workflow functions for working with data within th
 
 ```{r setup}
 library(deltadata)
-library(kableExtra)
 ```
 
 ## Installation
 
 The `deltadata` package can be installed from its GitHub repository.
 ```{r, eval=F}
-# Install `devtools` if you need to
-if (!require("devtools")) {
-  install.packages("devtools")
-}
+# Install `devtools` if we need to
+install.packages("devtools")
 
-# Installing `deltadata` if you do not already have it
-if (!require("deltadata")) {
+# Installing `deltadata` if we do not already have it
   devtools::install_github("trinhxuann/deltadata")
-}
 ```
 
 ## Reading in the data
 
-The `bridgeAccess()` function can be used to connect to an Access database and extract any table of interest. First and foremost, you will need a 32-bit version of R for this function to work due to the limitations of the odbc drivers. Once that is satisfied, you can work in 64-bit R and 32-bit R will be invoked when appropriate.
+The `bridgeAccess()` function can be used to connect to an Access database and extract any table of interest. First and foremost, we will need a 32-bit version of R for this function to work due to the limitations of the odbc drivers. Once that is satisfied, we can work in 64-bit R (32-bit R will be invoked when appropriate).
 
-The function can directly pull from a URL or connect to a file on your harddrive. If you download from a URL, it is suggested that you download from a zipped source to minimize the file size--the function will extract the Access file from the zipped file. If you only provide the file path in the function, a table of available tables will be provided to you to explore. The function can also access system tables, however, you will be prompted to provide file permissions before the function can pull those tables.
+The function can directly pull from a URL or connect to a file on our hard drive. When downloading from a URL, it is suggested to download from a zipped source to minimize the file size--the function will extract the Access file from the zipped file. If we only provide the file path in the function, a table of available tables will be provided to us to explore. The function can also access system tables, however, we will be prompted to provide file permissions before the function can pull those tables.
 
-First, download the database (zipped form) and explore what tables are available to extract: the file will only be downloaded once if you are in the same R session (downloaded to the temporary folder)
+First, download the database (zipped form) and explore what tables are available to extract: the file will only be downloaded once if we remain in the same R session (downloaded to the temporary folder)
 ```{r}
 bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip")
 ```
@@ -63,7 +58,7 @@ schema <- schema[[1]]
 ```
 ## Data joining
 
-The schema table contains instructions on how to join your relational tables together. The `schemaJoin()` function deciphers this table and does the joining for us. This approach is theoretically preferable compared to joining by hand as it removes any guesswork on how you should join the tables together--this is not absolute since it depends on the database being set up correctly in the first place.
+The schema table contains instructions on how to join our relational tables together. The `schemaJoin()` function deciphers this table and does the joining for us. This approach is theoretically preferable compared to joining by hand as it removes any guesswork on how we should join the tables together--this is not absolute since it depends on the database being set up correctly in the first place.
 
 ```{r}
 joinedData <- schemaJoin(schema, slsTables)
@@ -76,20 +71,14 @@ schemaFullJoin$joinType <- "full_join"
 joinedDataFullJoin <- schemaJoin(schemaFullJoin, slsTables)
 
 # Would expect number of rows to differ between an inner vs full join
-dimCompare <- kable(
-  data.frame(joinType = c("auto", "fullJoin"),
-             nRows = c(nrow(joinedData), nrow(joinedDataFullJoin)),
-             nCols = c(ncol(joinedData), ncol(joinedDataFullJoin)))
-  )
-dimCompare <- kable_styling(
-  dimCompare,
-  bootstrap_options = c("striped", "hover", "condensed", "responsive")
-  )
+data.frame(joinType = c("auto", "fullJoin"),
+           nRows = c(nrow(joinedData), nrow(joinedDataFullJoin)),
+           nCols = c(ncol(joinedData), ncol(joinedDataFullJoin)))
 ```
 
 ### Notes on `schemaJoin()`
 
-Besides supplying your own join type to the schema table, you can also provide manipulated relational tables to the function. There are several reasons why this may be required: 1) the columns were not read in correctly, e.g., date data as characters, 2) column names need to change, 3) unit conversion of a data column, or 4) other reasons. Ultimately, this function simply looks at the schema table and applies those joins to the provided data--we can manipulate either argument as we would like.
+Besides supplying our own join type to the schema table, we can also provide manipulated relational tables to the function. There are several reasons why this may be required: 1) the columns were not read in correctly, e.g., date data as characters, 2) column names need to change, 3) unit conversion of a data column, or 4) other reasons. Ultimately, this function simply looks at the schema table and applies those joins to the provided data--we can manipulate either argument as we would like.
 
 ## Checking GPS coordinate outliers
 
@@ -182,9 +171,9 @@ gpsData <- subset(gpsData, !is.na(lat) | !is.na(lon))
 plotGPS(gpsData, layerName = "Survey", dateName = "Year", height = 500)
 ```
 
-`plotGPS()` allows you to quickly visualize your GPS coordinates. It is most useful when you also visualize the theoretical coordinates alongside your points of interest. The outputted leaflet map has several useful features: 1) an interactive map in which you can zoom in and out and move around, 2) a legend is provided if you have multiple groupings of data points, 3) layer controls allow you to plot only the layers you want, and 4) each point is labeled and provides additional data when clicked upon. This function should allow us to quickly see the most egregious outliers.
+`plotGPS()` allows us to quickly visualize our GPS coordinates. It is most useful when we also visualize the theoretical coordinates alongside our points of interest. The outputted leaflet map has several useful features: 1) an interactive map in which we can zoom in and out and move around, 2) a legend is provided if we have multiple groupings of data points, 3) layer controls allow us to plot only the layers we want, and 4) each point is labeled and provides additional data when clicked upon. This function should allow us to quickly see the most egregious outliers.
 
-We can then do a finer search for outliers by using `gpsOutlier()`. This function calculates the distance between each sampling point and that location's theoretical GPS coordinates and returns any points above the distance threshold (defaults to 0.5 mile). This implies that you must supply theoretical GPS coordinates of your sampling points to the function and is why it is recommended to construct your GPS data frame to include the theoretical when using `plotGPS()`. The data frame output for `gpsOutlier()` is the same format as required by `plotGPS`, allowing us to pipe the two together.
+We can then do a finer search for outliers by using `gpsOutlier()`. This function calculates the distance between each sampling point and that location's theoretical GPS coordinates and returns any points above the distance threshold (defaults to 0.5 mile). This implies that we must supply theoretical GPS coordinates of our sampling points to the function and is why it is recommended to construct our GPS data frame to include the theoretical when using `plotGPS()`. The data frame output for `gpsOutlier()` is the same format as required by `plotGPS`, allowing us to pipe the two together.
 
 ```{r}
 # By default, d = 0.5
@@ -192,14 +181,10 @@ gpsOutliersData <- gpsOutlier(gpsData)
 
 plotGPS(gpsOutliersData, height = 500)
 
-gpsOutliersDataTable <- kable(gpsOutliersData)
-gpsOutliersDataTable <- kable_styling(
-  gpsOutliersDataTable, 
-  bootstrap_options = c("striped", "hover", "condensed", "responsive")
-  )
-scroll_box(gpsOutliersDataTable, width = "100%", height = "400px")
+head(gpsOutliersData)
 ```
-Note that the distance calculated between the sampling point and the theoretical coordinates is "as the crow flies", i.e., a straight line (taking into account the curviture of the Earth). The default 0.5 mile is the ideal trawling condition for most CDFW survey trawls.
+
+Note that the distance calculated between the sampling point and the theoretical coordinates is "as the crow flies", i.e., a straight line (taking into account the curvature of the Earth). The default 0.5 mile is the ideal trawling condition for most CDFW survey trawls.
 
 ## Comparing water quality values to CDEC gages
 
@@ -234,9 +219,7 @@ startTime <- Sys.time()
 cdecTable <- popCDEC(waterQualityData)
 totalTime <- Sys.time() - startTime
 
-cdecTable <- kable(cdecTable)
-cdecTable <- kable_styling(cdecTable, bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-scroll_box(cdecTable, width = "100%", height = "400px")
+head(cdecTable)
 ```
 
 For each sampling point, the function will return the desired water quality data from the nearest CDEC station, in terms of space and time. Each sampling point will be returned in a data frame with the desired water quality data from the nearest CDEC station.  Various metadata is also reported back by the function: the nearest CDEC station (`cdecStation`), the difference in minutes between the sampling point of interest and the CDEC data point (`timeDifference`), the distance in miles between the sampling point and the CDEC station (`distance`), and CDEC station metadata information (`sensorNumber`, `sensorDescription`, `units`, `duration`, `dataAvailable`).
@@ -248,6 +231,19 @@ There are several operations of the function to be aware of:
 1. the nearest CDEC station is calculated as a as-the-crow-flies distance
 2. the reported value from the CDEC station is the closest time point to the requested sampling point that has data. This means that if the station was sampling at time points closer to when our sampling occurred but valid data was not recorded, those time points were removed. The reported value is the closest *valid* value in time to when our sampling occurred. There may still be values that are NAs; these are due to the station not having any valid data within the requested date range.
 3. the function scrapes from the CDEC website and can get bogged down as we increase the number of data points to populate and/or the range of dates of the initial dataset. It is also dependent on the internet connection speed to the CDEC website.
+
+### `pullCDEC`
+
+Function `popCDEC` relies on `pullCDEC` in the background to pull data from CDEC gages. This function can be used as a stand-alone function. 
+
+```{r}
+malGage <- pullCDEC(station = "MAL", sensor = 25, duration = "hourly", 
+                    dateStart = "06/13/1986", dateEnd = "06/14/1986")
+
+head(malGage)
+```
+
+The function will pull the requested data into R if all the arguments are provided. Since it is difficult to know what data is available for a gage of interest, the function will provide metadata on all available data if only the station argument is provided, e.g., `pullCDEC(station = "MAL")`.
 
 ## Conclusion
 

@@ -70,6 +70,10 @@ translateSchema <- function(schema, verbose = F) {
 #' @param start The starting relational table to begin construction. If NULL,
 #' will start at the first table specified by the schema.
 #'
+#' @details
+#' The join type in the relationship table from Access can be modified directly if required. Simply add a `joinType` column to the relationship table and specify one of four options: `full_join`, `inner_join`, `left_join`, or `right_join`. The `data` argument can theoretically take in any data frame. This allows for manipulations of the relational tables if such operations are necessary before joining.
+#'
+#'
 #' @return A data frame joined according to the relationship schema.
 #' @export
 #'

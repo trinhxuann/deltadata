@@ -24,6 +24,9 @@ to the provided tables. Users can specify which tables they would like to
 join through the tables that they provide the function. Ensure that the names
 of the tables provided matches those required in the relationship table.
 }
+\details{
+The join type in the relationship table from Access can be modified directly if required. Simply add a \code{joinType} column to the relationship table and specify one of four options: \code{full_join}, \code{inner_join}, \code{left_join}, or \code{right_join}. The \code{data} argument can theoretically take in any data frame. This allows for manipulations of the relational tables if such operations are necessary before joining.
+}
 \examples{
 \dontrun{
 slsTables <- bridgeAccess(

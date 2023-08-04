@@ -4,7 +4,7 @@ file <- Args[1]
 rBit <- Args[3]
 officeBit <- Args[4]
 out <- Args[5]
-retry <- Args[6]
+retry <- as.logical(Args[6])
 
 tables <- Args[7:length(Args)]
 

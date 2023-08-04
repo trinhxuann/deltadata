@@ -5,3 +5,5 @@
 ^internal$
 ^doc$
 ^Meta$
+^READ.Rmd$
+^README_files$

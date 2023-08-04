@@ -148,7 +148,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
                                  shell.exec(dbGetInfo(con)$dbname)
 
                                  if (isTRUE(retry)) {
-                                   message('Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`, exit file, and rerun this code.')
+                                   message('Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`. Will retry once after 25 seconds.')
                                    Sys.sleep(25)
                                    cat("Retrying...")
                                    df <- mapply(dbReadTable,
