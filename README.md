@@ -239,7 +239,7 @@ gpsData <- subset(gpsData, !is.na(lat) | !is.na(lon))
 plotGPS(gpsData, layerName = "Survey", dateName = "Year", height = 500)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](man/figures/README-unnamed-chunk-8-1.png)<!-- -->
 
 `plotGPS()` allows us to quickly visualize our GPS coordinates. It is
 most useful when we also visualize the theoretical coordinates alongside
@@ -268,7 +268,7 @@ gpsOutliersData <- gpsOutlier(gpsData)
 plotGPS(gpsOutliersData, height = 500)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](man/figures/README-unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 
