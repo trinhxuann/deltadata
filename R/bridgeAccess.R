@@ -57,7 +57,10 @@ architectureCheck <- function(officeBit = NULL) {
        officeBit = officeBit)
 }
 
-#' Facilitates connection from R to Access. This is meant to run on the backend.
+#' Facilitates connection from R to Access.
+#'
+#' @description
+#' This function creates the actual connection to the Access database. Requires odbc drivers, which should be installed alongside Access (32 or 64 bit).
 #'
 #' @param path File path to database.
 #' @param driver ODBC driver. Defaults to using the Access drivers.
@@ -95,6 +98,10 @@ connectAccess <- function(path,
 }
 
 #' Extract tables from a connection
+#'
+#' @description
+#' Through an existing connection to an Access database, return the requested relational tables. If none are provided, will return a vector of possible tables tp choose from.
+#'
 #'
 #' @param con A DBIConnection object.
 #' @param tables The tables that you wish to pull from the database. This can
@@ -164,8 +171,11 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
   }
 }
 
+#' Download a file
+#'
+#' @description
 #' Grab the file from a website link, or provide the file path if a file path
-#' is provided. Optionality to open the file.
+#' is provided. Provides option to open the file.
 #'
 #' @param file File path to the file, most useful if provided as a URL.
 #' @param open T/F if the file should be opened or not.
@@ -222,9 +232,11 @@ getFile <- function(file, open = F, method) {
 }
 
 
-#' Create the connection to an Access database and pull the requested tables.
-#' This function will attempt to account for mismatched architectures
-#' (R vs Microsoft Access) but will take longer to execute if so.
+#' Connect to an Access database
+#'
+#' @description
+#' Create the connection to an Access database and pull the requested tables. This function will attempt to account for mismatched architectures (R vs Microsoft Access) but will take longer to execute if so.
+#'
 #'
 #' @param file File path to the Access database file. Can be a path to a hard
 #' drive or a URL.

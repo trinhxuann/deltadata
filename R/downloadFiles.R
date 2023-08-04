@@ -41,7 +41,10 @@ tableNamesEDI <- function(url, version = "newest") {
 
 #' Pull files from an EDI package
 #'
-#' @param url URL of the EDI package
+#' @description
+#' This function works with the API provided by EDI to download the files of a package. The default behavior is to download the newest version of the data package, but this can be changed via the `version` argument. The function handles different file types differently, i.e., .csv files are read directly into R while all other file types are downloaded in the temporary folder and a file path to the file is returned. Bear in mind that the EDI servers are very slow and the execution of this code will be thus affected.
+#'
+#' @param url URL of the EDI package with the version number, i.e., the package URL you would access in the browser.
 #' @param files Vector of file names of interest. Should match exactly what
 #' is on the website. Leave this blank to see the options.
 #' @param version Version of interest for the package at hand. Defaults to

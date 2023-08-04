@@ -1,7 +1,10 @@
-#' A leaflet wrapper to plot station GPS coordinates with layer control.
+#' Plot station GPS coordinates with layer control.
+#'
+#' @description
+#' This is a leaflet wrapper. The input data frame requires very specific columns that must be included. The format caters to IEP surveys but should be generalizable to other datasets.
 #'
 #' @param df A dataframe with 6 required columns: date, station, legend, layer,
-#' lat, and lon.
+#' lat, and lon. See the "details" section for additional information.
 #' @param layerName Character vector used to label the layer element within the
 #' pop up at each plotted point.
 #' @param dateName Character vector used to label the date element within the
@@ -9,6 +12,21 @@
 #' @param height Height of the leaflet map.
 #' @param ... Optional. Currently only used to determine the `provider` argument
 #' within the addProviderTiles.
+#'
+#' @details
+#' The input data frame must have at least six specific columns.
+#'
+#' `date` represents when the samples were taken and is used to label each data point in the pop-up label. This does not technically need to be a date and can be any date-related label that makes sense for your project, e.g., month or year.
+#'
+#' `station` represents the name of the sampling points and is used to label each data point on the map.
+#'
+#' `legend` contains the legend labels and marks the colors of the data points on the map. This is useful if there are different instances of the same sampling point, e.g., start and end GPS coordinates.
+#'
+#' `layer` determines the layers that are depicted in the layer control of the plot. Use this to filter data points on the map, e.g., per survey number.
+#'
+#' `lat` contains the latitude coordinates of your sampling point
+#'
+#' `lon` contains the longitude coordinates of your sampling point
 #'
 #' @return A leaflet plot.
 #' @export
@@ -81,11 +99,14 @@ plotGPS <- function(df, layerName = "Layer", dateName = "Date", height = 1200, .
                             options = leaflet::layersControlOptions(collapsed = FALSE))
 }
 
+#' Isolate outlying stations
+#'
+#' @description
 #' Identify stations that are more than `d` distance in miles, defaulting to
 #' 0.5, away from the theoretical coordinate.
 #'
 #' @param df A dataframe with 6 required columns: date, station, legend, layer,
-#' lat, and lon. See `plotGPS()` for details.
+#' lat, and lon. See \code{\link{plotGPS}} for details.
 #' @param d Miles threshold to call a coordinate outlying. This distance is
 #' measured as the crow flies.
 #'

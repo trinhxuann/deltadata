@@ -1,10 +1,6 @@
 ---
-title: "slsDemonstration"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{slsDemonstration}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+output: github_document
+always_allow_html: true
 ---
 
 ```{r, include = FALSE}
@@ -14,13 +10,12 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
-require(deltadata)
-require(kableExtra)
-```
+This package contains various workflow functions for working with data within the Sacramento-San Joaquin River Delta. There is a primary focus on IEP (Interagency Ecological Program) Surveys and supporting their data publication workflow. Additional features pertaining to other surveys may be supported in the future.
 
-## Note:
-This vignette was created as a snapshot of the SLS Access Database. If there are changes to the database in the future, these example codes may not fully work "as-is" but should if you can account for changes.
+```{r setup}
+library(deltadata)
+library(kableExtra)
+```
 
 ## Installation
 
@@ -57,10 +52,10 @@ slsTables <- bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/
 
 We can also download the relationship table. This is an important table that reflects the relational structure of the relational tables. Unfortunately, this table does require special permissions, but fortunately, we can easily give ourselves the necessary permission. When we first try to pull the table, an error is given and the Access file will be opened. The function will output in the console's error message isntructions on how to give ourselves permissions: "Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`, exit file, and rerun this code."
 
-```{r, eval=F}
+```{r}
 schema <- bridgeAccess(
   "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
-  tables = c("MSysRelationships", retry = T)
+  tables = c("MSysRelationships"), retry = T
   )
 
 # The function outputs a list, of which we can index to grab just the table
@@ -69,21 +64,6 @@ schema <- schema[[1]]
 ## Data joining
 
 The schema table contains instructions on how to join your relational tables together. The `schemaJoin()` function deciphers this table and does the joining for us. This approach is theoretically preferable compared to joining by hand as it removes any guesswork on how you should join the tables together--this is not absolute since it depends on the database being set up correctly in the first place.
-
-```{r}
-# This is a workaround for the schema table given that allowing permissions is an interactive step. This obviously only works for the current snapshot of the SLS database.
-schema <- data.frame(
-  ccolumn = c(2, 2, 3, 3, 3, 4, 4, 4, 4, 1, 1),
-  grbit = rep(4352, 11),
-  icolumn = c(0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 0),
-  szColumn = c("Date", "Station", "Date", "Station", "Tow", "Date", "Station", "Tow", "FishCode", "GroupCategoryID", "GroupID"),
-  szObject = c("Tow Info", "Tow Info", rep("Catch", 3), rep("Lengths", 4), "MSysNavPaneGroups", "MSysNavPaneGroupToObjects"),
-  szReferencedColumn = c("Date", "Station", "Date", "Station", "Tow", "Date", "Station", "Tow", "FishCode", "Id", "Id"),
-  szReferencedObject = c(rep("Water Info", 2), rep("Tow Info", 3), rep("Catch", 4), "MSysNavPaneGroupCategories", "MSysNavPaneGroups"),
-  szRelationship = c(rep("Water InfoTow Info", 2), rep("Tow InfoCatch", 3), rep("CatchLengths", 4), "MSysNavPaneGroupCategoriesMSysNavPaneGroups", "MSysNavPaneGroupsMSysNavPaneGroupToObjects")
-)
-```
-
 
 ```{r}
 joinedData <- schemaJoin(schema, slsTables)
@@ -201,6 +181,7 @@ gpsData <- subset(gpsData, !is.na(lat) | !is.na(lon))
 # layerName and dateName are specific to the popup labels at each point.
 plotGPS(gpsData, layerName = "Survey", dateName = "Year", height = 500)
 ```
+
 `plotGPS()` allows you to quickly visualize your GPS coordinates. It is most useful when you also visualize the theoretical coordinates alongside your points of interest. The outputted leaflet map has several useful features: 1) an interactive map in which you can zoom in and out and move around, 2) a legend is provided if you have multiple groupings of data points, 3) layer controls allow you to plot only the layers you want, and 4) each point is labeled and provides additional data when clicked upon. This function should allow us to quickly see the most egregious outliers.
 
 We can then do a finer search for outliers by using `gpsOutlier()`. This function calculates the distance between each sampling point and that location's theoretical GPS coordinates and returns any points above the distance threshold (defaults to 0.5 mile). This implies that you must supply theoretical GPS coordinates of your sampling points to the function and is why it is recommended to construct your GPS data frame to include the theoretical when using `plotGPS()`. The data frame output for `gpsOutlier()` is the same format as required by `plotGPS`, allowing us to pipe the two together.

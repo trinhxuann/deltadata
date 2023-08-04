@@ -2,9 +2,7 @@
 % Please edit documentation in R/bridgeAccess.R
 \name{bridgeAccess}
 \alias{bridgeAccess}
-\title{Create the connection to an Access database and pull the requested tables.
-This function will attempt to account for mismatched architectures
-(R vs Microsoft Access) but will take longer to execute if so.}
+\title{Connect to an Access database}
 \usage{
 bridgeAccess(file, tables = "check", method = "auto", retry = F, ...)
 }
@@ -34,9 +32,7 @@ name, or password.}
 A list of relational tables read from the Access database connection.
 }
 \description{
-Create the connection to an Access database and pull the requested tables.
-This function will attempt to account for mismatched architectures
-(R vs Microsoft Access) but will take longer to execute if so.
+Create the connection to an Access database and pull the requested tables. This function will attempt to account for mismatched architectures (R vs Microsoft Access) but will take longer to execute if so.
 }
 \examples{
 \dontrun{

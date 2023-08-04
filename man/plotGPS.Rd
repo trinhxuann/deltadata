@@ -2,13 +2,13 @@
 % Please edit documentation in R/gpsHelpers.R
 \name{plotGPS}
 \alias{plotGPS}
-\title{A leaflet wrapper to plot station GPS coordinates with layer control.}
+\title{Plot station GPS coordinates with layer control.}
 \usage{
 plotGPS(df, layerName = "Layer", dateName = "Date", height = 1200, ...)
 }
 \arguments{
 \item{df}{A dataframe with 6 required columns: date, station, legend, layer,
-lat, and lon.}
+lat, and lon. See the "details" section for additional information.}
 
 \item{layerName}{Character vector used to label the layer element within the
 pop up at each plotted point.}
@@ -25,7 +25,22 @@ within the addProviderTiles.}
 A leaflet plot.
 }
 \description{
-A leaflet wrapper to plot station GPS coordinates with layer control.
+This is a leaflet wrapper. The input data frame requires very specific columns that must be included. The format caters to IEP surveys but should be generalizable to other datasets.
+}
+\details{
+The input data frame must have at least six specific columns.
+
+\code{date} represents when the samples were taken and is used to label each data point in the pop-up label. This does not technically need to be a date and can be any date-related label that makes sense for your project, e.g., month or year.
+
+\code{station} represents the name of the sampling points and is used to label each data point on the map.
+
+\code{legend} contains the legend labels and marks the colors of the data points on the map. This is useful if there are different instances of the same sampling point, e.g., start and end GPS coordinates.
+
+\code{layer} determines the layers that are depicted in the layer control of the plot. Use this to filter data points on the map, e.g., per survey number.
+
+\code{lat} contains the latitude coordinates of your sampling point
+
+\code{lon} contains the longitude coordinates of your sampling point
 }
 \examples{
 \donttest{
