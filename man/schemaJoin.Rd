@@ -25,7 +25,7 @@ join through the tables that they provide the function. Ensure that the names
 of the tables provided matches those required in the relationship table.
 }
 \details{
-The join type in the relationship table from Access can be modified directly if required. Simply add a \code{joinType} column to the relationship table and specify one of four options: \code{full_join}, \code{inner_join}, \code{left_join}, or \code{right_join}. The \code{data} argument can theoretically take in any data frame. This allows for manipulations of the relational tables if such operations are necessary before joining.
+The join type in the relationship table from Access can be modified directly if required. Simply add a \code{joinType} column to the relationship table and specify one of four options: \code{full_join}, \code{inner_join}, \code{left_join}, or \code{right_join}. The \code{data} argument can theoretically take in any data frame. This allows for manipulations of the relational tables if such operations are necessary before joining. Within the schema table itself, \code{szReferencedObject} refers to the relational table with the primary key, while \code{szObject} refers to the relational table with the foreign key.
 }
 \examples{
 \dontrun{
