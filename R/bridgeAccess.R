@@ -90,9 +90,14 @@ connectAccess <- function(path,
            error = function(cond) {
              if (grepl(c("IM002.*ODBC Driver Manager"), cond$message)) {
                message(cond, "\n")
-               message("IM002 and ODBC Driver Manager error generally means a 32-bit R needs to be installed or used.")
+               stop("IM002 and ODBC Driver Manager error generally means a 32-bit R needs to be installed or used.", call. = F)
              } else {
-               message(cond)
+               if (grepl(c("IM006"), cond$message)) {
+                 file.remove(file)
+                 stop("File corrupted. Try setting `method = curl` to resolve this error.", call. = F)
+               } else {
+                 message(cond)
+               }
              }
            })
 }

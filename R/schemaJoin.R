@@ -71,7 +71,7 @@ translateSchema <- function(schema, verbose = F) {
 #' will start at the first table specified by the schema.
 #'
 #' @details
-#' The join type in the relationship table from Access can be modified directly if required. Simply add a `joinType` column to the relationship table and specify one of four options: `full_join`, `inner_join`, `left_join`, or `right_join`. The `data` argument can theoretically take in any data frame. This allows for manipulations of the relational tables if such operations are necessary before joining.
+#' The join type in the relationship table from Access can be modified directly if required. Simply add a `joinType` column to the relationship table and specify one of four options: `full_join`, `inner_join`, `left_join`, or `right_join`. The `data` argument can theoretically take in any data frame. This allows for manipulations of the relational tables if such operations are necessary before joining. Within the schema table itself, `szReferencedObject` refers to the relational table with the primary key, while `szObject` refers to the relational table with the foreign key.
 #'
 #'
 #' @return A data frame joined according to the relationship schema.
@@ -96,15 +96,24 @@ schemaJoin <- function(schema, data, start = NULL) {
   if (class(schema) == "list") stop("Your schema is not provided as a data.frame.", call. = F)
 
   schema <- translateSchema(schema)
-  missingTable <- schema[(schema[["szObject"]] %in% names(data) | schema[["szReferencedObject"]] %in% names(data)), ]
-  missingTable$score <- missingTable$szObject %in% names(data) + missingTable$szReferencedObject %in% names(data)
-  schema <- missingTable[1:max(which(missingTable$score %in% 2)), ]
-  if (any(schema$score %in% 1)) {
-    missingScore <- schema[schema[["score"]] == 1, ]
-    schema <- c(missingScore[["szObject"]][which(!missingScore[["szObject"]] %in% names(data))],
-                       missingScore[["szReferencedObject"]][which(!missingScore[["szReferencedObject"]] %in% names(data))])
-    stop("You are missing intermediate table(s): ", unique(schema), call. = F)
+  allTables <- factor(unique(c(schema$szObject, schema$szReferencedObject)),
+                      levels = unique(c(unique(schema[["szReferencedObject"]]), unique(schema$szObject))))
+
+  tableEssentialDFs <- data.frame(
+    table = allTables,
+    count = (allTables %in% schema$szObject) + (allTables %in% schema$szReferencedObject)
+  )
+  tableEssentialDFs <- tableEssentialDFs[order(tableEssentialDFs$table), ]
+  tableEssentialDFs <- tableEssentialDFs[1:max(which(tableEssentialDFs[["table"]] %in% names(data))), ]
+  tableEssentialDFs$providedTables <- tableEssentialDFs[["table"]] %in% names(data)
+
+  tableRequired <- tableEssentialDFs[tableEssentialDFs[["count"]] == 2 & !tableEssentialDFs[["providedTables"]], "table"]
+
+  if (length(tableRequired) > 0) {
+    stop("You are missing intermediate table(s) required for completing the joins: ", paste(tableRequired, collapse = ", "), call. = F)
   }
+  schema$score <- schema$szObject %in% names(data) + schema$szReferencedObject %in% names(data)
+  schema <- schema[schema[["score"]] == 2, ]
 
   startTable <- data[[schema$szReferencedObject[1]]]
   usedTable <- schema$szReferencedObject[1]
