@@ -77,7 +77,7 @@ data.frame(joinType = c("auto", "fullJoin"),
            nCols = c(ncol(joinedData), ncol(joinedDataFullJoin)))
 ```
 
-#### Aside on `schemaJoin()`
+### Aside on `schemaJoin()`
 
 Besides supplying our own join type to the schema table, we can also provide manipulated relational tables to the function, e.g., tables in `slsTables` in the example above. There are several reasons why this may be required: 1) we want to be sure our columns are read in correctly, e.g., date data as a Date format, 2) column names need to change, 3) unit conversion, or 4) other reasons. Ultimately, this function simply looks at the schema table and applies those joins to the provided data--we can manipulate either argument as we like.
 
@@ -225,7 +225,7 @@ head(cdecTable)
 
 For each sampling point, the function will return the desired water quality data from the nearest CDEC station for each sampling point, in terms of space (as-the-crow-flies) and time. The function also reports back various metadata: the nearest CDEC station (`cdecStation`), the time difference in minutes between the sample of interest and the CDEC sample (`timeDifference`), the distance in miles between the sampling point and the CDEC station (`distance`), and other metadata information about the CDEC station (`sensorNumber`, `sensorDescription`, `units`, `duration`, `dataAvailable`).
 
-#### Notes on the nuanced operations by `popCDEC()`
+### Notes on the nuanced operations by `popCDEC()`
 
 There are several underlying operations of the function to be aware of:
 
@@ -251,4 +251,4 @@ The function will provide the requested data directly into R if all the argument
 
 The `deltadata` package aims to provide workflow functions to efficiently work with IEP survey data. In this vignette, we explored how to use this package to replicate portions of the SLS QAQC pipeline. Function `bridgeAccess` is a convenient wrapper to connect to an Access database, allowing us to pull out relational tables of interest. The function can also access the relationship schema, which can be used to guide the joining process of our relational tables of interest via `schemaJoin()`. Once these relational tables are read into R, we can leverage R package to QAQC our data. The `deltadata` specifically provides several QAQC functions: 1) `plotGPS()` and `gpsOutlier()` to explore outlying GPS coordinates based on the distance from the theoretical, and 2) compare water quality data to the nearest CDEC station via `popCDEC()`.
 
-There may be additional functionalities added to this package in the future. If you have any suggestions or encounter any bugs, please feel free to open an issue, contribute to the package via a pull request, or directly contact [Trinh Nguyen](mailto:trinh.nguyen@wildlife.ca.gov).
+There may be additional functionalities added to this package in the future. If you have any suggestions or encounter any bugs, please feel free to open an [issue](https://github.com/trinhxuann/deltadata/issues), contribute to the package via a pull request, or directly contact [Trinh Nguyen](mailto:trinh.nguyen@wildlife.ca.gov).

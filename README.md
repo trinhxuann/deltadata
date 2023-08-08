@@ -143,7 +143,7 @@ data.frame(joinType = c("auto", "fullJoin"),
 #> 2 fullJoin 195648    33
 ```
 
-#### Aside on `schemaJoin()`
+### Aside on `schemaJoin()`
 
 Besides supplying our own join type to the schema table, we can also
 provide manipulated relational tables to the function, e.g., tables in
@@ -387,7 +387,7 @@ point and the CDEC station (`distance`), and other metadata information
 about the CDEC station (`sensorNumber`, `sensorDescription`, `units`,
 `duration`, `dataAvailable`).
 
-#### Notes on the nuanced operations by `popCDEC()`
+### Notes on the nuanced operations by `popCDEC()`
 
 There are several underlying operations of the function to be aware of:
 
@@ -457,5 +457,6 @@ station via `popCDEC()`.
 
 There may be additional functionalities added to this package in the
 future. If you have any suggestions or encounter any bugs, please feel
-free to open an issue, contribute to the package via a pull request, or
-directly contact [Trinh Nguyen](mailto:trinh.nguyen@wildlife.ca.gov).
+free to open an [issue](https://github.com/trinhxuann/deltadata/issues),
+contribute to the package via a pull request, or directly contact [Trinh
+Nguyen](mailto:trinh.nguyen@wildlife.ca.gov).
