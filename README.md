@@ -32,13 +32,19 @@ devtools::install_github("trinhxuann/deltadata")
 ## Reading in the data
 
 The `bridgeAccess()` function can be used to connect to an Access
-database and extract any table of interest. First and foremost, we will
-need a 32-bit version of R for this function to work due to the
-limitations of the odbc drivers. The newest version of R that supports
-32-bit is
-[4.1.3](https://cran.r-project.org/bin/windows/base/old/4.1.3)–32-bit R
-is no longer supported after this version. Once that is satisfied, we
-can work in 64-bit R (32-bit R will be invoked when appropriate).
+database and extract tables of interest. First and foremost, we must
+ensure that the architecture of our R is the same as our Microsoft
+Access (32 vs 64-bit). The function will check this for us and provide
+an interpretable error if they do not match. For most state computers,
+we have 32-bit Microsoft Access which means that we must have 32-bit R
+for this function to work. The newest version of R that supports 32-bit
+is [4.1.3](https://cran.r-project.org/bin/windows/base/old/4.1.3) (newer
+versions of R no longer support the 32-bit architecture, so this is not
+ideal). Once that is satisfied, we can work in 64-bit R and 32-bit R
+will be invoked when appropriate. If installing 32-bit R is not an
+option, 64-bit Microsoft Access must be installed to use this function
+with 64-bit R. Basically, the architecture of R must match that of
+Microsoft Access, and if that is satisfied, the function can run.
 
 The function can connect directly to a URL source or to a file on our
 hard drive. When connecting to a URL, it is suggested to download from a
@@ -335,7 +341,6 @@ waterQualityData <- subset(
 for (i in c("StartLat", "StartLong", "EndLat", "EndLong")) {
   waterQualityData[[i]] <- gsub("[-. ]", "", waterQualityData[[i]])
 }
-
 # createGPS is a helper function defined on line 108 above.
 waterQualityData <- createGPS(waterQualityData)
 waterQualityData$time <- paste(
@@ -349,10 +354,7 @@ waterQualityData <- unique(waterQualityData[, names(waterQualityData)])
 names(waterQualityData) <- c("Station", "lat", "lon", "time", 
                              "temp", "ec", "turbidity")
 
-startTime <- Sys.time()
 cdecTable <- popCDEC(waterQualityData)
-totalTime <- Sys.time() - startTime
-
 head(cdecTable)
 #>   station      lat       lon                time cdecStation temp tempCDEC
 #> 1     306 38.00064 -122.4145 2023-01-03 11:36:00         MRZ 10.4 9.555556
@@ -391,7 +393,7 @@ about the CDEC station (`sensorNumber`, `sensorDescription`, `units`,
 
 There are several underlying operations of the function to be aware of:
 
-1.  the nearest CDEC station is calculated as a as-the-crow-flies
+1.  the nearest CDEC station is calculated based on as-the-crow-flies
     distance
 2.  the reported value from the CDEC station is the closest time point
     to the requested sampling point that has data. This means that all
@@ -410,7 +412,95 @@ There are several underlying operations of the function to be aware of:
 ### `pullCDEC`
 
 Function `popCDEC` relies on `pullCDEC()` in the background to pull data
-from CDEC gages. This function can be used as a stand-alone function.
+from CDEC gages. This function can be used as a stand-alone function to
+obtain data from any CDEC station. Since it is difficult to remember
+what data is available for each CDEC station, the function is
+constructed to guide us through selecting all necessary arguments if we
+do not know exactly what we want. To begin, we can provide the function
+with just the station name:
+
+``` r
+pullCDEC(station = "MAL")
+#> # A tibble: 33 x 7
+#>    sensorDescription                     sensorNumber duration plot      
+#>    <chr>                                        <int> <chr>    <chr>     
+#>  1 RIVER STAGE, FEET                                1 event    (RIV STG) 
+#>  2 RIVER STAGE, FEET                                1 hourly   (RIV STG) 
+#>  3 TEMPERATURE, AIR, DEG F                          4 event    (TEMP)    
+#>  4 TEMPERATURE, AIR, DEG F                          4 hourly   (TEMP)    
+#>  5 ELECTRICAL CONDUCTIVTY MILLI S, mS/cm            5 daily    (EL CND)  
+#>  6 ELECTRICAL CONDUCTIVTY MILLI S, mS/cm            5 hourly   (EL CND)  
+#>  7 WIND, SPEED, MPH                                 9 event    (WIND SP) 
+#>  8 WIND, SPEED, MPH                                 9 hourly   (WIND SP) 
+#>  9 WIND, DIRECTION, DEG                            10 event    (WIND DR) 
+#> 10 WIND, DIRECTION, DEG                            10 hourly   (WIND DR) 
+#> 11 BATTERY VOLTAGE, VOLTS                          14 event    (BAT VOL) 
+#> 12 BATTERY VOLTAGE, VOLTS                          14 hourly   (BAT VOL) 
+#> 13 FLOW, RIVER DISCHARGE, CFS                      20 event    (FLOW)    
+#> 14 WATER, VELOCITY, FT/SEC                         21 event    (VLOCITY) 
+#> 15 TEMPERATURE, WATER, DEG F                       25 event    (TEMP W)  
+#> 16 TEMPERATURE, WATER, DEG F                       25 hourly   (TEMP W)  
+#> 17 SOLAR RADIATION, W/M^2                          26 event    (SOLAR R) 
+#> 18 SOLAR RADIATION, W/M^2                          26 hourly   (SOLAR R) 
+#> 19 WATER, TURBIDITY,   NTU                         27 event    (TURB W)  
+#> 20 WATER, TURBIDITY,   NTU                         27 hourly   (TURB W)  
+#> 21 CHLOROPHYLL, ug/L                               28 event    (CHLORPH) 
+#> 22 CHLOROPHYLL, ug/L                               28 hourly   (CHLORPH) 
+#> 23 WATER, DISSOLVED OXYGEN,  MG/L                  61 event    (DIS OXY) 
+#> 24 WATER, DISSOLVED OXYGEN,  MG/L                  61 hourly   (DIS OXY) 
+#> 25 WATER, PH VALUE, PH                             62 event    (PH VAL)  
+#> 26 WATER, PH VALUE, PH                             62 hourly   (PH VAL)  
+#> 27 ELECTRICAL COND BOTTOM MILLI S, mS/cm           92 hourly   (EL CONDB)
+#> 28 ELECTRICAL CONDUCTIVTY MICRO S, uS/cm          100 daily    (EL COND) 
+#> 29 ELECTRICAL CONDUCTIVTY MICRO S, uS/cm          100 event    (EL COND) 
+#> 30 ELECTRICAL CONDUCTIVTY MICRO S, uS/cm          100 hourly   (EL COND) 
+#> 31 ELECTRICAL COND BOTTOM MICRO S, uS/cm          102 event    (EL CONDB)
+#> 32 ELECTRICAL COND BOTTOM MICRO S, uS/cm          102 hourly   (EL CONDB)
+#> 33 RIVER STAGE NAVD88, FEET                       141 hourly   (RIVST88) 
+#>    dataCollection    dataAvailable            gage 
+#>    <chr>             <chr>                    <chr>
+#>  1 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#>  2 SATELLITE         10/01/1987 to present    MAL  
+#>  3 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#>  4 SATELLITE         01/25/2008 to present    MAL  
+#>  5 COMPUTED          10/01/1995 to 01/17/2008 MAL  
+#>  6 MICROWAVE         01/01/1984 to 01/17/2008 MAL  
+#>  7 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#>  8 SATELLITE         01/22/2008 to present    MAL  
+#>  9 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 10 SATELLITE         01/22/2008 to present    MAL  
+#> 11 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 12 SATELLITE         01/01/1995 to 10/01/2008 MAL  
+#> 13 DATA XCHG-USGS    07/08/2011 to present    MAL  
+#> 14 DATA XCHG-USGS    07/08/2011 to present    MAL  
+#> 15 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 16 SATELLITE         06/13/1986 to present    MAL  
+#> 17 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 18 SATELLITE         01/25/2008 to present    MAL  
+#> 19 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 20 SATELLITE         01/17/2008 to present    MAL  
+#> 21 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 22 SATELLITE         06/13/1986 to present    MAL  
+#> 23 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 24 SATELLITE         06/18/2007 to present    MAL  
+#> 25 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 26 SATELLITE         01/17/2008 to present    MAL  
+#> 27 MICROWAVE         02/01/1995 to 01/17/2008 MAL  
+#> 28 COMPUTED          01/18/2008 to present    MAL  
+#> 29 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 30 SATELLITE         01/17/2008 to present    MAL  
+#> 31 DATA XCHG-DWR DES 10/03/2008 to present    MAL  
+#> 32 SATELLITE         01/17/2008 to present    MAL  
+#> 33 COMPUTED          02/02/2006 to 09/30/2006 MAL
+#> Please provide sensor # and duration
+```
+
+The function provides us with the most current available metadata for
+station `MAL` from which we can specify our arguments. Here, we will
+skip to specifying all required arguments, but the function can take
+smaller steps, e.g., if we provide just sensor number and duration, the
+function filters for those options and provide the associated date
+range.
 
 ``` r
 malGage <- pullCDEC(station = "MAL", sensor = 25, duration = "hourly", 
@@ -434,26 +524,23 @@ head(malGage)
 ```
 
 The function will provide the requested data directly into R if all the
-arguments are provided. Since it is difficult to know what data is
-available for a gage of interest, the function also provide metadata for
-the station if only station argument is specified, e.g.,
-`pullCDEC(station = "MAL")`.
+arguments are provided.
 
 ## Conclusion
 
 The `deltadata` package aims to provide workflow functions to
 efficiently work with IEP survey data. In this vignette, we explored how
-to use this package to replicate portions of the SLS QAQC pipeline.
+to use the package to replicate portions of the SLS QAQC pipeline.
 Function `bridgeAccess` is a convenient wrapper to connect to an Access
 database, allowing us to pull out relational tables of interest. The
 function can also access the relationship schema, which can be used to
 guide the joining process of our relational tables of interest via
 `schemaJoin()`. Once these relational tables are read into R, we can
-leverage R package to QAQC our data. The `deltadata` specifically
-provides several QAQC functions: 1) `plotGPS()` and `gpsOutlier()` to
-explore outlying GPS coordinates based on the distance from the
-theoretical, and 2) compare water quality data to the nearest CDEC
-station via `popCDEC()`.
+leverage R packages to QAQC our data. The `deltadata` provides several
+niche QAQC functions: 1) `plotGPS()` and `gpsOutlier()` to explore
+outlying GPS coordinates based on the distance from the theoretical, and
+2) compare water quality data to the nearest CDEC station via
+`popCDEC()`.
 
 There may be additional functionalities added to this package in the
 future. If you have any suggestions or encounter any bugs, please feel
