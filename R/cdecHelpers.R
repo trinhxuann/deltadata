@@ -13,8 +13,21 @@
 #' @param dateStart Beginning date for the period of interest.
 #' @param dateEnd Ending date for the period of interest. Will default to today
 #' if left as `NULL`
+#' @param temperatureUnits Either `C` or `F` to convert temperature. Only
+#' applicable to temperature data.
+#' @param coordinates A vector of length = 2 containing the lat and lon, in
+#' that order. This argument can be used instead of `station`. See 'Details'
+#' for additional comments.
 #' @param verbose Logical. Should the function guide the user through the
-#' argument selection if arguments are missing? Defaults to `TRUE`.
+#' argument selection if arguments are missing? This also prints the link that
+#' the function will download from. Defaults to `TRUE`.
+#'
+#' @details
+#' The `coordinates` argument can be used in place of the `station` argument.
+#' The \code{\link{calcNearestCDEC}} function will be used to calculate the nearest
+#' CDEC station to your point of interest and pull data from that gage. use
+#' that function if you are specifically only interested in the metadata
+#' of the nearest CDEC gage.
 #'
 #' @return A data frame of the requested data pull.
 #' @export
@@ -24,12 +37,27 @@
 #' @examples
 #' \donttest{
 #' pullCDEC("MAL")
+#' pullCDEC(coordinates = c(38.04281, -121.9201))
 #' pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
+#' # If coordinates are used instead, must specify the argument names.
+#' pullCDEC(coordinates = c(38.04281, -121.9201), sensor = 25,
+#' duration = "hourly", dateStart = "06/13/1986", dateEnd = "06/14/1986")
 #' }
 pullCDEC <- function(station, sensor = NULL,
                      duration = c("event", "hourly", "daily"),
-                     dateStart, dateEnd = NULL,
+                     dateStart, dateEnd = NULL, temperatureUnits = c("C", "F"),
+                     coordinates,
                      verbose = T) {
+
+  if (!missing(coordinates) & !missing(station)) {
+    warning("Both `station` and `coordinates` are provided. Ignoring `coordinates`.", call. = F)
+  }
+
+  if (!missing(coordinates) & missing(station)) {
+    if (length(coordinates) != 2) stop("`coordinates` should be a vector of two numbers, lat and lon.", call. = F)
+    cdecClosest <- calcNearestCDEC(data.frame(lat = coordinates[[1]], lon = coordinates[[2]]))
+    station <- unique(cdecClosest[[1]][["cdecStation"]])
+  }
 
   if (is.null(sensor)) {
 
@@ -102,6 +130,7 @@ pullCDEC <- function(station, sensor = NULL,
     }
   }
 
+  temperatureUnits <- match.arg(temperatureUnits)
   duration <- match.arg(duration)
 
   if (duration == "event") {
@@ -114,22 +143,45 @@ pullCDEC <- function(station, sensor = NULL,
     }
   }
 
-  dateStart <- as.Date(dateStart, tryFormats = c("%Y/%m%/%d", "%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y"))
+  parseDate <- function(date) {
+    firstDigits <- sub("(\\d+).*", "\\1", date)
+
+    if (nchar(firstDigits) < 3) {
+      date <- tryCatch(as.Date(date, tryFormat = c("%m/%d/%Y", "%m-%d-%Y")),
+                       error = function(cond) {
+                         stop("Cannot parse date as provided. Supply the date as `YYYY-MM-DD` or `MM-DD-YYYY` format seperated by `-` or `/`.",
+                              call. = F)
+                       })
+    } else {
+      date <- tryCatch(as.Date(date, tryFormat = c("%Y/%m/%d", "%Y-%m-%d")),
+                       error = function(cond) {
+                         stop("Cannot parse date as provided. Supply the date as `YYYY-MM-DD` or `MM-DD-YYYY` format seperated by `-` or `/`.",
+                              call. = F)
+                       })
+    }
+    return(date)
+  }
+
+  dateStart <- parseDate(dateStart)
 
   if (is.null(dateEnd)) {
     dateEnd <- Sys.Date()
   } else {
-    dateEnd <- as.Date(dateEnd, tryFormats = c("%Y/%m%/%d", "%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y"))
+    dateEnd <- parseDate(dateEnd)
   }
 
-  df <- read.csv(paste0(
+  urlLink <- paste0(
     "https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=",
     paste(station, collapse = ","),
     "&SensorNums=", sensor,
     "&dur_code=", duration,
     "&Start=", dateStart,
     "&End=", dateEnd
-  ), check.names = F)
+  )
+
+  if (isTRUE(verbose)) cat("Reading from:", urlLink, "\n")
+
+  df <- read.csv(urlLink, check.names = F)
 
   names(df) <- gsub("((?<=[_\\s])+.)", "\\U\\1", tolower(names(df)), perl = T)
   names(df) <- gsub("_|\\s", "", names(df))
@@ -144,10 +196,16 @@ pullCDEC <- function(station, sensor = NULL,
     return()
   }
 
-  if (any(unique(df[["units"]]) %in% "DEG F")) {
+  if (any(unique(df[["units"]]) %in% "DEG F") & temperatureUnits == "C") {
     df$value <- ifelse(df[["units"]] == "DEG F", (df[["value"]] - 32) * 5/9, df[["value"]])
-    df$units <- ifelse(df[["units"]] == "DEG F", "DEG C", df[["value"]])
+    df$units <- ifelse(df[["units"]] == "DEG F", "DEG C", df[["units"]])
   }
+
+  if (any(unique(df[["units"]]) %in% "DEG C") & temperatureUnits == "F") {
+    df$value <- ifelse(df[["units"]] == "DEG C", (df[["value"]] * 9/5) + 32, df[["value"]])
+    df$units <- ifelse(df[["units"]] == "DEG C", "DEG F", df[["units"]])
+  }
+
   df
 }
 
@@ -276,8 +334,9 @@ calcNearestCDEC <- function(df, cdecGPS = deltadata::CDECGPS,
                                        fun = geosphere::distVincentyEllipsoid)
 
     distanceData <- data.frame(cdecStation = cdecGPSFiltered[["station"]],
-                               distance = as.vector(distanceMatrix)/1609.344,
-                               stationOfInterest = df[["station"]][x])
+                               distance = as.vector(distanceMatrix)/1609.344
+                               # stationOfInterest = df[["station"]][x]
+                               )
     distanceData <- distanceData[order(distanceData[["distance"]]), ]
 
     # If you are asking for top temperature, removing sensors that are on the bottom; if you are asking for

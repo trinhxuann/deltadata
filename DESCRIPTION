@@ -5,7 +5,6 @@ Authors@R:
     person("Trinh", "Nguyen", , "trinh.nguyen@wildlife.ca.gov", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: Workflow functions for IEP surveys to more efficiently work through the QAQC and publication process.
-License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
@@ -26,3 +25,4 @@ Depends:
     R (>= 2.10)
 LazyData: true
 VignetteBuilder: knitr
+License: MIT + file LICENSE

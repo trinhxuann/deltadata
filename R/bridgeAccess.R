@@ -196,9 +196,9 @@ getFile <- function(file, open = F, method) {
   fileType <- file(file)
   on.exit(close(fileType))
 
-  if (class(fileType)[[1]] == "url") {
-    fileName <- basename(file)
+  fileName <- basename(file)
 
+  if (class(fileType)[[1]] == "url") {
     if (!file.exists(file.path(tempdir(), fileName))) {
 
       fileSize <- as.numeric(httr::headers(httr::HEAD(file))$`content-length`)/1024^2
@@ -208,25 +208,33 @@ getFile <- function(file, open = F, method) {
         message(paste("File size is > 50 mb. Increasing `timeout` to", timeOut, "to download file fully. If not long enough, specify the time out manually via `options(timeout = value)`."))
         options(timeout = timeOut)
       }
-      fileDownloaded <- download.file(file, destfile = file.path(tempdir(), fileName), method = method)
+      filePath <- file.path(tempdir(), fileName)
+
+      fileDownloaded <- download.file(file, destfile = filePath, method = method)
       options(timeout = 60)
-    }
-
-    if (grepl("\\.zip$", fileName)) {
-      databaseName <- unzip(file.path(tempdir(), fileName), list = T)[["Name"]]
-      databaseName <- databaseName[grepl("(\\.accdb)|(\\.mdb)", databaseName)]
     } else {
-      databaseName <- fileName
+      filePath <- file.path(tempdir(), fileName)
     }
+  } else {
+    filePath <- file
+  }
 
-    if (length(databaseName) == 0) stop("An Access file was not found in the .zip file.")
+  if (grepl("\\.zip$", fileName)) {
+    databaseName <- unzip(filePath, list = T)[["Name"]]
+    databaseName <- databaseName[grepl("(\\.accdb)|(\\.mdb)", databaseName)]
+    accessPath <- file.path(tempdir(), databaseName)
+  } else {
+    databaseName <- fileName
+    accessPath <- file.path(dirname(filePath), databaseName)
+  }
 
-    if (!file.exists(file.path(tempdir(), databaseName))) {
-      message("Extracting file: ", sQuote(databaseName), " from the zip file.\n")
-      unzip(file.path(tempdir(), fileName), files = databaseName, exdir = tempdir())
-    }
+  if (length(databaseName) == 0) stop("An Access file was not found in the .zip file.")
 
-    file <- file.path(tempdir(), databaseName)
+  if (!file.exists(accessPath)) {
+    message("Extracting file: ", sQuote(databaseName), " from the zip file.")
+    file <- unzip(filePath, files = databaseName, exdir = tempdir())
+  } else {
+    file <- accessPath
   }
 
   if (isTRUE(open)) {
