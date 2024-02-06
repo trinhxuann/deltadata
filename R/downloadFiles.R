@@ -1,3 +1,45 @@
+#' Parse the scope, identifier, and revision number from a valid EDI url
+#'
+#' @description
+#' EDI urls come in two main forms when displaying the package ID. This function attempts to
+#' parse those forms into a more consistent form.
+#'
+#' @param url A valid EDI url
+#'
+#' @return A 1x4 table of the scope, identifier, revision, and package ID of the EDI package
+#'
+#' @noRd
+#' @keywords internal
+parseEDI <- function(url) {
+
+  # Check if it is the first form with scope, identifier, and revision
+  if (grepl("scope=|identifier=|revision=", url)) {
+    scope <- sub('.*scope=([^&]+).*', '\\1', url)
+    identifier <- sub('.*identifier=([^&]+).*', '\\1', url)
+
+    # Check if revision is present
+    if (grepl("revision=", url)) {
+      revision <- sub('.*revision=([^&]+).*', '\\1', url)
+    } else {
+      revision <- "1"
+    }
+
+    return(data.frame(scope = scope, identifier = identifier, revision = revision,
+                      packageID = paste(scope, identifier, revision, sep = ".")))
+  } else {
+    # Extract values using the second form
+    packageid <- sub('.*packageid=([^&]+).*', '\\1', url)
+    parts <- strsplit(packageid, "\\.")[[1]]
+
+    scope <- parts[1]
+    identifier <- parts[2]
+    revision <- parts[3]
+
+    return(data.frame(scope = scope, identifier = identifier, revision = revision,
+                      packageID = paste(scope, identifier, revision, sep = ".")))
+  }
+}
+
 #' Table of file names and the associated url from an EDI webpage
 #'
 #' @param url URL of the EDI package.
@@ -10,23 +52,19 @@
 #' @importFrom utils read.table
 #' @noRd
 #' @keywords internal
-tableNamesEDI <- function(url, version = "newest") {
+tableNamesEDI <- function(packageInfo, version = "newest") {
 
-  packageID <- regmatches(url, regexpr("(?<=edi\\.)\\d+", url, perl = TRUE))
-  versionNumber <- regmatches(url, regexpr(paste0("(?<=edi\\.\\d{", nchar(packageID), "}\\.)\\d+"),
-                                           url, perl = TRUE))
+  currentNewestVersion <- max(
+    suppressWarnings(read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier))[1])
+  )
 
-  currentNewestVersion <- max(read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageID))[1])
-
-  if (as.numeric(versionNumber) != currentNewestVersion & version == "newest") {
-    warning("Your current version is ", versionNumber, " but the newest version available is ", currentNewestVersion, ". Pulling from the newest version, otherwise, specify the `version` argument.",
+  if (as.numeric(packageInfo$revision) != currentNewestVersion & version == "newest") {
+    warning("Your current version is ", packageInfo$revision, " but the newest version available is ", currentNewestVersion, ". Pulling from the newest version, otherwise, specify the `version` argument.",
             call. = F)
   }
 
-  tableLinks <- read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageID, "/", version), header = F)[[1]]
+  tableLinks <- suppressWarnings(read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier, "/", version), header = F)[[1]])
   tableLinks <- tableLinks[which(grepl("/data/", tableLinks))]
-
-  what <- read.csv(tableLinks[[4]])
 
   tableNames <- lapply(tableLinks, function(x) {
     entityName <- readLines(gsub("data", "name", x), warn = F)
@@ -65,7 +103,9 @@ tableNamesEDI <- function(url, version = "newest") {
 #' }
 getEDI <- function(url, files, version = "newest") {
 
-  tables <- tableNamesEDI(url, version = version)
+  packageInfo <- parseEDI(url)
+
+  tables <- tableNamesEDI(packageInfo, version = version)
 
   if (missing(files))  {
     cat("Specify files to download: \n")
