@@ -97,6 +97,8 @@ uniqueNames <- function(x) {
 #' Fields allowing multiple selections should be provided as a vector.
 #' @param returnForm Logical, will return the html form if TRUE
 #'
+#' @importFrom rvest session html_form html_form_set session_submit
+#'
 #' @return An `rvest_session`
 #' @export
 #'
@@ -121,10 +123,10 @@ uniqueNames <- function(x) {
 #' }
 scrapeForm <- function(url, formIndex = NULL, ..., returnForm = F) {
 
-  session <- session(url)
+  session <- rvest::session(url)
 
   # Check for form existence
-  form <- html_form(session)
+  form <- rvest::html_form(session)
   if (length(form) == 0) {
     stop("No static form found on the website.", call. = FALSE)
   }
@@ -210,10 +212,10 @@ scrapeForm <- function(url, formIndex = NULL, ..., returnForm = F) {
   userFields[names(userFields) %in% checkboxFields] <- NULL
 
   # Rest of the fields can just be provided as a list
-  filledForm <- html_form_set(form, !!!userFields)
+  filledForm <- rvest::html_form_set(form, !!!userFields)
 
   # Submit the form
-  session <- session_submit(session, filledForm)
+  session <- rvest::session_submit(session, filledForm)
 
   return(session)
 }
