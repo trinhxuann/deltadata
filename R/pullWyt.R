@@ -23,7 +23,7 @@ pullWyt <- function(url = "https://cdec.water.ca.gov/reportapp/javareports?name=
   tableLinesTotal <- strsplit(wytTotal, "\r\n")[[1]]
   tableLinesTotal <- tableLinesTotal[!grepl("--", tableLinesTotal)]
   tableLinesTotal <- tableLinesTotal[1:(which(tableLinesTotal == "")[1] - 1)]
-  wytTotalDF <- read.table(text = paste(tableLinesTotal, collapse = "\n"), header = TRUE,
+  wytTotalDF <- read.table(text = tableLinesTotal, header = TRUE,
                            fill = T, na.strings = c("NA", ""))
   # Fix first 5 years
   tableEarly <- wytTotalDF[wytTotalDF$WY %in% 1901:1905, ]
@@ -56,7 +56,7 @@ pullWyt <- function(url = "https://cdec.water.ca.gov/reportapp/javareports?name=
   tableLinesEight <- tableLinesEight[!grepl("--", tableLinesEight)]
   tableLinesEight <- tableLinesEight[1:(which(tableLinesEight == "")[1] - 1)]
 
-  eightRiverDF <- read.table(text = paste(tableLinesEight, collapse = "\n"), header = TRUE,
+  eightRiverDF <- read.table(text = tableLinesEight, header = TRUE,
                              fill = T, na.strings = c("NA", ""))
   names(eightRiverDF)[1] <- "waterYear"
 
@@ -65,7 +65,7 @@ pullWyt <- function(url = "https://cdec.water.ca.gov/reportapp/javareports?name=
   tableLinesOfficial <- strsplit(officialWyt, "\r\n")[[1]]
   tableLinesOfficial <- tableLinesOfficial[3:(which(tableLinesOfficial == "")[1] - 1)]
 
-  officialWytDF <- read.table(text = paste(tableLinesOfficial, collapse = "\n"), header = TRUE,
+  officialWytDF <- read.table(text = tableLinesOfficial, header = TRUE,
                               fill = T, na.strings = c("NA", ""))
   names(officialWytDF) <- c("waterYear", "sacIndex", "sacWyt", "sjrIndex", "sjrWyt")
 
