@@ -85,18 +85,19 @@ pullWyt <- function(url = "https://cdec.water.ca.gov/reportapp/javareports?name=
 #'
 #' @param date A single or vector of dates, in date format
 #' @param wyt A data frame of the official wyt from the \code{pullWyt} function
-#' @param valley Which system, either `sac` or `sjr`
-#' @param value What value to return, either `wyt` or `index`
+#' @param valley Which system, either "sac" or "sjr"
+#' @param value What value to return, either "wyt" or "index"
 #'
-#' @return The water year type index or classification associated with the date(s)
+#' @return Returns water year type index or classification associated with the date(s)
 #' @export
 #'
 #' @examples
 #' \dontrun{
+#' wytTable <- pullWyt()
 #' randomDates <- sample(0:5000, 100, replace = TRUE) + as.Date("2010-01-01")
-#' wytDate(randomDates)
+#' wytDate(randomDates, wyt = wytTable$officialWyt)
 #' }
-wytDate <- function(date, wyt = wytTable$officialWyt,
+wytDate <- function(date, wyt,
                     valley = c("sac", "sjr"), value = c("wyt", "index")) {
 
   # Which valley and value are you interested in?

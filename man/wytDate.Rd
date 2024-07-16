@@ -4,31 +4,27 @@
 \alias{wytDate}
 \title{Water year type of a date}
 \usage{
-wytDate(
-  date,
-  wyt = wytTable$officialWyt,
-  valley = c("sac", "sjr"),
-  value = c("wyt", "index")
-)
+wytDate(date, wyt, valley = c("sac", "sjr"), value = c("wyt", "index"))
 }
 \arguments{
 \item{date}{A single or vector of dates, in date format}
 
 \item{wyt}{A data frame of the official wyt from the \code{pullWyt} function}
 
-\item{valley}{Which system, either \code{sac} or \code{sjr}}
+\item{valley}{Which system, either "sac" or "sjr"}
 
-\item{value}{What value to return, either \code{wyt} or \code{index}}
+\item{value}{What value to return, either "wyt" or "index"}
 }
 \value{
-The water year type index or classification associated with the date(s)
+Returns water year type index or classification associated with the date(s)
 }
 \description{
 Water year type of a date
 }
 \examples{
 \dontrun{
+wytTable <- pullWyt()
 randomDates <- sample(0:5000, 100, replace = TRUE) + as.Date("2010-01-01")
-wytDate(randomDates)
+wytDate(randomDates, wyt = wytTable$officialWyt)
 }
 }
