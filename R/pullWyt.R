@@ -2,7 +2,11 @@
 #'
 #' @param url URL of the historical Water Supply Index (WSIHIST) website
 #'
-#' @return A list of three tables, reconstructed wyt, eight river runoff, and official wyt classification
+#' @return Returns a list of three tables, reconstructed wyt, eight river runoff, and official wyt classification.
+#' \item{reconstructedWyt } All information from the Sacramento and San Joaquin Valleys water year type indices table
+#' \item{eightRiver } All information from the Eight River Runoff table
+#' \item{officialWyt } Contains only the wyt index and classification for the Sacramento and San Joaquin River Valleys
+#'
 #' @export
 #'
 #' @importFrom rvest session html_element html_text
@@ -13,9 +17,10 @@
 #' pullWyt()
 #' }
 pullWyt <- function(url = "https://cdec.water.ca.gov/reportapp/javareports?name=WSIHIST") {
+
   session <- rvest::session(url)
 
-  tableElement <- rvest::html_element(session, xpath = '//*[@id="main-content"]/div/div[2]/main/section/pre/text()')
+  tableElement <- rvest::html_element(session, xpath = '//*[@id="main-content"]/div/div/main/section/pre/text()')
   tableText <- rvest::html_text(tableElement)
 
   # Total WYT table
@@ -76,3 +81,34 @@ pullWyt <- function(url = "https://cdec.water.ca.gov/reportapp/javareports?name=
   ))
 }
 
+#' Water year type of a date
+#'
+#' @param date A single or vector of dates, in date format
+#' @param wyt A data frame of the official wyt from the \code{pullWyt} function
+#' @param valley Which system, either `sac` or `sjr`
+#' @param value What value to return, either `wyt` or `index`
+#'
+#' @return The water year type index or classification associated with the date(s)
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' randomDates <- sample(0:5000, 100, replace = TRUE) + as.Date("2010-01-01")
+#' wytDate(randomDates)
+#' }
+wytDate <- function(date, wyt = wytTable$officialWyt,
+                    valley = c("sac", "sjr"), value = c("wyt", "index")) {
+
+  # Which valley and value are you interested in?
+  valley <- match.arg(valley)
+  value <- match.arg(value)
+
+  # Identifying what you wanted
+  column <- paste0(valley, ifelse(value == "index", "Index", "Wyt"))
+  # Has to be a date in which water year has yet to be calculated
+  waterYear <- as.numeric(format(date, "%Y")) + (as.numeric(format(date, "%m")) >= 10)
+
+  # Vectorize into a vector
+  lookup <- setNames(wyt[[column]], wyt$waterYear)
+  lookup[as.character(waterYear)]
+}
