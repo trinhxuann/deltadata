@@ -109,6 +109,8 @@ plotGPS <- function(df, layerName = "Layer", dateName = "Date", height = 1200, .
 #' lat, and lon. See \code{\link{plotGPS}} for details.
 #' @param d Miles threshold to call a coordinate outlying. This distance is
 #' measured as the crow flies.
+#' @param returnAll Logical, to return all rows or not. Defaults to F, returning
+#' only the outlying points
 #'
 #' @return A data frame with all outlying coordinates.
 #' @export
@@ -126,7 +128,7 @@ plotGPS <- function(df, layerName = "Layer", dateName = "Date", height = 1200, .
 #'
 #' gpsOutlier(df, d = 0.5)
 #' }
-gpsOutlier <- function(df, d = 0.5) {
+gpsOutlier <- function(df, d = 0.5, returnAll = F) {
 
   originalNames <- names(df)
   names(df) <- tolower(names(df))
@@ -135,6 +137,9 @@ gpsOutlier <- function(df, d = 0.5) {
     stop("Four required columns: date, station, legend, layer, lat, and lon. `legend` must have a `Theoretical` label.",
          call. = F)
   }
+
+  if (all(!unique(df[["legend"]]) %in% "Theoretical"))
+    stop("A ", shQuote("Theoretical"), " group in the `legend` column must be present.")
 
   theoretical <- df[df[["legend"]] == "Theoretical", ]
 
@@ -145,7 +150,6 @@ gpsOutlier <- function(df, d = 0.5) {
     theoretical <- df[(df[["legend"]] == "Theoretical" & df[["station"]] == x), ]
 
     if (nrow(theoretical) > 0 & nrow(tows) > 0) {
-
       df <- tows
       # Add new columns with values from 'theoretical'
       df$lonTheoretical <- theoretical$lon
@@ -155,14 +159,20 @@ gpsOutlier <- function(df, d = 0.5) {
       df$distance <- df$distance/1609.34
       # Add outlier column based on condition
       df$outlier <- ifelse(df$distance > d, TRUE, FALSE)
-      df <- df[(df[["outlier"]] == TRUE), ]
-
-    } else df <- NULL
-
+      if (!returnAll) {
+        df <- df[which((df[["outlier"]] == TRUE)), ]
+      }
+    } else {
+      if (nrow(theoretical) == 0 & nrow(tows) > 0) {
+        df <- tows
+        df[, c("lonTheoretical", "latTheoretical", "distance", "outlier")] <- NA
+      } else df <- NULL
+    }
     df
   })
 
   outlierDF <- do.call(rbind, outlierDF)
+  if (is.null(outlierDF)) stop("No station matched the theoreticals.")
 
   finTheoreticalStations <- df[(df[["legend"]] == "Theoretical" & df[["station"]] %in% unique(outlierDF[["station"]])), ]
   finTheoreticalStations$lonTheoretical <- NA
@@ -176,4 +186,41 @@ gpsOutlier <- function(df, d = 0.5) {
     originalNames
 
   fin[order(fin[["distance"]], decreasing = T), ]
+}
+
+#' Convert GPS Coordinates to Decimal Degrees
+#'
+#' @param degrees A numeric vector
+#' @param minutes A numeric vector
+#' @param seconds A numeric vector
+#'
+#' @return A numeric vector in decimal degrees
+#' @export
+#'
+#' @examples
+#' gpsDF <- data.frame(LatD = c(rep(38, 7)),
+#' LatM = c(2, 3, 3, 4, 4, 3, 5),
+#' LatS = c(34.4, 37.1, 49, 35, 16, 39.9, 57.2))
+#'
+#' decimalDegrees(degrees = gpsDF$LatD,
+#' minutes = gpsDF$LatM,
+#' Seconds = gpsDF$LatS)
+decimalDegrees <- function(degrees, minutes, seconds) {
+  degrees + minutes/60 + seconds/3600
+}
+
+#' Seperate lat/lon
+#'
+#' @param x A vector of latitude or longitude in the format of degrees, minutes, and seconds
+#'
+#' @return A data frame of the coordinates in DMS
+#'
+#' @keywords internal
+splitCoordinates <- function(x) {
+  splitText <- strsplit(x, " ")[[1]]
+
+  degreesMinutesSeconds <- lapply(splitText, as.numeric)
+  data.frame(degrees = degreesMinutesSeconds[[1]],
+             minutes = degreesMinutesSeconds[[2]],
+             seconds = degreesMinutesSeconds[[3]])
 }

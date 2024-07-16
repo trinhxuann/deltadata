@@ -91,11 +91,16 @@ translateSchema <- function(schema, verbose = F) {
 #'
 #' schemaJoin(schema, slsTables)
 #' }
+#' @note
+#' The tables in the 20mm dataset aren't sequentially linked. There are tables that
+#' are linked together first before being linked back to the original. How do I solve this?
+#'
 schemaJoin <- function(schema, data, start = NULL) {
 
   if (class(schema) == "list") stop("Your schema is not provided as a data.frame.", call. = F)
 
   schema <- translateSchema(schema)
+  schema <- schema[-which(schema$grbit == 2), ]
   allTables <- factor(unique(c(schema$szObject, schema$szReferencedObject)),
                       levels = unique(c(unique(schema[["szReferencedObject"]]), unique(schema$szObject))))
 
@@ -138,11 +143,13 @@ schemaJoin <- function(schema, data, start = NULL) {
                                              data[[yTable]],
                                              by = setNames(yName, xName))
       usedTable <- c(usedTable, yTable)
-    }, error = function(err) {
+    },
+    error = function(err) {
       if (grepl("cannot allocate vector of size", err)) {
         return("sizeError")
       }
-    })
+    }
+    )
 
     if (result[[1]] %in% "sizeError") {
       stop("Resulting table is size is too large. Pare down your list of tables.", call. = F)
