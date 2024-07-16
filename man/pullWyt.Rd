@@ -10,7 +10,10 @@ pullWyt(url = "https://cdec.water.ca.gov/reportapp/javareports?name=WSIHIST")
 \item{url}{URL of the historical Water Supply Index (WSIHIST) website}
 }
 \value{
-A list of three tables, reconstructed wyt, eight river runoff, and official wyt classification
+Returns a list of three tables, reconstructed wyt, eight river runoff, and official wyt classification.
+\item{reconstructedWyt}{All information from the Sacramento and San Joaquin Valleys water year type indices table}
+\item{eightRiver}{All information from the Eight River Runoff table}
+\item{officialWyt}{Contains only the wyt index and classification for the Sacramento and San Joaquin River Valleys}
 }
 \description{
 Scrape water year type data from DWR

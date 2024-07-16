@@ -4,7 +4,7 @@
 \alias{gpsOutlier}
 \title{Isolate outlying stations}
 \usage{
-gpsOutlier(df, d = 0.5)
+gpsOutlier(df, d = 0.5, returnAll = F)
 }
 \arguments{
 \item{df}{A dataframe with 6 required columns: date, station, legend, layer,
@@ -12,6 +12,9 @@ lat, and lon. See \code{\link{plotGPS}} for details.}
 
 \item{d}{Miles threshold to call a coordinate outlying. This distance is
 measured as the crow flies.}
+
+\item{returnAll}{Logical, to return all rows or not. Defaults to F, returning
+only the outlying points}
 }
 \value{
 A data frame with all outlying coordinates.
