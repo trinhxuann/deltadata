@@ -76,7 +76,7 @@ pullCDEC <- function(station, sensor = NULL,
     }
 
     tableNames <- rvest::html_elements(session, "th")
-    tableNames <- rvest::html_text(tableNames, "th")
+    tableNames <- rvest::html_text(tableNames)
     tableNames <- gsub("\\s", "", tableNames)
     tableNames <- gsub("(^[A-Z])", "\\L\\1", tableNames, perl = T)
 
