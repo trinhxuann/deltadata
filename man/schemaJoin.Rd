@@ -4,15 +4,12 @@
 \alias{schemaJoin}
 \title{Applies the joins in accordance to a relationship schema.}
 \usage{
-schemaJoin(schema, data, start = NULL)
+schemaJoin(schema, data)
 }
 \arguments{
 \item{schema}{A schema table that mirrors the structure of an Access schema.}
 
 \item{data}{A list of data tables to be joined}
-
-\item{start}{The starting relational table to begin construction. If NULL,
-will start at the first table specified by the schema.}
 }
 \value{
 A data frame joined according to the relationship schema.

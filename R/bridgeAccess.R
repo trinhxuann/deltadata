@@ -73,7 +73,6 @@ architectureCheck <- function(officeBit = NULL) {
 #' @importFrom DBI dbConnect
 #' @importFrom odbc odbc
 #' @keywords internal
-
 connectAccess <- function(path,
                           driver = "Microsoft Access Driver (*.mdb, *.accdb)", uid = "", pwd = "") {
 
@@ -153,7 +152,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
                                  shell.exec(dbGetInfo(con)$dbname)
 
                                  if (isTRUE(retry)) {
-                                   message('Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`. Will retry once after 25 seconds.')
+                                   message('Enable content, `Ctrl + g`, enter \nCurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"\nHit `Enter`. Will retry once after 25 seconds.')
                                    Sys.sleep(25)
                                    cat("Retrying...")
                                    df <- mapply(dbReadTable,
@@ -162,7 +161,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
                                                 SIMPLIFY = F)
                                    return(df)
                                  }
-                                 stop('Enable content, `Ctrl + g`, enter `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`, `Enter`, exit file, and rerun this code.', call. = F)
+                                 stop('Enable content, `Ctrl + g`, enter \nCurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"\nHit `Enter`, exit file, and rerun this code.', call. = F)
 
                                } else {
                                  stop(cond)

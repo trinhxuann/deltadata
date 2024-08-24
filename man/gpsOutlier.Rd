@@ -24,7 +24,7 @@ Identify stations that are more than \code{d} distance in miles, defaulting to
 0.5, away from the theoretical coordinate.
 }
 \examples{
-\donttest{
+\dontrun{
 df <- data.frame(date = 2023,
 station = c(508, 513, 520, 801, 801),
 legend = c(rep("Theoretical", 4), "StartTow"),

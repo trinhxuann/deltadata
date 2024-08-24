@@ -97,7 +97,7 @@ tableNamesEDI <- function(packageInfo, version = "newest") {
 #' @importFrom utils read.csv download.file
 #' @importFrom stats setNames
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.8",
 #' files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
 #' }

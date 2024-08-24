@@ -25,7 +25,6 @@
 #' # Saving to the temporary directory
 #' saveRelationalTables(slsTables, folderPath = tempdir())
 #' }
-
 saveRelationalTables <- function(relationalTables, folderPath, fileNames = NULL) {
 
   if (is.null(fileNames)) {

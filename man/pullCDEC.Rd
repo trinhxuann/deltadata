@@ -55,7 +55,7 @@ that function if you are specifically only interested in the metadata
 of the nearest CDEC gage.
 }
 \examples{
-\donttest{
+\dontrun{
 pullCDEC("MAL")
 pullCDEC(coordinates = c(38.04281, -121.9201))
 pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")

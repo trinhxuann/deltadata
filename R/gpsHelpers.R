@@ -35,7 +35,7 @@
 #' addCircleMarkers labelOptions addLegend addLayersControl layersControlOptions
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' df <- data.frame(date = 2023,
 #' station = c(508, 513, 520, 801),
 #' legend = c("Theoretical"),
@@ -118,7 +118,7 @@ plotGPS <- function(df, layerName = "Layer", dateName = "Date", height = 1200, .
 #' @importFrom geosphere distVincentyEllipsoid
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' df <- data.frame(date = 2023,
 #' station = c(508, 513, 520, 801, 801),
 #' legend = c(rep("Theoretical", 4), "StartTow"),
@@ -188,39 +188,97 @@ gpsOutlier <- function(df, d = 0.5, returnAll = F) {
   fin[order(fin[["distance"]], decreasing = T), ]
 }
 
+#' Convert Degrees Minutes Seconds to Decimal Degrees
+#'
+#' @param dms A vector of latitudes or longitudes in degrees minutes seconds
+#' @param isLongitude T/F. Will assign a negative if `TRUE`. Applicable to only
+#' the Bay-Delta area.
+#' @return A numeric value or vector
+#'
+#' @details
+#' Meant to be used in the Bay-Delta area only
+#'
+#' @noRd
+#' @keywords internal
+dmsToDD <- function(dms, isLongitude = F) {
+
+  splitText <- do.call(rbind, strsplit(as.character(dms), "\\s+"))
+
+  degree <- abs(as.numeric(splitText[, 1]))
+  minute <- as.numeric(splitText[, 2])
+  second <- as.numeric(splitText[, 3])
+
+  decimalDegrees <- degree + minute/60 + second/3600
+
+  if (isLongitude) {
+    return(-decimalDegrees)
+  } else {
+    return(decimalDegrees)
+  }
+}
+
+#' Convert Degrees Minutes Seconds to Decimal Degrees
+#'
+#' @param ddm A vector of latitudes or longitudes in degrees minutes seconds
+#' separated by a white space.
+#' @param isLongitude Will expect the first set of number to have 3 digits.
+#' Will assign the value as negative and is specific only to the Bay-Delta area.
+#'
+#' @return A numeric value or vector
+#'
+#' @details
+#' Meant to be used in the Bay-Delta area only
+#'
+#' @noRd
+#' @keywords internal
+ddmToDD <- function(ddm, isLongitude = F) {
+  ddm <- gsub("\\s+", "", ddm)
+
+  if (isLongitude) {
+    startingValue = 3
+  } else {
+    startingValue = 2
+  }
+
+  # Extract degrees and minutes
+  degrees <- as.numeric(substring(ddm, 1, startingValue))
+  minutes <- as.numeric(substring(ddm, startingValue + 1)) / 100
+  decimalDegrees <- (degrees + minutes / 60)
+
+  if (isLongitude) {
+    -decimalDegrees
+  } else {
+    decimalDegrees
+  }
+}
+
 #' Convert GPS Coordinates to Decimal Degrees
 #'
-#' @param degrees A numeric vector
-#' @param minutes A numeric vector
-#' @param seconds A numeric vector
+#' @param x A value or vector of latitude or longitude in dms or ddm format
+#' separated by a whitespace
+#' @param type Either "dms" or "ddm". The lat/lon format of the input.
+#' @param isLongitude T/F. Will expect the first set of number to have 3 digits.
+#' Will assign the value as negative and is specific only to the Bay-Delta area.
+#'
+#' @description
+#' This function attempts to convert latitude and longitude coordinates to
+#' decimal degrees. It supports two formats: degrees minutes seconds (DMS) and
+#' degrees decimal minutes (DDS).
 #'
 #' @return A numeric vector in decimal degrees
 #' @export
 #'
 #' @examples
-#' gpsDF <- data.frame(LatD = c(rep(38, 7)),
-#' LatM = c(2, 3, 3, 4, 4, 3, 5),
-#' LatS = c(34.4, 37.1, 49, 35, 16, 39.9, 57.2))
+#' gpsDF <- data.frame(
+#' Latitude = paste(c(rep(38, 7)), c(2, 3, 3, 4, 4, 3, 5), c(34.4, 37.1, 49, 35, 16, 39.9, 57.2)),
+#' Longitude = paste(c(rep(122, 7)), c(2, 3, 3, 4, 4, 3, 5), c(34.4, 37.1, 49, 35, 16, 39.9, 57.2))
+#' )
 #'
-#' decimalDegrees(degrees = gpsDF$LatD,
-#' minutes = gpsDF$LatM,
-#' Seconds = gpsDF$LatS)
-decimalDegrees <- function(degrees, minutes, seconds) {
-  degrees + minutes/60 + seconds/3600
-}
-
-#' Seperate lat/lon
-#'
-#' @param x A vector of latitude or longitude in the format of degrees, minutes, and seconds
-#'
-#' @return A data frame of the coordinates in DMS
-#'
-#' @keywords internal
-splitCoordinates <- function(x) {
-  splitText <- strsplit(x, " ")[[1]]
-
-  degreesMinutesSeconds <- lapply(splitText, as.numeric)
-  data.frame(degrees = degreesMinutesSeconds[[1]],
-             minutes = degreesMinutesSeconds[[2]],
-             seconds = degreesMinutesSeconds[[3]])
+#'decimalDegrees(gpsDF$Latitude, type = "dms")
+#'decimalDegrees(gpsDF$Longitude, type = "ddm", isLongitude = T)
+decimalDegrees <- function(x, type = c("dms", "ddm"), isLongitude = F) {
+  switch(type,
+         dms = dmsToDD(x, isLongitude),
+         ddm = ddmToDD(x, isLongitude),
+         stop("Supply type as `dms` or `ddm` only.", call. = F))
 }

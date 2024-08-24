@@ -74,8 +74,10 @@ orderSchema <- function(schema, providedTables) {
   oneToOneTables <- filteredSchema[which(filteredSchema$grbit %in% oneToOne), ]
   primaryTables <- unique(c(oneToOneTables$foreignTable, oneToOneTables$primaryTable, filteredSchema$primaryTable))
   edgeTables <- names(occurrences[which(occurrences == 1)])
-  cascadeCandidates <- unlist(filteredSchema[which(filteredSchema$grbit > 2), c("foreignTable", "primaryTable")],
-                              use.names = F)
+  # This cascade filter might need work
+  # Currently, this disregards look up table. In the future, likely best to
+  cascadeCandidates <- unlist(filteredSchema[which(filteredSchema$grbit != 0),
+                                             c("foreignTable", "primaryTable")], use.names = F)
   qualifyingVectors <- list(primaryTables, edgeTables, cascadeCandidates)
   startTable <- Reduce(intersect, qualifyingVectors)
 

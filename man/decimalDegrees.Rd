@@ -4,27 +4,31 @@
 \alias{decimalDegrees}
 \title{Convert GPS Coordinates to Decimal Degrees}
 \usage{
-decimalDegrees(degrees, minutes, seconds)
+decimalDegrees(x, type = c("dms", "ddm"), isLongitude = F)
 }
 \arguments{
-\item{degrees}{A numeric vector}
+\item{x}{A value or vector of latitude or longitude in dms or ddm format
+separated by a whitespace}
 
-\item{minutes}{A numeric vector}
+\item{type}{Either "dms" or "ddm". The lat/lon format of the input.}
 
-\item{seconds}{A numeric vector}
+\item{isLongitude}{T/F. Will expect the first set of number to have 3 digits.
+Will assign the value as negative and is specific only to the Bay-Delta area.}
 }
 \value{
 A numeric vector in decimal degrees
 }
 \description{
-Convert GPS Coordinates to Decimal Degrees
+This function attempts to convert latitude and longitude coordinates to
+decimal degrees. It supports two formats: degrees minutes seconds (DMS) and
+degrees decimal minutes (DDS).
 }
 \examples{
-gpsDF <- data.frame(LatD = c(rep(38, 7)),
-LatM = c(2, 3, 3, 4, 4, 3, 5),
-LatS = c(34.4, 37.1, 49, 35, 16, 39.9, 57.2))
+gpsDF <- data.frame(
+Latitude = paste(c(rep(38, 7)), c(2, 3, 3, 4, 4, 3, 5), c(34.4, 37.1, 49, 35, 16, 39.9, 57.2)),
+Longitude = paste(c(rep(122, 7)), c(2, 3, 3, 4, 4, 3, 5), c(34.4, 37.1, 49, 35, 16, 39.9, 57.2))
+)
 
-decimalDegrees(degrees = gpsDF$LatD,
-minutes = gpsDF$LatM,
-Seconds = gpsDF$LatS)
+decimalDegrees(gpsDF$Latitude, type = "dms")
+decimalDegrees(gpsDF$Longitude, type = "ddm", isLongitude = T)
 }

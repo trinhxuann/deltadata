@@ -43,7 +43,7 @@ The input data frame must have at least six specific columns.
 \code{lon} contains the longitude coordinates of your sampling point
 }
 \examples{
-\donttest{
+\dontrun{
 df <- data.frame(date = 2023,
 station = c(508, 513, 520, 801),
 legend = c("Theoretical"),

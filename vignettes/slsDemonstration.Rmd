@@ -60,7 +60,7 @@ We can also download the relationship table. This is an important table that ref
 ```{r, eval=F}
 schema <- bridgeAccess(
   "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/SLS.zip",
-  tables = c("MSysRelationships", retry = T)
+  tables = c("MSysRelationships"), retry = T
   )
 
 # The function outputs a list, of which we can index to grab just the table

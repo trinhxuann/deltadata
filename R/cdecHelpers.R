@@ -35,7 +35,7 @@
 #' @importFrom rvest session html_elements html_text html_table
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' pullCDEC("MAL")
 #' pullCDEC(coordinates = c(38.04281, -121.9201))
 #' pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
@@ -222,7 +222,7 @@ pullCDEC <- function(station, sensor = NULL,
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' pullMetadataCDEC("MAL")
 #' }
 pullMetadataCDEC <- function(station, list = T) {
@@ -244,7 +244,7 @@ pullMetadataCDEC <- function(station, list = T) {
 #' @importFrom rvest session html_element html_text
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' pullCoordinates("MAL")
 #' }
 pullCoordinates <- function(gage) {
@@ -288,7 +288,7 @@ pullCoordinates <- function(gage) {
 #' @importFrom geosphere distm distVincentyEllipsoid
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
 #'
 #' calcNearestCDEC(df)
@@ -382,7 +382,7 @@ calcNearestCDEC <- function(df, cdecGPS = deltadata::CDECGPS,
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' df <- data.frame(station = "306", lat = 38.00064,
 #' lon = -122.4136, time = "2023-01-01 10:00:00", temp = 10)
 #'

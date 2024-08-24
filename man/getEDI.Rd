@@ -25,7 +25,7 @@ output for that element.
 This function works with the API provided by EDI to download the files of a package. The default behavior is to download the newest version of the data package, but this can be changed via the \code{version} argument. The function handles different file types differently, i.e., .csv files are read directly into R while all other file types are downloaded in the temporary folder and a file path to the file is returned. Bear in mind that the EDI servers are very slow and the execution of this code will be thus affected.
 }
 \examples{
-\donttest{
+\dontrun{
 getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.8",
 files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
 }

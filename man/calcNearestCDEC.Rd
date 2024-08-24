@@ -42,7 +42,7 @@ requires metadata of all CDEC stations of interest. By default, all CDEC
 stations are used.
 }
 \examples{
-\donttest{
+\dontrun{
 df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
 
 calcNearestCDEC(df)
