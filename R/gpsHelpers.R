@@ -133,8 +133,8 @@ gpsOutlier <- function(df, d = 0.5, returnAll = F) {
   originalNames <- names(df)
   names(df) <- tolower(names(df))
 
-  if (sum(grepl("date|station|legend|layer|lat|lon", names(df))) != 6) {
-    stop("Four required columns: date, station, legend, layer, lat, and lon. `legend` must have a `Theoretical` label.",
+  if (sum(c("date", "station", "legend", "layer", "lat", "lon") %in% names(df)) != 6) {
+    stop("Six required columns: date, station, legend, layer, lat, and lon. `legend` must have a `Theoretical` label.",
          call. = F)
   }
 
@@ -275,10 +275,10 @@ ddmToDD <- function(ddm, isLongitude = F) {
 #' )
 #'
 #'decimalDegrees(gpsDF$Latitude, type = "dms")
-#'decimalDegrees(gpsDF$Longitude, type = "ddm", isLongitude = T)
-decimalDegrees <- function(x, type = c("dms", "ddm"), isLongitude = F) {
+#'decimalDegrees(gpsDF$Longitude, type = "ddm", isLongitude = TRUE)
+decimalDegrees <- function(x, type = c("dms", "ddm"), isLongitude = FALSE) {
   switch(type,
          dms = dmsToDD(x, isLongitude),
          ddm = ddmToDD(x, isLongitude),
-         stop("Supply type as `dms` or `ddm` only.", call. = F))
+         stop("Supply type as `dms` or `ddm` only.", call. = FALSE))
 }

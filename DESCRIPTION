@@ -14,7 +14,8 @@ Imports:
     httr,
     geosphere,
     leaflet,
-    rvest
+    rvest,
+    lubridate
 Suggests: 
     knitr,
     rmarkdown,

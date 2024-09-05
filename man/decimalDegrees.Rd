@@ -4,7 +4,7 @@
 \alias{decimalDegrees}
 \title{Convert GPS Coordinates to Decimal Degrees}
 \usage{
-decimalDegrees(x, type = c("dms", "ddm"), isLongitude = F)
+decimalDegrees(x, type = c("dms", "ddm"), isLongitude = FALSE)
 }
 \arguments{
 \item{x}{A value or vector of latitude or longitude in dms or ddm format
@@ -30,5 +30,5 @@ Longitude = paste(c(rep(122, 7)), c(2, 3, 3, 4, 4, 3, 5), c(34.4, 37.1, 49, 35, 
 )
 
 decimalDegrees(gpsDF$Latitude, type = "dms")
-decimalDegrees(gpsDF$Longitude, type = "ddm", isLongitude = T)
+decimalDegrees(gpsDF$Longitude, type = "ddm", isLongitude = TRUE)
 }

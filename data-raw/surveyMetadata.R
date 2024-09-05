@@ -8,6 +8,7 @@
 
 crosswalk <- readxl::read_xlsx(file.path("data-raw", "vocab.xlsx"),
                                sheet = "Variables")
+crosswalk <- as.data.frame(crosswalk)
 
 # Tow Schedule ------------------------------------------------------------
 # A tow schedule dictates the amount of cable to let out based on the depth

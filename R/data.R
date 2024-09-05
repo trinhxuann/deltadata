@@ -32,33 +32,35 @@
 #'
 #' @format A data frame with 29 columns
 #' \describe{
-#'   \item{variableType}{Tow duration}
-#'   \item{variable}{Maximum depth recorded at sampling location}
-#'   \item{recommendedName}{Depth range label created by the cut() function}
-#'   \item{recommendedUnit}{Length of cable to be let out}
-#'   \item{notes}{Maximum depth recorded at sampling location}
-#'   \item{ybfmp}{Depth range label created by the cut() function}
-#'   \item{YBFMP Units}{Length of cable to be let out}
-#'   \item{djfmp}{Maximum depth recorded at sampling location}
-#'   \item{DJFMP Units}{Depth range label created by the cut() function}
-#'   \item{Delta Smelt formalin preservation data}{Length of cable to be let out}
-#'   \item{Delta boat electrofishing survey }{Maximum depth recorded at sampling location}
-#'   \item{Electrofishing Units}{Depth range label created by the cut() function}
-#'   \item{EDSM}{Length of cable to be let out}
-#'   \item{EDSM Units}{Maximum depth recorded at sampling location}
-#'   \item{sls}{Depth range label created by the cut() function}
-#'   \item{SLS units}{Length of cable to be let out}
-#'   \item{20mm}{Maximum depth recorded at sampling location}
-#'   \item{20mm units}{Depth range label created by the cut() function}
-#'   \item{stn}{Length of cable to be let out}
-#'   \item{STN units}{Maximum depth recorded at sampling location}
-#'   \item{fmwt}{Depth range label created by the cut() function}
-#'   \item{FMWT units}{Length of cable to be let out}
-#'   \item{skt}{Maximum depth recorded at sampling location}
-#'   \item{SKT units}{Depth range label created by the cut() function}
-#'   \item{sms}{Length of cable to be let out}
-#'   \item{SMS units}{Maximum depth recorded at sampling location}
-#'   \item{bs}{Depth range label created by the cut() function}
+#'   \item{variableType}{Category of variable of interest}
+#'   \item{variable}{Name used to describe the data collected}
+#'   \item{recommendedName}{Value recommended by IEP to use to describe the relevant data}
+#'   \item{recommendedUnit}{Value recommended by IEP to use to describe the unit of the relevant data}
+#'   \item{notes}{Freeform comments by IEP}
+#'   \item{ybfmp}{Yolo Bypass Fish Monitoring Program}
+#'   \item{YBFMP Units}{Units of}
+#'   \item{djfmp}{Delta Juvenile Fish Monitoring Program}
+#'   \item{DJFMP Units}{Units of}
+#'   \item{frp}{Fish Restoration Program}
+#'   \item{FRP Units}{Units of}
+#'   \item{Delta Smelt formalin preservation data}{Not familiar with this}
+#'   \item{Delta boat electrofishing survey }{Not familiar with this}
+#'   \item{Electrofishing Units}{Units of}
+#'   \item{EDSM}{Enhanced Delta Smelt Monitoring Program}
+#'   \item{EDSM Units}{Units of}
+#'   \item{sls}{Smelt Larval Survey}
+#'   \item{SLS units}{Units of}
+#'   \item{20mm}{20 mm Survey}
+#'   \item{20mm units}{Units of}
+#'   \item{stn}{Summer Townet Survey}
+#'   \item{STN units}{Units of}
+#'   \item{fmwt}{Fall Midwater Trawl}
+#'   \item{FMWT units}{Units of}
+#'   \item{skt}{Spring Kodiak Trawl}
+#'   \item{SKT units}{Units of}
+#'   \item{sms}{Suisun Marsh Study}
+#'   \item{SMS units}{Units of}
+#'   \item{bs}{Bay Study}
 #'   }
 "crosswalk"
 

@@ -18,7 +18,8 @@ qaqcData(
     "WaterTemperatureBottom", "SpecificConductance", "SpecificConductanceTop",
     "SpecificConductanceBottom", "Secchi", "TurbidityNTU", "TurbidityTopNTU",
     "TurbidityBottomNTU", "Salinity", "SalinityTop", "SalinityBottom"),
-  perMonth = T
+  stdev = 2,
+  waterQualityGroupings = list("StationCode", c("StationCode", "Month"))
 )
 }
 \arguments{
@@ -40,6 +41,9 @@ should be provided in degree decimals.}
 \item{gpsDistance}{A value in miles indicating the threshold distance beyond which is an outlier.
 Defaults to 0.5 miles}
 
+\item{startingGPSFormat}{Either degrees, minutes, and seconds (dms) or degrees and decimal minutes (ddm).
+Format of your GPS coordinates. This will be convert to decimal degrees}
+
 \item{towSchedule}{Calculate outlying cable length values if provided.
 A data frame containing the tow schedule. Several tow schedules
 are provided in the package within the \code{towSchedule} list. See details.}
@@ -49,11 +53,12 @@ A data frame containing the expected range for a meter reading
 based on the duration of the tow. Several meter schedules are provided in the package
 within the \code{meterSchedule} list. You can provide your own data frame following the format.}
 
-\item{waterQualityVariables}{Calculate outlying water quality variables.
-A vector of numeric values.}
+\item{waterQualityVariables}{Calculate outlying water quality variables.}
 
-\item{perMonth}{T/F. Specific to the water quality QAQC, should outlying values
-be compared to a specific month basis to account for seasonality.}
+\item{stdev}{Defaults to 2. The number of standard deviation away from the mean to flag as an outlying water quality value}
+
+\item{waterQualityGroupings}{A list of grouping variables to iterate through the water quality check.
+By default, calculates per station and per station and month.}
 }
 \value{
 A list of objects containing identified outliers or rows with missing data points
@@ -62,8 +67,9 @@ A list of objects containing identified outliers or rows with missing data point
 Apply basic QAQC procedures to a survey dataset
 }
 \details{
-For the \code{towSchedule} argument, you can use a schedule recorded in the package, currently
-available only for the FMWT, SLS, and 20 mm, which were based on protocol documentation.
+For the \code{towSchedule} and \code{meterSchedule} arguments, you can use a schedules recorded
+in the package (\code{towSchedule} or \code{meterSchedule}), currently
+available only for center surveys, which were based on protocol documentation.
 If not available, you can provide your own schedule. See the example on how to create
 such a table.
 }
@@ -72,7 +78,8 @@ such a table.
 # You can create your own tow schedule with the following code:
 aTowSchedule <- data.frame(
 maxDepth = c(10, 15, 20, 25, 30, 35, Inf),
-depth = cut(c(10, 15, 20, 25, 30, 35, Inf), breaks = c(0, 10, 15, 20, 25, 30, 35, Inf), right = T, include.lowest = T),
+depth = cut(c(10, 15, 20, 25, 30, 35, Inf),
+breaks = c(0, 10, 15, 20, 25, 30, 35, Inf), right = T, include.lowest = T),
 cableLength = c(0, 50, 100, 125, 150, 175, 200)
 )
 
@@ -81,11 +88,17 @@ cableLength = c(0, 50, 100, 125, 150, 175, 200)
 # You will have to provide yourself with permissions to extract this table.
 
 # Grab relationship schema from the Access database for default joins
-tmmRelationship <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/20mm_New.zip",
+tmmRelationship <- bridgeAccess(
+file = "https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/20mm_New.zip",
 tables = "MSysRelationships")[[1]]
-# Grab relational tables of interest. The minimum should include station, tow, and water sample data. Other columns are preserved but are not used
-tmmTables <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/20mm_New.zip", tables = c("Station", "Survey", "Tow", "Gear"))
-tmmTables$`20mmStations` <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/20mm_New.zip", tables = c("20mmStations"))[[1]]
+# Grab relational tables of interest. The minimum should include station,
+tow, and water sample data. Other columns are preserved but are not used
+tmmTables <- bridgeAccess(file =
+"https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/20mm_New.zip",
+tables = c("Station", "Survey", "Tow", "Gear"))
+tmmTables$`20mmStations` <- bridgeAccess(file =
+"https://filelib.wildlife.ca.gov/Public/Delta\%20Smelt/20mm_New.zip",
+tables = c("20mmStations"))[[1]]
 officialGPS <- data.frame(
 station = tmmTables$`20mmStations`$Station,
 lat = decimalDegrees(paste(
@@ -103,7 +116,6 @@ joinedTMM <- schemaJoin(tmmRelationship, tmmTables)
 tmmQAQC <- qaqcData(data = joinedTMM, year = 2023, survey = "20mm",
  officialGPS = officialGPS, gpsDistance = 0.5, startingGPSFormat = "dms",
  towSchedule = towSchedule$`20mm`,
- meterSchedule = meterSchedule$`20mm`,
- perMonth = T)
+ meterSchedule = meterSchedule$`20mm`)
 }
 }

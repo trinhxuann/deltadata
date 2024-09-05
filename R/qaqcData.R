@@ -1,25 +1,27 @@
 #' Flag outlying values based on a standard deviation threshold
 #'
-#' @param x A vector of values
+#' @param x A vector of values of interest to check for outliers
+#' @param y A vector of values for calculating the mean or median to compare potential outlying values to
+#' This defaults to x.
 #' @param measure Either "mean" or "median", the summary value to compare the sd. Defaults to mean.
 #' @param sdThreshold A value indicating the standard deviation to use. Defaults to 2.
 #' @param na.rm T/F. To ignore NAs or not
 #'
 #' @return A vector of values
 #'
+#' @importFrom stats median sd
+#'
 #' @noRd
 #' @keywords internal
-physicalOutliers <- function(x, measure = c("mean", "median"),
-                             sdThreshold = 2, na.rm = T) {
+physicalOutliers <- function(x, y = x, measure = c("mean", "median"),
+                             sdThreshold = 2, na.rm = TRUE) {
 
   measure <- match.arg(measure)
-  center <- switch(measure,
-                   mean = mean(x, na.rm = na.rm),
-                   median = median(x, na.rm = na.rm),
-                   stop(shQuote(measure), "should be either mean or median."))
+  center <- if (measure == "mean") mean(y, na.rm = na.rm)
+  else median(y, na.rm = na.rm)
 
   # Calculate standard deviation
-  sd <- sd(x, na.rm = na.rm)
+  sd <- sd(y, na.rm = na.rm)
 
   # Define outlier threshold
   threshold <- sdThreshold * sd
@@ -39,9 +41,10 @@ physicalOutliers <- function(x, measure = c("mean", "median"),
 #'
 #' @return A data frame that is a crosswalk of IEP recommended names and the name of the survey of interest
 #'
+#' @importFrom utils tail
 #' @noRd
 #' @keywords internal
-populateCrosswalk <- function(survey, requiredNames, xwalk = crosswalk) {
+populateCrosswalk <- function(survey, requiredNames, xwalk = deltadata::crosswalk) {
   if (!survey %in% names(xwalk)) {
     possibleNames <- tail(names(xwalk), -5)
     unitPositions <- grep("unit", possibleNames, ignore.case = TRUE)
@@ -76,13 +79,15 @@ moveComments <- function(data, commentNames) {
 #'
 #' @return A renamed data frame
 #'
+#' @importFrom stats na.omit
+#'
 #' @noRd
 #' @keywords internal
 convertName <- function(outlierDF, survey) {
-  applicableIndex <- which(names(outlierDF) %in% crosswalk[["recommendedName"]])
-  replaceIndex <- na.omit(match(names(outlierDF), crosswalk[["recommendedName"]]))
+  applicableIndex <- which(names(outlierDF) %in% deltadata::crosswalk[["recommendedName"]])
+  replaceIndex <- na.omit(match(names(outlierDF), deltadata::crosswalk[["recommendedName"]]))
 
-  names(outlierDF)[applicableIndex] <- crosswalk[[survey]][replaceIndex]
+  names(outlierDF)[applicableIndex] <- deltadata::crosswalk[[survey]][replaceIndex]
   outlierDF
 }
 
@@ -108,25 +113,31 @@ convertName <- function(outlierDF, survey) {
 #' based on the duration of the tow. Several meter schedules are provided in the package
 #' within the `meterSchedule` list. You can provide your own data frame following the format.
 #' @param waterQualityVariables Calculate outlying water quality variables.
-#' A vector of numeric values.
-#' @param perMonth T/F. Specific to the water quality QAQC, should outlying values
-#' be compared to a specific month basis to account for seasonality.
+#' @param startingGPSFormat Either degrees, minutes, and seconds (dms) or degrees and decimal minutes (ddm).
+#' Format of your GPS coordinates. This will be convert to decimal degrees
+#' @param stdev Defaults to 2. The number of standard deviation away from the mean to flag as an outlying water quality value
+#' @param waterQualityGroupings A list of grouping variables to iterate through the water quality check.
+#' By default, calculates per station and per station and month.
 #'
 #' @details
-#' For the `towSchedule` argument, you can use a schedule recorded in the package, currently
-#' available only for the FMWT, SLS, and 20 mm, which were based on protocol documentation.
+#' For the `towSchedule` and `meterSchedule` arguments, you can use a schedules recorded
+#' in the package (`towSchedule` or `meterSchedule`), currently
+#' available only for center surveys, which were based on protocol documentation.
 #' If not available, you can provide your own schedule. See the example on how to create
 #' such a table.
 #'
 #' @return A list of objects containing identified outliers or rows with missing data points
 #' @export
 #'
+#' @importFrom lubridate year month
+#' @importFrom stats sd
 #' @examples
 #' \dontrun{
 #' # You can create your own tow schedule with the following code:
 #' aTowSchedule <- data.frame(
 #' maxDepth = c(10, 15, 20, 25, 30, 35, Inf),
-#' depth = cut(c(10, 15, 20, 25, 30, 35, Inf), breaks = c(0, 10, 15, 20, 25, 30, 35, Inf), right = T, include.lowest = T),
+#' depth = cut(c(10, 15, 20, 25, 30, 35, Inf),
+#' breaks = c(0, 10, 15, 20, 25, 30, 35, Inf), right = T, include.lowest = T),
 #' cableLength = c(0, 50, 100, 125, 150, 175, 200)
 #' )
 #'
@@ -135,11 +146,17 @@ convertName <- function(outlierDF, survey) {
 #' # You will have to provide yourself with permissions to extract this table.
 #'
 #' # Grab relationship schema from the Access database for default joins
-#' tmmRelationship <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
+#' tmmRelationship <- bridgeAccess(
+#' file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
 #' tables = "MSysRelationships")[[1]]
-#' # Grab relational tables of interest. The minimum should include station, tow, and water sample data. Other columns are preserved but are not used
-#' tmmTables <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip", tables = c("Station", "Survey", "Tow", "Gear"))
-#' tmmTables$`20mmStations` <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip", tables = c("20mmStations"))[[1]]
+#' # Grab relational tables of interest. The minimum should include station,
+#' tow, and water sample data. Other columns are preserved but are not used
+#' tmmTables <- bridgeAccess(file =
+#' "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
+#' tables = c("Station", "Survey", "Tow", "Gear"))
+#' tmmTables$`20mmStations` <- bridgeAccess(file =
+#' "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
+#' tables = c("20mmStations"))[[1]]
 #' officialGPS <- data.frame(
 #' station = tmmTables$`20mmStations`$Station,
 #' lat = decimalDegrees(paste(
@@ -157,8 +174,7 @@ convertName <- function(outlierDF, survey) {
 #' tmmQAQC <- qaqcData(data = joinedTMM, year = 2023, survey = "20mm",
 #'  officialGPS = officialGPS, gpsDistance = 0.5, startingGPSFormat = "dms",
 #'  towSchedule = towSchedule$`20mm`,
-#'  meterSchedule = meterSchedule$`20mm`,
-#'  perMonth = T)
+#'  meterSchedule = meterSchedule$`20mm`)
 #' }
 qaqcData <- function(data,
                      year,
@@ -174,16 +190,21 @@ qaqcData <- function(data,
                                                "SpecificConductanceBottom", "Secchi", "TurbidityNTU",
                                                "TurbidityTopNTU", "TurbidityBottomNTU",
                                                "Salinity", "SalinityTop", "SalinityBottom"),
-                     perMonth = T) {
+                     stdev = 2,
+                     waterQualityGroupings = list(
+                       "StationCode",
+                       c("StationCode", "Month")
+                     )) {
 
   # --- Prepare data ---
   # Standardize names, should really only be a 2 column table
   # requiredNames will be a vector specified in the package itself, manually set
   # Another approach would be to just read in the column of "Recommended Name" from the excel sheet
   crosswalk <- populateCrosswalk(survey, requiredNames = crosswalk[["recommendedName"]])
+  crosswalk[["dataName"]] <- names(data)[match(crosswalk[[survey]], names(data))]
   crosswalk[["check"]] <- crosswalk[[survey]] %in% names(data)
 
-  incorrectNames <- na.omit(crosswalk[[survey]][!crosswalk[["check"]]])
+  incorrectNames <- na.omit(crosswalk[[survey]][!crosswalk[["check"]] & !is.na(crosswalk[["dataName"]])])
   if (length(incorrectNames) > 0) {
     warning("The following columns cannot be matched in the dataset: ",
             paste(incorrectNames, collapse = ", "), call. = F)
@@ -203,6 +224,8 @@ qaqcData <- function(data,
   # Calculate year if not calculated
   if (is.null(data$Year)) {
     data[["Year"]] <- lubridate::year(data[["SampleDate"]])
+    # Also calculate month as well
+    data[["Month"]] <- lubridate::month(data[["SampleDate"]])
   }
   dataYear <- data[data$Year == year, ]
   if (nrow(dataYear) == 0) {
@@ -231,13 +254,12 @@ qaqcData <- function(data,
     gpsDF <- unique(dataYear[, c(requiredColumns, gpsColNames, commentColumns)])
 
     # Split into start/end coordinates
-    # What about when there aren't start/end variants?
     gpsStart <- data.frame(
       date = gpsDF[, "SampleDate"],
       station = gpsDF[, "StationCode"],
       layer = gpsDF[, "SurveyNumber"],
       legend = "start",
-      gpsDF[, commentColumns]
+      gpsDF[, c(gpsColNames, commentColumns)]
     )
 
     gpsEnd <- data.frame(
@@ -245,11 +267,10 @@ qaqcData <- function(data,
       station = gpsDF[, "StationCode"],
       layer = gpsDF[, "SurveyNumber"],
       legend = "end",
-      gpsDF[, commentColumns]
+      gpsDF[, c(gpsColNames, commentColumns)]
     )
 
     startingGPSFormat <- match.arg(startingGPSFormat)
-
     latLonStartEnd <- c("LatitudeDegreeStart", "LatitudeMinuteStart", "LatitudeSecondStart",
                         "LongitudeDegreeStart", "LongitudeMinuteStart", "LongitudeSecondStart",
                         "LatitudeDegreeEnd", "LatitudeMinuteEnd", "LatitudeSecondEnd",
@@ -260,23 +281,23 @@ qaqcData <- function(data,
       gpsColumnIndices <- which(names(gpsDF) %in% latLonStartEnd)
       gpsDF[, gpsColumnIndices] <- lapply(gpsDF[, gpsColumnIndices], as.numeric)
 
-      gpsStart[["lat"]] <- decimalDegrees(paste(gpsDF[, "LatitudeDegreeStart"],
-                                                gpsDF[, "LatitudeMinuteStart"],
-                                                gpsDF[, "LatitudeSecondStart"]),
-                                          type = startingGPSFormat)
-      gpsStart[["lon"]] <- decimalDegrees(paste(gpsDF[, "LongitudeDegreeStart"],
+      gpsStart[["lat"]] <- suppressWarnings(decimalDegrees(paste(gpsDF[, "LatitudeDegreeStart"],
+                                                                 gpsDF[, "LatitudeMinuteStart"],
+                                                                 gpsDF[, "LatitudeSecondStart"]),
+                                                           type = startingGPSFormat))
+      gpsStart[["lon"]] <- suppressWarnings(decimalDegrees(paste(gpsDF[, "LongitudeDegreeStart"],
                                                 gpsDF[, "LongitudeMinuteStart"],
                                                 gpsDF[, "LongitudeSecondStart"]),
-                                          type = startingGPSFormat, isLongitude = T)
+                                          type = startingGPSFormat, isLongitude = T))
 
-      gpsEnd[["lat"]] = decimalDegrees(paste(gpsDF[, "LatitudeDegreeEnd"],
+      gpsEnd[["lat"]] = suppressWarnings(decimalDegrees(paste(gpsDF[, "LatitudeDegreeEnd"],
                                              gpsDF[, "LatitudeMinuteEnd"],
                                              gpsDF[, "LatitudeSecondEnd"]),
-                                       type = startingGPSFormat)
-      gpsEnd[["lon"]] = decimalDegrees(paste(gpsDF[, "LongitudeDegreeEnd"],
+                                       type = startingGPSFormat))
+      gpsEnd[["lon"]] = suppressWarnings(decimalDegrees(paste(gpsDF[, "LongitudeDegreeEnd"],
                                              gpsDF[, "LongitudeMinuteEnd"],
                                              gpsDF[, "LongitudeSecondEnd"]),
-                                       type = startingGPSFormat, isLongitude = T)
+                                       type = startingGPSFormat, isLongitude = T))
     } else {
       if (all(c("LatitudeStart", "LongitudeStart") %in% names(gpsDF)) |
           all(c("Latitude", "Longitude") %in% names(gpsDF))) {
@@ -427,46 +448,57 @@ qaqcData <- function(data,
   waterQualityIndex <- which(crosswalk[["recommendedName"]] %in% waterQualityVariables &
                                !is.na(crosswalk[[survey]]))
 
-  waterQualityVariables <- crosswalk[waterQualityIndex, "recommendedName"][[1]]
-  waterQualityDF <- unique(dataYear[, c(requiredColumns, waterQualityVariables, commentColumns)])
+  waterQualityVariables <- crosswalk[waterQualityIndex, "recommendedName"]
+  waterQualityDF <- unique(dataYear[, c(requiredColumns, setdiff(unique(unlist(waterQualityGroupings)),
+                                                                 requiredColumns),
+                                        waterQualityVariables, commentColumns)])
+  # Need the full database to calculate mean/medians from
+  waterQualityTotal <- unique(data[, c(requiredColumns, setdiff(unique(unlist(waterQualityGroupings)),
+                                                                requiredColumns),
+                                       waterQualityVariables)])
 
-  # Return data frame per variable
-  outlierWaterQuality <- lapply(waterQualityVariables, function(x) {
-    outliers <- physicalOutliers(waterQualityDF[[x]])
-    df <- cbind(waterQualityDF[, c(requiredColumns, x, commentColumns)], outliers)
-    df <- df[which(df[["outlier"]]), ]
+  # Return data frame per variable per grouping
+  outlierWaterQuality <- lapply(waterQualityGroupings, function(groupings) {
+    outlierDF <- lapply(waterQualityVariables, function(variable) {
 
-    if (!convertNames) {
-      df <- convertName(df, survey)
-    }
+      # Calculate group-wise means and standard deviations
+      groupMeans <- tapply(waterQualityTotal[[variable]], waterQualityTotal[groupings], mean, na.rm = TRUE)
+      groupSD <- tapply(waterQualityTotal[[variable]], waterQualityTotal[groupings], sd, na.rm = TRUE)
 
-    moveComments(df, commentColumns)
-  })
-  names(outlierWaterQuality) <- waterQualityVariables
+      groupColumns <- expand.grid(dimnames(groupMeans)) # Get all group combinations
+      thresholds <- data.frame(
+        groupColumns,
+        mean = as.vector(groupMeans),
+        sd = as.vector(groupSD),
+        thresholdValueMin = as.vector(groupMeans) - stdev * as.vector(groupSD),
+        thresholdValueMax = as.vector(groupMeans) + stdev * as.vector(groupSD)
+      )
 
-  if (perMonth) {
-    # If month is not calculated, calculate it
-    dataYear[["Month"]] <- lubridate::month(dataYear[["SampleDate"]])
+      # Merge with the subset data and flag outliers
+      df <- merge(waterQualityDF[, c(requiredColumns, setdiff(groupings, requiredColumns),
+                                     variable, commentColumns)], thresholds, by = groupings)
+      df[["outlier"]] <- abs(df[[variable]] - df[["mean"]]) > (stdev * df[["sd"]])
 
-    # Same data frame as the one without month, since month should be derived from the date
-    waterQualityDFMonth <- dataYear[, c(requiredColumns, "Month",
-                                        waterQualityVariables,
-                                        commentColumns)]
-
-    outlierWaterQualityMonthly <- lapply(waterQualityVariables, function(x) {
-      outliers <- physicalOutliers(waterQualityDFMonth[[x]])
-
-      df <- cbind(waterQualityDFMonth[, c(requiredColumns, x, commentColumns)], outliers)
+      # Filter and process
+      dfMissing <- df[is.na(df[[variable]]), ]
       df <- df[which(df[["outlier"]]), ]
 
       if (!convertNames) {
         df <- convertName(df, survey)
+        dfMissing <- convertName(dfMissing, survey)
       }
 
-      moveComments(df, commentColumns)
+      list(df = moveComments(df, commentColumns),
+           dfMissing = moveComments(dfMissing, commentColumns))
     })
-    names(outlierWaterQualityMonthly) <- waterQualityVariables
-  }
+    names(outlierDF) <- waterQualityVariables
+
+    df <- lapply(outlierDF, "[[", "df")
+    missingDF <- lapply(outlierDF, "[[", "dfMissing")
+    list(df = df,
+         missingDF = missingDF)
+  })
+  names(outlierWaterQuality) <- sapply(waterQualityGroupings, paste, collapse = "_")
 
   return(list(
     gpsPlot = gpsOutlierPlot,
@@ -474,12 +506,12 @@ qaqcData <- function(data,
     outlierCableLength = outlierTowDF,
     outlierMeterCount = outlierMeterDF,
     outlierDuration = outlierDurationDF,
-    waterQuality = outlierWaterQuality,
-    waterQualityMonth = outlierWaterQualityMonthly,
+    waterQuality = lapply(outlierWaterQuality, "[[", "df"),
     missingData = list(
       missingGPS = missingGPS,
       missingCableLength = missingCableLength,
-      missingMeterGearCode = missingMeterGearCode
+      missingMeterGearCode = missingMeterGearCode,
+      missingWaterQuality = outlierWaterQuality[[1]]$missingDF
     )
   ))
 }
