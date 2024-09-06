@@ -6,8 +6,8 @@
 \usage{
 calcNearestCDEC(
   df,
-  cdecGPS = deltadata::CDECGPS,
-  cdecMetadata = deltadata::CDECMetadata,
+  cdecGPS = deltadata:::cdecStations,
+  cdecMetadata = deltadata:::cdecMetadata,
   variable = c("temp", "turbidity", "ec"),
   waterColumn = c("top", "bottom")
 )

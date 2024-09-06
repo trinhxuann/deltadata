@@ -293,8 +293,8 @@ pullCoordinates <- function(gage) {
 #'
 #' calcNearestCDEC(df)
 #' }
-calcNearestCDEC <- function(df, cdecGPS = deltadata::CDECGPS,
-                            cdecMetadata = deltadata::CDECMetadata,
+calcNearestCDEC <- function(df, cdecGPS = deltadata:::cdecStations,
+                            cdecMetadata = deltadata:::cdecMetadata,
                             variable = c("temp", "turbidity", "ec"),
                             waterColumn = c("top", "bottom")) {
 
