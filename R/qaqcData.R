@@ -419,6 +419,7 @@ qaqcData <- function(data,
     missingMeterGearCode <- meterDF[!meterDF[["MethodCode"]] %in% unique(meterSchedule[["gear"]]), ]
 
     # --- Duration outliers ---
+
     durationDF <- unique(dataYear[, c(requiredColumns, "Duration", commentColumns)])
     # Flag any duration not specified in the meterSchedule
     outlierDurationDF <- durationDF[which(!durationDF[["Duration"]] %in% meterSchedule[["duration"]]), ]
@@ -457,6 +458,14 @@ qaqcData <- function(data,
                                                                 requiredColumns),
                                        waterQualityVariables)])
 
+  # Which variables are duplicated, e.g., across tows recorded only once
+  uniqueCounts <- aggregate(waterQualityDF[, waterQualityVariables],
+                            by = list(date = waterQualityDF[, "SampleDate"],
+                                      stationCode = waterQualityDF[, "StationCode"]),
+                            FUN = function(x) length(unique(x)))
+
+  oncePerSampleVariables <- names(which(apply(uniqueCounts[, -c(1, 2)], 2, function(x) all(x == 1))))
+
   # Return data frame per variable per grouping
   outlierWaterQuality <- lapply(waterQualityGroupings, function(groupings) {
     outlierDF <- lapply(waterQualityVariables, function(variable) {
@@ -474,9 +483,18 @@ qaqcData <- function(data,
         thresholdValueMax = as.vector(groupMeans) + stdev * as.vector(groupSD)
       )
 
+      if (variable %in% oncePerSampleVariables) {
+        data <- unique(waterQualityDF[, c(requiredColumns, setdiff(groupings, requiredColumns),
+                                          variable, commentColumns)])
+      } else {
+        data <- waterQualityDF[, c(requiredColumns, setdiff(groupings, requiredColumns),
+                                          variable, commentColumns)]
+      }
+
       # Merge with the subset data and flag outliers
-      df <- merge(waterQualityDF[, c(requiredColumns, setdiff(groupings, requiredColumns),
-                                     variable, commentColumns)], thresholds, by = groupings)
+      df <- merge(data,
+                  thresholds,
+                  by = groupings)
       df[["outlier"]] <- abs(df[[variable]] - df[["mean"]]) > (stdev * df[["sd"]])
 
       # Filter and process
