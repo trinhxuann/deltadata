@@ -15,7 +15,8 @@ Imports:
     geosphere,
     leaflet,
     rvest,
-    lubridate
+    lubridate,
+    XML
 Suggests: 
     knitr,
     rmarkdown,
@@ -27,3 +28,4 @@ Depends:
 LazyData: true
 VignetteBuilder: knitr
 License: MIT + file LICENSE
+Compression: xz
