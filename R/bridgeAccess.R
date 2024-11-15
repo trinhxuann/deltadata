@@ -144,7 +144,11 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
                                     MoreArgs = list(conn = con),
                                     SIMPLIFY = F),
                              error = function(cond) {
-                               if (grepl("^(?=.*42000)(?=.*no read permission).*", cond$message, perl = T) &
+
+                               errorCode <- gsub("\033\\[[0-9;]*[a-zA-Z]|\033\\]8;;\\a|\033\\]8;.*?\\a|\\n", "",
+                                                 cond)
+
+                               if (grepl("42000.*no read permission", errorCode, perl = T) &
                                    any(grepl("^MSys", tables))) {
 
                                  message('You are asking for a system table but do not have permissions. Opening the database file to allow you to do so.')
