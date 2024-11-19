@@ -393,93 +393,121 @@ popCDEC <- function(df,
                     variable = c("temp", "turbidity", "ec"),
                     waterColumn = c("top", "bottom")) {
 
+  # Input validation and preprocessing
+  requiredCols <- c("station", "lat", "lon", "time")
   names(df) <- tolower(names(df))
 
-  if (any(!c("station", "lat", "lon", "time") %in% names(df))) {
-    stop("Your `df` must contain columns `station`, `lat`, lon`, and` `time`", call. = F)
+  if (!all(requiredCols %in% names(df))) {
+    stop(sprintf("Missing required columns: %s",
+                 paste(setdiff(requiredCols, names(df)), collapse = ", ")),
+         call. = FALSE)
   }
 
+  if (nrow(df) == 0) return(data.frame())
+
+  # Validate and match arguments
   variable <- match.arg(variable)
   if (!variable %in% names(df)) {
-    stop("You are asking for ", shQuote(variable), ", which does not exist in your provided df.", call. = F)
+    stop(sprintf("Variable '%s' not found in dataset", variable),
+         call. = FALSE)
   }
 
-  if (nrow(df) == 0) {
-    message("Data frame has no data.")
-    return(data.frame())
-  }
   waterColumn <- match.arg(waterColumn)
 
-  if (variable == "ec") {
-    variableWanted <- "elec.* conduct.* micro"
-  } else {
-    if (variable == "temp") {
-      variableWanted <- "(temp).*(water)"
-    } else variableWanted <- variable
+  # Define variable patterns
+  variablePatterns <- list(
+    ec = "elec.* conduct.* micro",
+    temp = "(temp).*(water)",
+    turbidity = "turbidity"
+  )
+
+  variableWanted <- variablePatterns[[variable]]
+  waterColumnWanted <- if(waterColumn == "bottom") "(lower|bottom)" else waterColumn
+
+  # Get CDEC data
+  if (is.null(cdecClosest)) {
+    cdecClosest <- calcNearestCDEC(df,
+                                   variable = variableWanted,
+                                   waterColumn = waterColumnWanted)
   }
 
-  waterColumnWanted <- ifelse(waterColumn %in% "bottom", "(lower|bottom)", waterColumn)
+  # Process CDEC closest stations
+  cdecClosestDF <- do.call(rbind, lapply(cdecClosest, function(x) {
+    if (all(!is.na(x$duration))) {
+      x$duration <- factor(x$duration, levels = c("event", "hourly", "daily"))
+      x[which.min(as.integer(x$duration)), ]
+    } else {
+      x[1, ]
+    }
+  }))
 
-  if (is.null(cdecClosest)) cdecClosest <- calcNearestCDEC(df, variable = variableWanted,
-                                                           waterColumn = waterColumnWanted)
+  # Prepare data frame for merging
+  df$rowIndex <- seq_len(nrow(df))
+  relevantCols <- c(requiredCols, "rowIndex", variable)
+  dfMerged <- merge(df[relevantCols], cdecClosestDF, by = "rowIndex", all = TRUE)
 
-  cdecClosest <- lapply(cdecClosest, function(x) {
-    x$duration <- factor(x[["duration"]], levels = c("event", "hourly", "daily"))
-    x <- x[order(x[["duration"]]), ]
-    x[1, ]
-  })
+  # Pull and process CDEC data
+  dfSplitDuration <- split(dfMerged, list(dfMerged$duration, dfMerged$sensorNumber))
 
-  cdecClosestDF <- do.call(rbind, cdecClosest)
+  pulledData <- do.call(rbind, lapply(dfSplitDuration, function(x) {
+    if (nrow(x) == 0) return(NULL)
 
-  if (!inherits(df[["time"]], "POSIXct")) df[["time"]] <- as.POSIXct(df[["time"]])
-  df$rowIndex <- 1:nrow(df)
+    dateRange <- range(as.Date(x$time))
+    cdecData <- pullCDEC(
+      station = unique(x$cdecStation),
+      sensor = unique(x$sensorNumber),
+      duration = as.character(unique(x$duration)),
+      dateStart = dateRange[1],
+      dateEnd = dateRange[2]
+    )
 
-  dfMerged <- merge(df[c(which(names(df) %in% c("station", "lat", "lon", "time", "rowIndex")),
-                         which(grepl(variable, names(df))))],
-                    cdecClosestDF, by = "rowIndex", all = T)
+    if (is.null(cdecData) || nrow(cdecData) == 0) return(x)
 
-  dfSplit <- split(dfMerged, dfMerged$cdecStation)
+    merged <- merge(x, cdecData,
+                    by.x = "cdecStation",
+                    by.y = "stationId",
+                    all.x = TRUE)
 
-  # Split the data by duration. Faster to download all stations across a date range per duration than each station.
-  dfSplitDuration <- split(dfMerged, ~ duration + sensorNumber)
-  dfSplitDuration <- dfSplitDuration[sapply(dfSplitDuration, nrow) > 0]
+    merged$timeDifference <- abs(difftime(merged$time,
+                                          merged$dateTime,
+                                          units = "mins"))
 
-  pulledData <- lapply(dfSplitDuration, function(x) {
+    do.call(rbind, by(merged,
+                      list(merged$station, merged$time),
+                      function(subset) {
+                        validRows <- !is.na(subset$value)
+                        if (!any(validRows)) return(subset[1, ])
+                        subset <- subset[validRows, ]
+                        subset[which.min(subset$timeDifference), ]
+                      }))
+  }))
+  row.names(pulledData) <- NULL
 
-    rangeDates <- range(as.Date(x[["time"]]))
+  # Combine and format final output
+  remainingData <- dfMerged[!dfMerged$cdecStation %in% pulledData$cdecStation, ]
+  allCols <- union(names(pulledData), names(remainingData))
 
-    df <- pullCDEC(station = unique(x[["cdecStation"]]),
-                   sensor = unique(x[["sensorNumber"]]),
-                   duration = as.character(unique(x[["duration"]])),
-                   dateStart = min(rangeDates),
-                   dateEnd = max(rangeDates))
+  remainingData[setdiff(allCols, names(remainingData))] <- NA
+  pulledData[setdiff(allCols, names(pulledData))] <- NA
 
-    dfGageMerged <- merge(x, df, by.x = "cdecStation", by.y = "stationId", all.x = T)
-    dfGageMerged$timeDifference <- abs(difftime(dfGageMerged$time, dfGageMerged$dateTime, units = "mins"))
-    dfGageSplit <- split(dfGageMerged, ~ station)
-    dfMinDiff <- lapply(dfGageSplit, function(x) {
+  combinedData <- rbind(remainingData, pulledData)
 
-      df <- subset(x, !is.na(x$value))
-      df <- df[which.min(df$timeDifference), ]
-      if (nrow(df) == 0) {
-        x[1, ]
-      } else {
-        df
-      }
-    })
-    dfMinDiff <- do.call(rbind, dfMinDiff)
-  })
+  # Select and rename final columns
+  finalCols <- c("station", "lat", "lon", "time", "cdecStation",
+                 grep(paste0("^", variable), names(combinedData), value = TRUE),
+                 "value", "timeDifference", "distance", "sensorNumber.x",
+                 "sensorDescription", "units", "duration.x", "dataAvailable")
 
-  pulledData <- do.call(rbind, c(pulledData, make.row.names = FALSE))
+  result <- combinedData[order(combinedData$rowIndex), finalCols]
 
-  dfFin <- pulledData[, c("station", "lat", "lon", "time", "cdecStation",
-                          names(pulledData)[which(grepl(paste0("^", variable), names(pulledData)))],
-                          "value", "timeDifference", "distance", "sensorNumber.x",
-                          "sensorDescription", "units", "duration.x", "dataAvailable")]
+  # Rename columns
+  colsToRename <- c("value", "sensorNumber.x", "duration.x")
+  newNames <- c(paste0(variable, "CDEC"), "sensorNumber", "duration")
+  names(result)[match(colsToRename, names(result))] <- newNames
 
-  names(dfFin)[which(names(dfFin) %in% c("value", "sensorNumber.x", "duration.x"))] <- c(paste0(variable, "CDEC"), "sensorNumber", "duration")
-
-  dfFin
+  # Return final result with original column order preserved
+  result[, c(setdiff(names(df), "rowIndex"),
+             setdiff(names(result), names(df)))]
 }
 
 # parPopCDEC <- function(df,
