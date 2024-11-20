@@ -458,7 +458,7 @@ popCDEC <- function(df,
       sensor = unique(x$sensorNumber),
       duration = as.character(unique(x$duration)),
       dateStart = dateRange[1],
-      dateEnd = dateRange[2]
+      dateEnd = dateRange[2] + 1
     )
 
     if (is.null(cdecData) || nrow(cdecData) == 0) return(x)

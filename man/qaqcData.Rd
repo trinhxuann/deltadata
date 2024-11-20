@@ -26,7 +26,8 @@ qaqcData(
 \item{data}{A data frame with the required data, dependent on what QAQC procedures
 you want to run. It is advised to provide the fully joined/merged dataset.}
 
-\item{year}{A filtering year.}
+\item{year}{A filtering year. This can support custom year labels if desired, e.g.,
+your sampling season extends across two years.}
 
 \item{survey}{Name of a qualifying IEP survey name. Currently explicit support
 only for sls, 20mm, stn, fmwt, and bs.}

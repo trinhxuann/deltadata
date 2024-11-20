@@ -95,7 +95,8 @@ convertName <- function(outlierDF, survey) {
 #'
 #' @param data A data frame with the required data, dependent on what QAQC procedures
 #' you want to run. It is advised to provide the fully joined/merged dataset.
-#' @param year A filtering year.
+#' @param year A filtering year. This can support custom year labels if desired, e.g.,
+#' your sampling season extends across two years.
 #' @param survey Name of a qualifying IEP survey name. Currently explicit support
 #' only for sls, 20mm, stn, fmwt, and bs.
 #' @param convertNames T/F. Should the names be changed to their respective IEP recommended names
@@ -450,8 +451,9 @@ qaqcData <- function(data,
                                !is.na(crosswalk[[survey]]))
 
   waterQualityVariables <- crosswalk[waterQualityIndex, "recommendedName"]
-  waterQualityDF <- unique(dataYear[, c(requiredColumns, setdiff(unique(unlist(waterQualityGroupings)),
-                                                                 requiredColumns),
+  waterQualityDF <- unique(dataYear[, c(requiredColumns, "StartTime",
+                                        setdiff(unique(unlist(waterQualityGroupings)),
+                                                requiredColumns),
                                         waterQualityVariables, commentColumns)])
   # Need the full database to calculate mean/medians from
   waterQualityTotal <- unique(data[, c(requiredColumns, setdiff(unique(unlist(waterQualityGroupings)),
@@ -484,10 +486,12 @@ qaqcData <- function(data,
       )
 
       if (variable %in% oncePerSampleVariables) {
-        data <- unique(waterQualityDF[, c(requiredColumns, setdiff(groupings, requiredColumns),
+        data <- unique(waterQualityDF[, c(requiredColumns, "StartTime",
+                                          setdiff(groupings, requiredColumns),
                                           variable, commentColumns)])
       } else {
-        data <- waterQualityDF[, c(requiredColumns, setdiff(groupings, requiredColumns),
+        data <- waterQualityDF[, c(requiredColumns, "StartTime",
+                                   setdiff(groupings, requiredColumns),
                                           variable, commentColumns)]
       }
 

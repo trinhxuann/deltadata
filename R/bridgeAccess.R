@@ -7,7 +7,6 @@
 #' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access
 #' architectures match.
 #'
-#' @importFrom utils readRegistry
 #' @noRd
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
@@ -192,7 +191,6 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
 #'
 #' @noRd
 #' @importFrom httr headers HEAD
-#' @importFrom utils unzip
 #' @keywords internal
 getFile <- function(file, open = F, method) {
 
