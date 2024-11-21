@@ -155,7 +155,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
                                  shell.exec(dbGetInfo(con)$dbname)
 
                                  if (isTRUE(retry)) {
-                                   message('Enable content, `Ctrl + g`, enter \nCurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;" \nHit `Enter`. Will retry once after 25 seconds.')
+                                   message('Enable content, `Ctrl + g`, paste in: \nCurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;" \nHit `Enter`. Will retry once after 25 seconds.')
                                    Sys.sleep(25)
                                    cat("Retrying...")
                                    df <- mapply(dbReadTable,
@@ -164,7 +164,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
                                                 SIMPLIFY = F)
                                    return(df)
                                  }
-                                 stop('Enable content, `Ctrl + g`, enter \nCurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;" \nHit `Enter`, exit file, and rerun this code.', call. = F)
+                                 stop('Enable content, `Ctrl + g`, paste in: \nCurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;" \nHit `Enter`, exit file, and rerun this code.', call. = F)
 
                                } else {
                                  stop(cond)
@@ -264,7 +264,6 @@ getFile <- function(file, open = F, method) {
 #' @param method `method` argument for `download.file`. Defaults to `auto` and
 #' it is recommended to not change this. See `download.file` for additional
 #' details if your downloaded file(s) cannot be read correctly.
-#' @param retry Logical. If `TRUE`, the function will retry extracting after waiting 25 seconds.
 #' @param ... Additional arguments to be passed onto `connectAccess()`. Used to
 #' pass on a specific driver if the default Access driver does not work, a user
 #' name, or password.
@@ -282,7 +281,9 @@ getFile <- function(file, open = F, method) {
 #' tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
 #' "SLS Stations", "Tow Info", "Water Info"))
 #' }
-bridgeAccess <- function(file, tables = "check", method = "auto", retry = F, ...) {
+bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
+
+  retry <- if (is.null(list(...)$retry)) FALSE else list(...)$retry
 
   # First, check architecture. If ok then just source the script; if not then invoke system2
   bitCheck <- architectureCheck()

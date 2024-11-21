@@ -2,7 +2,7 @@
 This package contains various workflow functions for working with data
 within the Sacramento-San Joaquin River Delta. There is a primary focus
 on IEP (Interagency Ecological Program) Surveys and supporting their
-data publication workflows. Additional features pertaining to other
+data publication workflows. Additional features pertaining to other IEP
 surveys may be supported in the future.
 
 The following is a case study using tools in this package to help QAQC
@@ -35,24 +35,19 @@ prerequisite that we must fulfill.
 
 The function requires that the architectures of our R and Microsoft
 Access be the same, i.e., 32 vs 64-bit. To help users, the function
-automatically checks for this requirement before proceeding. If the
-architectures are not the same, an interpretable error will inform the
-user. For most state computers, we have 32-bit Microsoft Access
-installed. Unfortunately, the newest versions of R only come in 64-bit.
-Therefore, you have two potential solutions:
+automatically checks for this requirement before proceeding. For most
+state computers, we have 32-bit Microsoft Access installed.
+Unfortunately, the newest versions of R only come in 64-bit. Therefore,
+you have two potential solutions:
 
-1.  Download 32-bit R to match your 32-bit Office. The latest version of
-    R that supports 32-bit is version
-    [4.1.3](https://cran.r-project.org/bin/windows/base/old/4.1.3).
-    Although this version is older, I have yet to run into any
-    compatability issues with packages. Once installed, `bridgeAccess()`
-    will simply use this extra instance in the background, allowing you
-    stay working in 64-bit R–you should never have to open or use the
-    32-bit R yourself.
+1.  Install 32-bit R. The latest version of R that supports 32-bit is
+    version
+    [4.1.3](https://cran.r-project.org/bin/windows/base/old/4.1.3). Once
+    installed, `bridgeAccess()` will run this instance in the
+    background, allowing you to stay working in 64-bit R.
 2.  Install 64-bit Office. This likely requires installation by your IT
-    department. The entire Microsoft Office will need to be installed,
-    as I don’t think you can just install 64-bit Access. This solution
-    is more future proof and does not require a separate install of R.
+    department. This solution is more future proof and does not require
+    a separate install of R.
 
 We can replicate the architecture check using an internal function of
 the package:
@@ -71,9 +66,8 @@ deltadata:::architectureCheck()
 ```
 
 The function determines that my architectures do not align, that I am in
-64-bit R but have 32 bit Office. This does not automatically throw an
-error. The function will attempt to find and use my 32-bit R to
-proceed–an error is only thrown if I do not have 32-bit installed.
+64-bit R but have 32 bit Office. The function will attempt to find and
+use my 32-bit R to proceed.
 
 #### Connecting to your Access database
 
@@ -82,8 +76,8 @@ argument is flexible and can take a filepath to the file on your hard
 drive or a URL to a file online. The file must be an Access database or
 a compressed file (e.g., .zip) with the Access database inside. If the
 Access database needs to be downloaded from a URL or extracted from a
-compressed file, the file will be downloaded to the temporary folder (it
-will be deleted after R is shut down).
+compressed file, the file will be downloaded to Window’s temporary
+folder (it will be deleted after R is shut down).
 
 We will download the 20 mm from the FTP website, opting for the .zip
 version. The function will download the file, extract it, and provide us
@@ -116,22 +110,23 @@ We can also download the system relationship table. This is an important
 table that records the relationships between the relational tables in
 the database. We can leverage this table to automatically and reliably
 join the relational tables with one another. However, this table does
-require special permissions to download and may break your database if
-you modify it. Although this is very hard to do, I recommend you always
-work from a copy of your database and to work only through R.
+require special permissions to download. We can give ourselves
+permissions by feeding this table (`MSysRelationships`) into
+`bridgeAccess()`. The function will open the Access file and provide a
+message with instructions:
 
-This table is named `MSysRelationships`. Once fed into `bridgeAccess()`,
-the Access file will be opened and a message will be provide with
-instructions to enable permissions: in the program, “Enable content,
-`Ctrl + g`, enter
-`CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`,
-`Enter`, exit file, and rerun this code.”
+<div style="background-color: #f8f8f8; font-family: monospace;">
+
+“Enable content, `Ctrl + g`, paste in:<br>
+`CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`<br>
+hit `Enter`, exit file, and rerun this code.”
+
+</div>
 
 ``` r
 schema <- bridgeAccess(
   "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
-  tables = c("MSysRelationships"), 
-  retry = T # The retry argument will rerun the function again after 25 seconds
+  tables = c("MSysRelationships"), retry = T
   )
 
 # The function outputs a list, of which we can index to grab just the table
@@ -140,13 +135,11 @@ schema <- schema[[1]]
 
 ## Data joining
 
-The relational tables must be tied together before we can properly QAQC
-the data. To do this, we can use the `schemaJoin()` function to decipher
-the relationship table we downloaded above and join the tables. Although
-we can join the tables by hand, I prefer using `schemaJoin()` as it
-relies entirely on the outlined relationships in the database, allowing
-us a way to consistently join the tables correctly (assuming the
-database is set up correctly in the first place!).
+The relational tables must be joined together before we can properly
+QAQC the data. To do this, we can use the `schemaJoin()` function to
+decipher the relationship table. Although we can join the tables by
+hand, the `schemaJoin()` function provide an automatic and consistent
+way to join the tables correctly.
 
 ``` r
 joinedData <- schemaJoin(schema, relationalTables)
@@ -159,15 +152,16 @@ Throughout the joining process, the function provides a narration of the
 join type, the tables being joined, and the column keys the join is
 occurring on. We can use this narration to ensure that we are getting
 the joins we are expecting. Once our relational tables are joined, we
-can proceed with QAQC-ing the dataset.
+can proceed with the quality assurance and quality control (QAQC) of the
+dataset.
 
 ## Data QAQC
 
 The package supports various QAQC operations that have been duplicated
-from or requested by the CDFW IEP surveys. I would like to incorporate
-operations from other surveys as well as part of a larger effort to
-create a more robust and standardized QAQC workflow that all IEP surveys
-can leverage.
+from or requested by the CDFW IEP surveys. Ideally, more operations will
+be incorporated from other surveys as part of a larger effort to create
+a robust and standardized QAQC workflow that all IEP surveys can
+leverage.
 
 #### Checking outlying GPS coordinates
 
@@ -184,29 +178,25 @@ coordinates that are too far from the desired sampling location:
     information.
 2.  `gpsOutlier()`: returns a data frame of GPS coordinates that are
     beyond a specified distance (default is 0.5 mile, measured
-    “as-the-crow-flies”, or the most direct path) from each sampling
-    location’s theoretical coordinates. This function similarly requires
-    a data frame with 6 columns, the same as `plotGPS()`, with a firm
+    “as-the-crow-flies”, or the most direct path) from a theoretical.
+    This function requires the same 6 columns as `plotGPS()` with a firm
     requirement for a `Theoretical` (named as so) group of GPS
     coordinates in the `legend` column.
 
-A recommended workflow is to find outlying data points with
-`gpsOutlier()` then visualize those points with with `plotGPS()`.
-
 Below, we explore the 20 mm 2023 sampling season for outlying sampling
-points. For CDFW surveys, sampling points 0.5 miles away from the
-theoretical sampling point are deemed potentially outlying.
+points. We first manipulate our joined data frame for use in
+`plotGPS()`.
 
 ``` r
 filteredData <- joinedData
 
 # Filter for 2023 season
-filteredData$SeasonYear <- as.numeric(format(filteredData$SampleDate, format = "%Y")) + 
+filteredData$SeasonYear <- as.numeric(format(filteredData$SampleDate, format = "%Y")) +
   (as.numeric(format(filteredData$SampleDate, format = "%m")) > 11)
 filteredData <- subset(filteredData, SeasonYear == 2023)
 
 # Add in lat and lon of the sampling locations
-filteredData <- transform(filteredData, 
+filteredData <- transform(filteredData,
                           startLatitude = decimalDegrees(paste(StartLatDeg, StartLatMin, StartLatSec), "dms"),
                           startLongitude = decimalDegrees(paste(StartLonDeg, StartLonMin, StartLonSec), "dms", isLongitude = T),
                           endLatitude = decimalDegrees(paste(EndLatDeg, EndLatMin, EndLatSec), "dms"),
@@ -259,23 +249,22 @@ This interactive (disabled for the README) plot allows us to visualize
 all sampling points of interest at once. This is most helpful for
 identifying significantly outlying points, e.g., outside of the Delta.
 We can click on any point of interest and a pop-up will appear with
-layer (here, the survey) and sampling date information. Although this
-step is useful for a quick glance at our points, we can do a specific
-search for only potentially outlying points using `gpsOutlier()` and
-then feeding those points into `plotGPS()`.
+`layer` (here, the survey number) and sampling date information.
+Although this step is useful for a quick glance at our points, we can do
+a specific search for only potentially outlying points using
+`gpsOutlier()` and then feeding those points into `plotGPS()`.
 
 ``` r
 # By default, d = 0.5
 gpsOutliers <- gpsOutlier(gpsDF)
-
 plotGPS(gpsOutliers, height = 500)
 ```
 
 ![](man/figures/README-unnamed-chunk-9-1.png)<!-- -->
 
-This creates a much cleaner map. The resulting data frame also contains
-the distance from the theoretical sampling point, in case your distance
-is not a strict threshold.
+This creates a map with only outlying data points. The resulting data
+frame contains the distance from the theoretical sampling point, in case
+your distance is not a strict threshold.
 
 ``` r
 head(gpsOutliers)
@@ -302,13 +291,15 @@ One way to QAQC this water quality data is to compare to nearby
 continuous sondes. We can do this with the `popCDEC()` function. This
 function will fetch surface (default) or bottom water temperature,
 turbidity, or electro-conductivity data from the nearest CDEC
-(California Data Exchange Center) station.
+(California Data Exchange Center) sondes. Like the gps functions,
+`popCDEC()` requires several five columns: “time”, “station”, “lat”,
+“lon”, and the variable of interest (“temp”, “turbidity”, or “ec”).
 
 ``` r
 # For the 20 mm, water quality is taken at the beginning of the first tow (out of 3)
 temperatureData <- data.frame(
-  time = as.POSIXct(paste(filteredData$SampleDate, 
-                              format(filteredData$TowTime, "%H:%M:%S")), 
+  time = as.POSIXct(paste(filteredData$SampleDate,
+                              format(filteredData$TowTime, "%H:%M:%S")),
                         format = "%Y-%m-%d %H:%M:%S",
                         tz = "America/Los_Angeles"),
   station = filteredData$Station,
@@ -316,6 +307,7 @@ temperatureData <- data.frame(
   lon = filteredData$startLongitude,
   temp = filteredData$Temp
 )
+# Remove duplicates
 temperatureData <- temperatureData[!duplicated(temperatureData[, c("station", "lat", "lon", "temp")]), ]
 # Remove NAs
 temperatureData <- na.omit(temperatureData)
@@ -361,11 +353,8 @@ metadata information about the CDEC station (`sensorNumber`,
 
 #### All-in-one function
 
-The `qaqcData()` function is an experimental function that attempts to
-apply various QAQC operations to an IEP dataset all in one simple
-function call. Currently, the function is modeled on the CDFW IEP survey
-QAQC procedures. Although the function may work on other IEP surveys, it
-has only been tested with the CDFW IEP surveys. The function runs
+The `qaqcData()` function attempts to apply various QAQC operations to
+an IEP dataset, all in one simple function call. The function runs
 several QAQC operations on an inputted data set:
 
 1.  outlying GPS points, defaulting to 0.5 mile away from the
@@ -379,8 +368,8 @@ several QAQC operations on an inputted data set:
     beyond the mean (per station and per station per month),
 5.  and missing data points in the previously mentioned operations.
 
-Each of these operations are optional and are only ran if the supporting
-arguments are provided:
+Each operation is optional and are only ran if their supporting argument
+is provided:
 
 1.  gps outliers requires a table of theoretical gps coordinates of each
     station, provided to the `officialGPS` argument,
@@ -392,10 +381,10 @@ arguments are provided:
     inputted data frame.
 
 The package currently store tow and meter schedules of various CDFW IEP
-surveys for ease of use. These are available as `deltadata::towSchedule`
-and `deltadata::meterSchedule`. More surveys will be added to the
-package as this information becomes available. Users can specify their
-own schedules by modeling them against these existing ones.
+surveys for ease of use, as `deltadata::towSchedule` and
+`deltadata::meterSchedule`. More surveys will be added to the package as
+this information becomes available. Users can specify their own
+schedules by modeling them against these existing ones.
 
 We can demonstrate this function with the 20 mm database:
 
@@ -454,9 +443,9 @@ head(temperatureOutliers)
 #> 288         15.271113          18.82119    TRUE       <NA>       <NA>     <NA>
 ```
 
-Although the function does not automatically employ the `popCDEC()`
-function, users can manipulate the outputted outlier data frames to be
-accepted by the function:
+Although the function does not automatically populate CDEC data for
+water quality variables, users can manipulate the outputted outlier data
+frames to be accepted in `popCDEC()`:
 
 ``` r
 # The function needs at least five columns: "station", "lat", "lon", "time", and our variable, "temp"
@@ -465,7 +454,7 @@ accepted by the function:
 temperatureOutliers <- data.frame(
   station = temperatureOutliers$Station,
   time = as.POSIXct(paste(
-    temperatureOutliers$SampleDate, 
+    temperatureOutliers$SampleDate,
     format(temperatureOutliers$TowTime, format = "%H:%M:%S")),
     format = "%Y-%m-%d %H:%M:%S",
     tz = "America/Los_Angeles"
