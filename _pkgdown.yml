@@ -1,4 +1,10 @@
 url: https://trinhxuann.github.io/deltadata/
 template:
   bootstrap: 5
+  theme: github-light
+  theme-dark: github-dark
+  light-switch: true
+  includes:
+    in_header: |
+      <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 

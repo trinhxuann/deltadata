@@ -70,11 +70,11 @@ relationalTables <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/
 
 We can also download the system relationship table. This is an important table that records the relationships between the relational tables in the database. We can leverage this table to automatically and reliably join the relational tables with one another. However, this table does require special permissions to download. We can give ourselves permissions by feeding this table (`MSysRelationships`) into `bridgeAccess()`. The function will open the Access file and provide a message with instructions:
 
-<div style="background-color: #f8f8f8; font-family: monospace;">
-"Enable content, `Ctrl + g`, paste in:<br>
-`CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`<br>
+```
+"Enable content, `Ctrl + g`, paste in:
+`CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`
 hit `Enter`, exit file, and rerun this code."
-</div>
+```
 
 ```{r}
 schema <- bridgeAccess(

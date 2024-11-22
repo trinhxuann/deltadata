@@ -1,4 +1,3 @@
-# deltadata <a href="https://github.com/trinhxuann/deltadata/"><img src="man/figures/logo.png" align="right" height="150" /></a>
 
 This package contains various workflow functions for working with data
 within the Sacramento-San Joaquin River Delta. There is a primary focus
@@ -116,13 +115,9 @@ permissions by feeding this table (`MSysRelationships`) into
 `bridgeAccess()`. The function will open the Access file and provide a
 message with instructions:
 
-<div style="background-color: #f8f8f8; font-family: monospace;">
-
-“Enable content, `Ctrl + g`, paste in:<br>
-`CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`<br>
-hit `Enter`, exit file, and rerun this code.”
-
-</div>
+    "Enable content, `Ctrl + g`, paste in:
+    `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`
+    hit `Enter`, exit file, and rerun this code."
 
 ``` r
 schema <- bridgeAccess(
