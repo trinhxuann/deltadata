@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" type="image/png" sizes="120x120" href="apple-touch-icon-120x120.png">
 <link rel="apple-touch-icon" type="image/png" sizes="76x76" href="apple-touch-icon-76x76.png">
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="apple-touch-icon-60x60.png">
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -20,12 +20,13 @@
 <meta name="description" content="Workflow functions for IEP surveys to more efficiently work through the QAQC and publication process.">
 <meta property="og:description" content="Workflow functions for IEP surveys to more efficiently work through the QAQC and publication process.">
 <meta property="og:image" content="https://trinhxuann.github.io/deltadata/logo.png">
+<link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">deltadata</a>
 
@@ -44,6 +45,14 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -51,13 +60,7 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header">
-<img src="logo.png" class="logo" alt=""><h1 id="deltadata-">deltadata 
-<a class="anchor" aria-label="anchor" href="#deltadata-"></a>
-</h1>
-</div>
-<p>This package contains various workflow functions for working with data within the Sacramento-San Joaquin River Delta. There is a primary focus on IEP (Interagency Ecological Program) Surveys and supporting their data publication workflows. Additional features pertaining to other IEP surveys may be supported in the future.</p>
+  <main id="main" class="col-md-9"><p>This package contains various workflow functions for working with data within the Sacramento-San Joaquin River Delta. There is a primary focus on IEP (Interagency Ecological Program) Surveys and supporting their data publication workflows. Additional features pertaining to other IEP surveys may be supported in the future.</p>
 <p>The following is a case study using tools in this package to help QAQC the 20 mm Survey Access database, a yearly process that precedes data publication.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://trinhxuann.github.io/deltadata/">deltadata</a></span><span class="op">)</span></span></code></pre></div>
@@ -117,10 +120,10 @@
 <code class="sourceCode R"><span><span class="va">relationalTables</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span>file <span class="op">=</span> <span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span>,</span>
 <span>                          tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Station"</span>, <span class="st">"Survey"</span>, <span class="st">"Tow"</span>, <span class="st">"Gear"</span>, <span class="st">"20mmStations"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>We can also download the system relationship table. This is an important table that records the relationships between the relational tables in the database. We can leverage this table to automatically and reliably join the relational tables with one another. However, this table does require special permissions to download. We can give ourselves permissions by feeding this table (<code>MSysRelationships</code>) into <code><a href="reference/bridgeAccess.html">bridgeAccess()</a></code>. The function will open the Access file and provide a message with instructions:</p>
-<div style="background-color: #f8f8f8; font-family: monospace;">
-<p>“Enable content, <code>Ctrl + g</code>, paste in:<br><code>CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"</code><br> hit <code>Enter</code>, exit file, and rerun this code.”</p>
-</div>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="st">"Enable content, `Ctrl + g`, paste in:</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="st">`CurrentProject.Connection.Execute "</span>GRANT SELECT ON MSysRelationships TO Admin;<span class="st">"`</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="st">hit `Enter`, exit file, and rerun this code."</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">schema</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span></span>
 <span>  <span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span>,</span>
 <span>  tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MSysRelationships"</span><span class="op">)</span>, retry <span class="op">=</span> <span class="cn">T</span></span>
@@ -134,7 +137,7 @@
 <h2 id="data-joining">Data joining<a class="anchor" aria-label="anchor" href="#data-joining"></a>
 </h2>
 <p>The relational tables must be joined together before we can properly QAQC the data. To do this, we can use the <code><a href="reference/schemaJoin.html">schemaJoin()</a></code> function to decipher the relationship table. Although we can join the tables by hand, the <code><a href="reference/schemaJoin.html">schemaJoin()</a></code> function provide an automatic and consistent way to join the tables correctly.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">joinedData</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/schemaJoin.html">schemaJoin</a></span><span class="op">(</span><span class="va">schema</span>, <span class="va">relationalTables</span><span class="op">)</span></span>
 <span><span class="co">#&gt; inner_join 'Survey' with 'Station' via columns 'SurveyID' and 'SurveyID' </span></span>
 <span><span class="co">#&gt; inner_join 'Station' with 'Tow' via columns 'StationID' and 'StationID' </span></span>
@@ -156,7 +159,7 @@
 <code><a href="reference/gpsOutlier.html">gpsOutlier()</a></code>: returns a data frame of GPS coordinates that are beyond a specified distance (default is 0.5 mile, measured “as-the-crow-flies”, or the most direct path) from a theoretical. This function requires the same 6 columns as <code><a href="reference/plotGPS.html">plotGPS()</a></code> with a firm requirement for a <code>Theoretical</code> (named as so) group of GPS coordinates in the <code>legend</code> column.</li>
 </ol>
 <p>Below, we explore the 20 mm 2023 sampling season for outlying sampling points. We first manipulate our joined data frame for use in <code><a href="reference/plotGPS.html">plotGPS()</a></code>.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">filteredData</span> <span class="op">&lt;-</span> <span class="va">joinedData</span></span>
 <span></span>
 <span><span class="co"># Filter for 2023 season</span></span>
@@ -212,13 +215,13 @@
 <span><span class="fu"><a href="reference/plotGPS.html">plotGPS</a></span><span class="op">(</span><span class="va">gpsDF</span>, layerName <span class="op">=</span> <span class="st">"Survey"</span>, dateName <span class="op">=</span> <span class="st">"Sampling Date"</span>, height <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-8-1.png"><!-- --></p>
 <p>This interactive (disabled for the README) plot allows us to visualize all sampling points of interest at once. This is most helpful for identifying significantly outlying points, e.g., outside of the Delta. We can click on any point of interest and a pop-up will appear with <code>layer</code> (here, the survey number) and sampling date information. Although this step is useful for a quick glance at our points, we can do a specific search for only potentially outlying points using <code><a href="reference/gpsOutlier.html">gpsOutlier()</a></code> and then feeding those points into <code><a href="reference/plotGPS.html">plotGPS()</a></code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># By default, d = 0.5</span></span>
 <span><span class="va">gpsOutliers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gpsOutlier.html">gpsOutlier</a></span><span class="op">(</span><span class="va">gpsDF</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/plotGPS.html">plotGPS</a></span><span class="op">(</span><span class="va">gpsOutliers</span>, height <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-9-1.png"><!-- --></p>
 <p>This creates a map with only outlying data points. The resulting data frame contains the distance from the theoretical sampling point, in case your distance is not a strict threshold.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gpsOutliers</span><span class="op">)</span></span>
 <span><span class="co">#&gt;            date station legend layer      lat       lon lonTheoretical</span></span>
 <span><span class="co">#&gt; 2970 2023-03-28     323    end     2 38.04039 -122.3035      -122.2863</span></span>
@@ -239,7 +242,7 @@
 <h4 id="comparing-water-quality-values-to-cdec-gages">Comparing water quality values to CDEC gages<a class="anchor" aria-label="anchor" href="#comparing-water-quality-values-to-cdec-gages"></a>
 </h4>
 <p>Many IEP surveys collect water quality data in addition to fish data. One way to QAQC this water quality data is to compare to nearby continuous sondes. We can do this with the <code><a href="reference/popCDEC.html">popCDEC()</a></code> function. This function will fetch surface (default) or bottom water temperature, turbidity, or electro-conductivity data from the nearest CDEC (California Data Exchange Center) sondes. Like the gps functions, <code><a href="reference/popCDEC.html">popCDEC()</a></code> requires several five columns: “time”, “station”, “lat”, “lon”, and the variable of interest (“temp”, “turbidity”, or “ec”).</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For the 20 mm, water quality is taken at the beginning of the first tow (out of 3)</span></span>
 <span><span class="va">temperatureData</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">$</span><span class="va">SampleDate</span>,</span>
@@ -305,7 +308,7 @@
 </ol>
 <p>The package currently store tow and meter schedules of various CDFW IEP surveys for ease of use, as <code><a href="reference/towSchedule.html">deltadata::towSchedule</a></code> and <code><a href="reference/meterSchedule.html">deltadata::meterSchedule</a></code>. More surveys will be added to the package as this information becomes available. Users can specify their own schedules by modeling them against these existing ones.</p>
 <p>We can demonstrate this function with the 20 mm database:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create the tow schedule for the 20 mm. This is also available in the package as towSchedule$ttmm</span></span>
 <span><span class="va">towSchedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  duration <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.5</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">7</span><span class="op">]</span>,</span>
@@ -331,7 +334,7 @@
 <span>                     towSchedule <span class="op">=</span> <span class="va">towSchedule</span>,</span>
 <span>                     meterSchedule <span class="op">=</span> <span class="va">meterSchedule</span><span class="op">)</span></span></code></pre></div>
 <p>The function returns all results as part of a list, separating the outlying and the <code>NA</code> data points into their own data frames.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ttmmQAQC</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "gpsPlot"            "outlierGPS"         "outlierCableLength"</span></span>
 <span><span class="co">#&gt; [4] "outlierMeterCount"  "outlierDuration"    "waterQuality"      </span></span>
@@ -355,7 +358,7 @@
 <span><span class="co">#&gt; 287         15.271113          18.82119    TRUE       &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 288         15.271113          18.82119    TRUE       &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;</span></span></code></pre></div>
 <p>Although the function does not automatically populate CDEC data for water quality variables, users can manipulate the outputted outlier data frames to be accepted in <code><a href="reference/popCDEC.html">popCDEC()</a></code>:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The function needs at least five columns: "station", "lat", "lon", "time", and our variable, "temp"</span></span>
 <span><span class="co"># We already have station. We need to create the time column from the date and tow time columns</span></span>
 <span></span>
@@ -412,7 +415,7 @@
 <p>The <code>deltadata</code> package is a collection of workflow functions meant to help users efficiently work with IEP datasets. In this vignette, we explored how to QAQC the 20 mm database using the <code><a href="reference/bridgeAccess.html">bridgeAccess()</a></code>, <code><a href="reference/schemaJoin.html">schemaJoin()</a></code>, <code><a href="reference/plotGPS.html">plotGPS()</a></code>, <code><a href="reference/gpsOutlier.html">gpsOutlier()</a></code>, <code><a href="reference/popCDEC.html">popCDEC()</a></code>, and <code><a href="reference/qaqcData.html">qaqcData()</a></code> functions. It is the goal of this package to expand these functions and add others functions to better support IEP surveys and their QAQC procedures.</p>
 <p>If you have any suggestions or encounter any bugs, please feel free to open an <a href="https://github.com/trinhxuann/deltadata/issues" class="external-link">issue</a>, contribute to the package via a pull request, or directly contact <a href="mailto:trinh.nguyen@wildlife.ca.gov">Trinh Nguyen</a>.</p>
 </div>
-</div>
+
   </main><aside class="col-md-3"><div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
