@@ -9,7 +9,6 @@ vignette: >
 ```{r, include=F}
 dataPath <- system.file("extdata", "ttmmExample.Rds", package = "deltadata")
 data <- readRDS(dataPath)
-# data <- readRDS(file.path("inst", "extdata", "ttmmExample.Rds"))
 relationalTables <- data[[1]]
 schema <- data[[2]]
 ```

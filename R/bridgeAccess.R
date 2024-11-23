@@ -8,6 +8,7 @@
 #' architectures match.
 #'
 #' @noRd
+#' @importFrom utils readRegistry
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
 
@@ -191,6 +192,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
 #'
 #' @noRd
 #' @importFrom httr headers HEAD
+#' @importFrom utils unzip
 #' @keywords internal
 getFile <- function(file, open = F, method) {
 
