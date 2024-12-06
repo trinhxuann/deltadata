@@ -18,7 +18,6 @@
 #'
 #' @importFrom httr GET content timeout status_code
 #' @importFrom XML xmlParse xmlValue getNodeSet xpathSApply
-#' @importFrom utils URLencode flush.console
 #'
 #' @examples
 #' \dontrun{
@@ -130,7 +129,7 @@ getTaxonomyFromItis <- function(taxonNames, verbose = TRUE) {
       message <- sprintf("Processing taxon %d of %d: %s", i, length(taxonNames), name)
       # cat(sprintf("\r%-*s", 80, message), "\n")
       cat(message, "\n")
-      flush.console()
+      utils::flush.console()
     }
 
     # Initialize current row

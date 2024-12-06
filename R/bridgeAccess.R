@@ -8,7 +8,6 @@
 #' architectures match.
 #'
 #' @noRd
-#' @importFrom utils readRegistry
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
 
@@ -30,7 +29,7 @@ architectureCheck <- function(officeBit = NULL) {
       subkey <- "Bitness"
     }
 
-    officeBit <- tryCatch(readRegistry(fp)[[subkey]],
+    officeBit <- tryCatch(utils::readRegistry(fp)[[subkey]],
                           error = function(cond) {
                             ifelse(grepl("not found", cond$message),
                                    stop("Cannot automatically detect the architecture of your Microsoft Office. Please fill in `x32` or `x64` manually in the `officeBit` argument.", call. = F),
@@ -192,7 +191,6 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
 #'
 #' @noRd
 #' @importFrom httr headers HEAD
-#' @importFrom utils unzip
 #' @keywords internal
 getFile <- function(file, open = F, method) {
 
@@ -223,7 +221,7 @@ getFile <- function(file, open = F, method) {
   }
 
   if (grepl("\\.zip$", fileName)) {
-    databaseName <- unzip(filePath, list = T)[["Name"]]
+    databaseName <- utils::unzip(filePath, list = T)[["Name"]]
     databaseName <- databaseName[grepl("(\\.accdb)|(\\.mdb)", databaseName)]
     accessPath <- file.path(tempdir(), databaseName)
   } else {

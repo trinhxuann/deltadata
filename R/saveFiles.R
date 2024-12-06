@@ -11,8 +11,6 @@
 #' from an Access database. The function was developed specifically for the
 #' surveys within the Native Fish Program from CDFW, requiring the UTF-8 encoding.
 #'
-#' @importFrom utils write.csv
-#'
 #' @return Each table will be written. A metadata table will be returned
 #' indicating success of the file writes.
 #' @export
@@ -34,7 +32,7 @@ saveRelationalTables <- function(relationalTables, folderPath, fileNames = NULL)
   writingFiles <- lapply(seq_along(relationalTables), function(i) {
 
     filePath <- file.path(folderPath, paste0(fileNames[[i]], ".csv"))
-    write.csv(relationalTables[[i]], file = filePath, row.names = F, fileEncoding = "UTF-8")
+    utils::write.csv(relationalTables[[i]], file = filePath, row.names = F, fileEncoding = "UTF-8")
     writingSuccess <- file.exists(filePath)
 
   })

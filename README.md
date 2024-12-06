@@ -1,5 +1,5 @@
 
-# deltadata <a href="https://github.com/trinhxuann/deltadata/"><img src="man/figures/logo.png" align="right" height="150" /></a>
+# deltadata <a href="https://github.com/trinhxuann/deltadata/"><img src="./man/figures/logo.png" align="right" height="150" /></a>
 
 This package contains various workflow functions for working with data
 within the Sacramento-San Joaquin River Delta. There is a primary focus

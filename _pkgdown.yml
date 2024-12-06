@@ -1,4 +1,4 @@
-url: https://trinhxuann.github.io/deltadata/
+url: https://github.com/trinhxuann/deltadata
 template:
   bootstrap: 5
   theme: github-light
@@ -7,4 +7,9 @@ template:
   includes:
     in_header: |
       <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
-
+home:
+  links:
+  - text: Browse source code
+    href: https://github.com/trinhxuann/deltadata
+  - text: Report a bug
+    href: https://github.com/trinhxuann/deltadata/issues

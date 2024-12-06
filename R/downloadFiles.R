@@ -49,13 +49,12 @@ parseEDI <- function(url) {
 #' @return A table of file names, hash values, and associated url of all files
 #' available in the data package.
 #'
-#' @importFrom utils read.table
 #' @noRd
 #' @keywords internal
 tableNamesEDI <- function(packageInfo, version = "newest") {
 
   currentNewestVersion <- max(
-    suppressWarnings(read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier))[1])
+    suppressWarnings(utils::read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier))[1])
   )
 
   if (as.numeric(packageInfo$revision) != currentNewestVersion & version == "newest") {
@@ -63,7 +62,7 @@ tableNamesEDI <- function(packageInfo, version = "newest") {
             call. = F)
   }
 
-  tableLinks <- suppressWarnings(read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier, "/", version), header = F)[[1]])
+  tableLinks <- suppressWarnings(utils::read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier, "/", version), header = F)[[1]])
   tableLinks <- tableLinks[which(grepl("/data/", tableLinks))]
 
   tableNames <- lapply(tableLinks, function(x) {
@@ -89,12 +88,11 @@ tableNamesEDI <- function(packageInfo, version = "newest") {
 #' `newest`, which pulls data from the newest version.
 #'
 #' @return A list of the data files requested. If it is a CSV, this will be
-#' read directly into R via the `read.csv()` function. If any other file types,
+#' read directly into R via the `utils::read.csv()` function. If any other file types,
 #' the file will be downloaded and the file path will be provided as an
 #' output for that element.
 #' @export
 #'
-#' @importFrom utils read.csv download.file
 #' @importFrom stats setNames
 #' @examples
 #' \dontrun{
@@ -131,11 +129,11 @@ getEDI <- function(url, files, version = "newest") {
     url <- (tables[tables[["name"]] == x, ])[["url"]]
 
     if (grepl("\\.csv$", x)) {
-      read.csv(url)
+      utils::read.csv(url)
     } else {
       filePath <- file.path(tempdir(), x)
       if (!file.exists(filePath)) {
-        downloaded <- download.file(url, destfile = filePath, mode = "wb")
+        downloaded <- utils::download.file(url, destfile = filePath, mode = "wb")
         if (downloaded == 0) {
           filePath
         } else {

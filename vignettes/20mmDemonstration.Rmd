@@ -7,10 +7,9 @@ vignette: >
 ---
 
 ```{r, include=F}
-dataPath <- system.file("extdata", "ttmmExample.Rds", package = "deltadata")
-data <- readRDS(dataPath)
-relationalTables <- data[[1]]
-schema <- data[[2]]
+tableNames <- deltadata:::tableNames
+relationalTables <- deltadata:::tables
+schema <- deltadata:::schema
 ```
 The following is a case study using tools in this package to help QAQC the 20 mm Survey Access database, a yearly process that precedes data publication.
 
@@ -42,8 +41,13 @@ The function determines that my architectures do not align, that I am in 64-bit 
 The first argument of `bridgeAccess()` is the path to your file. This argument is flexible and can take a filepath to the file on your hard drive or a URL to a file online. The file must be an Access database or a compressed file (e.g., .zip) with the Access database inside. If the Access database needs to be downloaded from a URL or extracted from a compressed file, the file will be downloaded to Window's temporary folder (it will be deleted after R is shut down).
 
 We will download the 20 mm from the FTP website, opting for the .zip version. The function will download the file, extract it, and provide us with a list of table names to choose from. If you rerun the function and the file has already been downloaded, the function will skip downloading the file again.
-```{r}
+```{r, eval=F}
 bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip")
+```
+```{r, echo=F}
+# To get around the FTP website potentially being down, will just work from a saved version to create vignette. However, the code should work with the live FTP if it is behaving normally.
+cat("Specify at least one table to pull from:\n")
+print(deltadata:::tableNames)
 ```
 
 #### Extracting your tables of interest
@@ -52,10 +56,14 @@ Once you have connected to your Access database, the `table` argument allows you
 
 The 20 mm has five main relational tables needed for QAQC. We can specify them here:
 ```{r, eval=F}
-relationalTables <- bridgeAccess(file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
-                                 tables = c("Station", "Survey", "Tow", "Gear", "20mmStations"))
+relationalTables <- bridgeAccess(
+  file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
+  tables = c("Station", "Survey", "Tow", "Gear", "20mmStations")
+  )
 ```
-
+```{r, include=F}
+relationalTables <- deltadata:::tables
+```
 We can also download the system relationship table. This is an important table that records the relationships between the relational tables in the database. We can leverage this table to automatically and reliably join the relational tables with one another. However, this table does require special permissions to download. We can give ourselves permissions by feeding this table (`MSysRelationships`) into `bridgeAccess()`. The function will open the Access file and provide a message with instructions:
 
 ```
@@ -71,6 +79,9 @@ schema <- bridgeAccess(
   )
 # The function outputs a list, of which we can index to grab just the table
 schema <- schema[[1]]
+```
+```{r, include=F}
+schema <- deltadata:::schema
 ```
 
 ## Data joining
@@ -105,11 +116,13 @@ filteredData$SeasonYear <- as.numeric(format(filteredData$SampleDate, format = "
 filteredData <- subset(filteredData, SeasonYear == 2023)
 
 # Add in lat and lon of the sampling locations
-filteredData <- transform(filteredData,
-                          startLatitude = decimalDegrees(paste(StartLatDeg, StartLatMin, StartLatSec), "dms"),
-                          startLongitude = decimalDegrees(paste(StartLonDeg, StartLonMin, StartLonSec), "dms", isLongitude = T),
-                          endLatitude = decimalDegrees(paste(EndLatDeg, EndLatMin, EndLatSec), "dms"),
-                          endLongitude = decimalDegrees(paste(EndLonDeg, EndLonMin, EndLonSec), "dms", isLongitude = T))
+filteredData <- transform(
+  filteredData,
+  startLatitude = decimalDegrees(paste(StartLatDeg, StartLatMin, StartLatSec), "dms"),
+  startLongitude = decimalDegrees(paste(StartLonDeg, StartLonMin, StartLonSec), "dms", isLongitude = T),
+  endLatitude = decimalDegrees(paste(EndLatDeg, EndLatMin, EndLatSec), "dms"),
+  endLongitude = decimalDegrees(paste(EndLonDeg, EndLonMin, EndLonSec), "dms", isLongitude = T)
+  )
 
 # Fix the table with the theoretical sampling points. Convert to lat/lon in decimal degrees
 officialGPS <- data.frame(
@@ -187,7 +200,8 @@ temperatureData <- temperatureData[!duplicated(temperatureData[, c("station", "l
 # Remove NAs
 temperatureData <- na.omit(temperatureData)
 
-# Now, we can populate the data frame with the required data. Depending on how large our data frame is, this can take several minutes.
+# Now, we can populate the data frame with the required data. 
+# Depending on how large our data frame is, this can take several minutes.
 temperatureOutlierCdec <- popCDEC(temperatureData, variable = "temp")
 
 head(temperatureOutlierCdec)
@@ -237,10 +251,12 @@ meterSchedule <- data.frame(
 
 # The function requires a joined database. We did this earlier using schemaJoin()
 # We also must specify a year and survey that is being inputted.
-ttmmQAQC <- qaqcData(data = joinedData, year = 2023, survey = "20mm",
-                     officialGPS = officialGPS, gpsDistance = 0.5, startingGPSFormat = "dms", # officialGPS was defined previously
-                     towSchedule = towSchedule,
-                     meterSchedule = meterSchedule)
+ttmmQAQC <- qaqcData(
+  data = joinedData, year = 2023, survey = "20mm",
+  officialGPS = officialGPS, gpsDistance = 0.5, startingGPSFormat = "dms",
+  towSchedule = towSchedule,
+  meterSchedule = meterSchedule
+  )
 ```
 
 The function returns all results as part of a list, separating the outlying and the `NA` data points into their own data frames.
@@ -280,7 +296,9 @@ temperatureOutliers <- merge(
 
 # We now have all required columns.
 head(popCDEC(temperatureOutliers, variable = "temp"))
-# We see here that EMM has a high time difference. This is because the sensor malfunctioned during the period of interest--the function returns the closest available value.
+# We see here that EMM has a high time difference. 
+# This is because the sensor malfunctioned during the period of interest--
+# the function returns the closest available value.
 ```
 
 ## Conclusion

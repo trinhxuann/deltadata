@@ -48,5 +48,3 @@ if (length(numberErrors) = 0) {
 } else {
   cdecMetadata[numberErrors]
 }
-
-usethis::use_data(cdecStations, cdecMetadata, overwrite = TRUE, compress = 'xz', internal = T)

@@ -41,12 +41,11 @@ physicalOutliers <- function(x, y = x, measure = c("mean", "median"),
 #'
 #' @return A data frame that is a crosswalk of IEP recommended names and the name of the survey of interest
 #'
-#' @importFrom utils tail
 #' @noRd
 #' @keywords internal
 populateCrosswalk <- function(survey, requiredNames, xwalk = deltadata::crosswalk) {
   if (!survey %in% names(xwalk)) {
-    possibleNames <- tail(names(xwalk), -5)
+    possibleNames <- utils::tail(names(xwalk), -5)
     unitPositions <- grep("unit", possibleNames, ignore.case = TRUE)
 
     for (i in possibleNames[-unitPositions]) {

@@ -17,7 +17,7 @@ is on the website. Leave this blank to see the options.}
 }
 \value{
 A list of the data files requested. If it is a CSV, this will be
-read directly into R via the \code{read.csv()} function. If any other file types,
+read directly into R via the \code{utils::read.csv()} function. If any other file types,
 the file will be downloaded and the file path will be provided as an
 output for that element.
 }
