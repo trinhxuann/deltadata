@@ -30,9 +30,12 @@ The function requires that the architectures of our R and Microsoft Access be th
 
 We can replicate the architecture check using an internal function of the package:
 
-```{r}
+```{r, eval=F}
 # This function is ran internally in bridgeAccess()
 deltadata:::architectureCheck()
+```
+```{r, echo=F}
+list(check = F, rBit = "x64", officeBit = "x32")
 ```
 The function determines that my architectures do not align, that I am in 64-bit R but have 32 bit Office. The function will attempt to find and use my 32-bit R to proceed.
 

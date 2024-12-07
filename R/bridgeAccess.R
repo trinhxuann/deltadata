@@ -29,7 +29,7 @@ architectureCheck <- function(officeBit = NULL) {
       subkey <- "Bitness"
     }
 
-    officeBit <- tryCatch(utils::readRegistry(fp)[[subkey]],
+    officeBit <- tryCatch(utils:::readRegistry(fp)[[subkey]],
                           error = function(cond) {
                             ifelse(grepl("not found", cond$message),
                                    stop("Cannot automatically detect the architecture of your Microsoft Office. Please fill in `x32` or `x64` manually in the `officeBit` argument.", call. = F),
