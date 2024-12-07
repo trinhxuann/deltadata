@@ -19,7 +19,7 @@
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Various functions for acquiring data within the SFE">
 <meta name="description" content="Workflow functions for IEP surveys to more efficiently work through the QAQC and publication process.">
 <meta property="og:description" content="Workflow functions for IEP surveys to more efficiently work through the QAQC and publication process.">
-<meta property="og:image" content="https://trinhxuann.github.io/deltadata/logo.png">
+<meta property="og:image" content="https://github.com/trinhxuann/deltadata/logo.png">
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 </head>
 <body>
@@ -40,6 +40,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/20mmDemonstration.html">QAQC Workflows</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -60,363 +66,46 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9"><p>This package contains various workflow functions for working with data within the Sacramento-San Joaquin River Delta. There is a primary focus on IEP (Interagency Ecological Program) Surveys and supporting their data publication workflows. Additional features pertaining to other IEP surveys may be supported in the future.</p>
-<p>The following is a case study using tools in this package to help QAQC the 20 mm Survey Access database, a yearly process that precedes data publication.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://trinhxuann.github.io/deltadata/">deltadata</a></span><span class="op">)</span></span></code></pre></div>
+  <main id="main" class="col-md-9"><div class="section level1">
+<div class="page-header">
+<img src="logo.png" class="logo" alt=""><h1 id="deltadata-">deltadata 
+<a class="anchor" aria-label="anchor" href="#deltadata-"></a>
+</h1>
+</div>
+<p>This package contains various workflow functions for working with data within the Sacramento-San Joaquin River Delta. There is a primary focus on IEP (Interagency Ecological Program) Surveys and supporting their data publication workflows. Additional features pertaining to other IEP surveys may be supported in the future.</p>
+<p>The main use cases of this package are:</p>
+<ol style="list-style-type: decimal">
+<li>Easily connect to an Access database, extracting and joining its relational tables</li>
+<li>Quality Assurance and Quality Control workflows, functions to help automate and standardize</li>
+<li>Downloading data from CDEC (California Data Exchange Center)</li>
+<li>Downloading data from EDI (Environmental Data Initiative)</li>
+<li>Downloading data from SacPAS</li>
+</ol>
 <div class="section level2">
 <h2 id="installing-the-package">Installing the package<a class="anchor" aria-label="anchor" href="#installing-the-package"></a>
 </h2>
 <p>The <code>deltadata</code> package can be installed from its GitHub repository.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Install `devtools` if we need to</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
-<span></span>
 <span><span class="co"># Installing `deltadata` if we do not already have it</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"trinhxuann/deltadata"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="reading-in-your-data">Reading in your data<a class="anchor" aria-label="anchor" href="#reading-in-your-data"></a>
+<h2 id="contact">Contact<a class="anchor" aria-label="anchor" href="#contact"></a>
 </h2>
-<p>The <code><a href="reference/bridgeAccess.html">bridgeAccess()</a></code> function is our primary tool to download, connect to, and extract data tables from an Access database. However, there is a prerequisite that we must fulfill.</p>
-<div class="section level4">
-<h4 id="prerequisite-to-enable-bridgeaccess">Prerequisite to enable <code>bridgeAccess()</code>
-<a class="anchor" aria-label="anchor" href="#prerequisite-to-enable-bridgeaccess"></a>
-</h4>
-<p>The function requires that the architectures of our R and Microsoft Access be the same, i.e., 32 vs 64-bit. To help users, the function automatically checks for this requirement before proceeding. For most state computers, we have 32-bit Microsoft Access installed. Unfortunately, the newest versions of R only come in 64-bit. Therefore, you have two potential solutions:</p>
-<ol style="list-style-type: decimal">
-<li>Install 32-bit R. The latest version of R that supports 32-bit is version <a href="https://cran.r-project.org/bin/windows/base/old/4.1.3" class="external-link">4.1.3</a>. Once installed, <code><a href="reference/bridgeAccess.html">bridgeAccess()</a></code> will run this instance in the background, allowing you to stay working in 64-bit R.</li>
-<li>Install 64-bit Office. This likely requires installation by your IT department. This solution is more future proof and does not require a separate install of R.</li>
-</ol>
-<p>We can replicate the architecture check using an internal function of the package:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># This function is ran internally in bridgeAccess()</span></span>
-<span><span class="fu">deltadata</span><span class="fu">:::</span><span class="fu">architectureCheck</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $check</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $rBit</span></span>
-<span><span class="co">#&gt; [1] "x64"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $officeBit</span></span>
-<span><span class="co">#&gt; [1] "x32"</span></span></code></pre></div>
-<p>The function determines that my architectures do not align, that I am in 64-bit R but have 32 bit Office. The function will attempt to find and use my 32-bit R to proceed.</p>
-</div>
-<div class="section level4">
-<h4 id="connecting-to-your-access-database">Connecting to your Access database<a class="anchor" aria-label="anchor" href="#connecting-to-your-access-database"></a>
-</h4>
-<p>The first argument of <code><a href="reference/bridgeAccess.html">bridgeAccess()</a></code> is the path to your file. This argument is flexible and can take a filepath to the file on your hard drive or a URL to a file online. The file must be an Access database or a compressed file (e.g., .zip) with the Access database inside. If the Access database needs to be downloaded from a URL or extracted from a compressed file, the file will be downloaded to Window’s temporary folder (it will be deleted after R is shut down).</p>
-<p>We will download the 20 mm from the FTP website, opting for the .zip version. The function will download the file, extract it, and provide us with a list of table names to choose from. If you rerun the function and the file has already been downloaded, the function will skip downloading the file again.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span><span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Extracting file: '20mm_New.accdb' from the zip file.</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="extracting-your-tables-of-interest">Extracting your tables of interest<a class="anchor" aria-label="anchor" href="#extracting-your-tables-of-interest"></a>
-</h4>
-<p>Once you have connected to your Access database, the <code>table</code> argument allows you to specify which tables you would like to read into R. If you do not know, leave this argument blank and the function will return the names of the available data tables for you to specify (as shown above). Once specified, all tables will be read into R in a list format.</p>
-<p>The 20 mm has five main relational tables needed for QAQC. We can specify them here:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">relationalTables</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span>file <span class="op">=</span> <span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span>,</span>
-<span>                          tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Station"</span>, <span class="st">"Survey"</span>, <span class="st">"Tow"</span>, <span class="st">"Gear"</span>, <span class="st">"20mmStations"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>We can also download the system relationship table. This is an important table that records the relationships between the relational tables in the database. We can leverage this table to automatically and reliably join the relational tables with one another. However, this table does require special permissions to download. We can give ourselves permissions by feeding this table (<code>MSysRelationships</code>) into <code><a href="reference/bridgeAccess.html">bridgeAccess()</a></code>. The function will open the Access file and provide a message with instructions:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="st">"Enable content, `Ctrl + g`, paste in:</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="st">`CurrentProject.Connection.Execute "</span>GRANT SELECT ON MSysRelationships TO Admin;<span class="st">"`</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="st">hit `Enter`, exit file, and rerun this code."</span></span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">schema</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span></span>
-<span>  <span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span>,</span>
-<span>  tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MSysRelationships"</span><span class="op">)</span>, retry <span class="op">=</span> <span class="cn">T</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span><span class="co"># The function outputs a list, of which we can index to grab just the table</span></span>
-<span><span class="va">schema</span> <span class="op">&lt;-</span> <span class="va">schema</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></code></pre></div>
+<p>If you have any suggestions or encounter any bugs, please feel free to open an <a href="https://github.com/trinhxuann/deltadata/issues">issue</a>, contribute to the package via a pull request, or directly contact <a href="mailto:trinh.nguyen@wildlife.ca.gov">Trinh Nguyen</a>.</p>
 </div>
 </div>
-<div class="section level2">
-<h2 id="data-joining">Data joining<a class="anchor" aria-label="anchor" href="#data-joining"></a>
-</h2>
-<p>The relational tables must be joined together before we can properly QAQC the data. To do this, we can use the <code><a href="reference/schemaJoin.html">schemaJoin()</a></code> function to decipher the relationship table. Although we can join the tables by hand, the <code><a href="reference/schemaJoin.html">schemaJoin()</a></code> function provide an automatic and consistent way to join the tables correctly.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">joinedData</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/schemaJoin.html">schemaJoin</a></span><span class="op">(</span><span class="va">schema</span>, <span class="va">relationalTables</span><span class="op">)</span></span>
-<span><span class="co">#&gt; inner_join 'Survey' with 'Station' via columns 'SurveyID' and 'SurveyID' </span></span>
-<span><span class="co">#&gt; inner_join 'Station' with 'Tow' via columns 'StationID' and 'StationID' </span></span>
-<span><span class="co">#&gt; inner_join 'Tow' with 'Gear' via columns 'TowID' and 'TowID'</span></span></code></pre></div>
-<p>Throughout the joining process, the function provides a narration of the join type, the tables being joined, and the column keys the join is occurring on. We can use this narration to ensure that we are getting the joins we are expecting. Once our relational tables are joined, we can proceed with the quality assurance and quality control (QAQC) of the dataset.</p>
-</div>
-<div class="section level2">
-<h2 id="data-qaqc">Data QAQC<a class="anchor" aria-label="anchor" href="#data-qaqc"></a>
-</h2>
-<p>The package supports various QAQC operations that have been duplicated from or requested by the CDFW IEP surveys. Ideally, more operations will be incorporated from other surveys as part of a larger effort to create a robust and standardized QAQC workflow that all IEP surveys can leverage.</p>
-<div class="section level4">
-<h4 id="checking-outlying-gps-coordinates">Checking outlying GPS coordinates<a class="anchor" aria-label="anchor" href="#checking-outlying-gps-coordinates"></a>
-</h4>
-<p>There are two functions dedicated to visualizing and detecting GPS coordinates that are too far from the desired sampling location:</p>
-<ol style="list-style-type: decimal">
-<li>
-<code><a href="reference/plotGPS.html">plotGPS()</a></code>: plots GPS coordinates on a leaflet map. Requires a data frame with 6 columns, <code>date</code>, <code>station</code>, <code>legend</code>, <code>layer</code>, <code>lat</code>, and <code>lon.</code> The <code>legend</code> column should contain the legend labels for the plotted points, and it is recommended that one group be the “Theoretical” coordinates of each sampling station. The <code>layer</code> column is used in the layer control (toggling the display of a layer) and is generally the survey number. See <code>?plotGPS()</code> for more information.</li>
-<li>
-<code><a href="reference/gpsOutlier.html">gpsOutlier()</a></code>: returns a data frame of GPS coordinates that are beyond a specified distance (default is 0.5 mile, measured “as-the-crow-flies”, or the most direct path) from a theoretical. This function requires the same 6 columns as <code><a href="reference/plotGPS.html">plotGPS()</a></code> with a firm requirement for a <code>Theoretical</code> (named as so) group of GPS coordinates in the <code>legend</code> column.</li>
-</ol>
-<p>Below, we explore the 20 mm 2023 sampling season for outlying sampling points. We first manipulate our joined data frame for use in <code><a href="reference/plotGPS.html">plotGPS()</a></code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">filteredData</span> <span class="op">&lt;-</span> <span class="va">joinedData</span></span>
-<span></span>
-<span><span class="co"># Filter for 2023 season</span></span>
-<span><span class="va">filteredData</span><span class="op">$</span><span class="va">SeasonYear</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">$</span><span class="va">SampleDate</span>, format <span class="op">=</span> <span class="st">"%Y"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">$</span><span class="va">SampleDate</span>, format <span class="op">=</span> <span class="st">"%m"</span><span class="op">)</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">11</span><span class="op">)</span></span>
-<span><span class="va">filteredData</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">filteredData</span>, <span class="va">SeasonYear</span> <span class="op">==</span> <span class="fl">2023</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add in lat and lon of the sampling locations</span></span>
-<span><span class="va">filteredData</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/transform.html" class="external-link">transform</a></span><span class="op">(</span><span class="va">filteredData</span>,</span>
-<span>                          startLatitude <span class="op">=</span> <span class="fu"><a href="reference/decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">StartLatDeg</span>, <span class="va">StartLatMin</span>, <span class="va">StartLatSec</span><span class="op">)</span>, <span class="st">"dms"</span><span class="op">)</span>,</span>
-<span>                          startLongitude <span class="op">=</span> <span class="fu"><a href="reference/decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">StartLonDeg</span>, <span class="va">StartLonMin</span>, <span class="va">StartLonSec</span><span class="op">)</span>, <span class="st">"dms"</span>, isLongitude <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>,</span>
-<span>                          endLatitude <span class="op">=</span> <span class="fu"><a href="reference/decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">EndLatDeg</span>, <span class="va">EndLatMin</span>, <span class="va">EndLatSec</span><span class="op">)</span>, <span class="st">"dms"</span><span class="op">)</span>,</span>
-<span>                          endLongitude <span class="op">=</span> <span class="fu"><a href="reference/decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">EndLonDeg</span>, <span class="va">EndLonMin</span>, <span class="va">EndLonSec</span><span class="op">)</span>, <span class="st">"dms"</span>, isLongitude <span class="op">=</span> <span class="cn">T</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Fix the table with the theoretical sampling points. Convert to lat/lon in decimal degrees</span></span>
-<span><span class="va">officialGPS</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  station <span class="op">=</span> <span class="va">relationalTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">Station</span>,</span>
-<span>  lat <span class="op">=</span> <span class="fu"><a href="reference/decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
-<span>    <span class="va">relationalTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LatD</span>,</span>
-<span>    <span class="va">relationalTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LatM</span>,</span>
-<span>    <span class="va">relationalTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LatS</span></span>
-<span>  <span class="op">)</span>, type <span class="op">=</span> <span class="st">"dms"</span><span class="op">)</span>,</span>
-<span>  lon <span class="op">=</span> <span class="fu"><a href="reference/decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
-<span>    <span class="va">relationalTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LonD</span>,</span>
-<span>    <span class="va">relationalTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LonM</span>,</span>
-<span>    <span class="va">relationalTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LonS</span></span>
-<span>  <span class="op">)</span>, type <span class="op">=</span> <span class="st">"dms"</span>, isLongitude <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>,</span>
-<span>  date <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  legend <span class="op">=</span> <span class="st">"Theoretical"</span>,</span>
-<span>  layer <span class="op">=</span> <span class="st">"Theoretical"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Stack to long format</span></span>
-<span><span class="va">gpsDF</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  <span class="co"># R recycles rows as long as the vectors are multiples of each other</span></span>
-<span>  date <span class="op">=</span> <span class="va">filteredData</span><span class="op">$</span><span class="va">SampleDate</span>,</span>
-<span>  station <span class="op">=</span> <span class="va">filteredData</span><span class="op">$</span><span class="va">Station</span>,</span>
-<span>  legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"start"</span>, <span class="st">"end"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  layer <span class="op">=</span> <span class="va">filteredData</span><span class="op">$</span><span class="va">Survey</span>,</span>
-<span>  lat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">$</span><span class="va">startLatitude</span>, <span class="va">filteredData</span><span class="op">$</span><span class="va">end_latitude</span><span class="op">)</span>,</span>
-<span>  lon <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">$</span><span class="va">startLongitude</span>, <span class="va">filteredData</span><span class="op">$</span><span class="va">endLongitude</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co"># Removing duplicates, e.g., multiple fish catches per tow</span></span>
-<span><span class="va">gpsDF</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">gpsDF</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add in the theoretical as a legend</span></span>
-<span><span class="va">gpsDF</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
-<span>  <span class="va">gpsDF</span>,</span>
-<span>  <span class="va">officialGPS</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Plot it</span></span>
-<span><span class="fu"><a href="reference/plotGPS.html">plotGPS</a></span><span class="op">(</span><span class="va">gpsDF</span>, layerName <span class="op">=</span> <span class="st">"Survey"</span>, dateName <span class="op">=</span> <span class="st">"Sampling Date"</span>, height <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-8-1.png"><!-- --></p>
-<p>This interactive (disabled for the README) plot allows us to visualize all sampling points of interest at once. This is most helpful for identifying significantly outlying points, e.g., outside of the Delta. We can click on any point of interest and a pop-up will appear with <code>layer</code> (here, the survey number) and sampling date information. Although this step is useful for a quick glance at our points, we can do a specific search for only potentially outlying points using <code><a href="reference/gpsOutlier.html">gpsOutlier()</a></code> and then feeding those points into <code><a href="reference/plotGPS.html">plotGPS()</a></code>.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># By default, d = 0.5</span></span>
-<span><span class="va">gpsOutliers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gpsOutlier.html">gpsOutlier</a></span><span class="op">(</span><span class="va">gpsDF</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/plotGPS.html">plotGPS</a></span><span class="op">(</span><span class="va">gpsOutliers</span>, height <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-9-1.png"><!-- --></p>
-<p>This creates a map with only outlying data points. The resulting data frame contains the distance from the theoretical sampling point, in case your distance is not a strict threshold.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gpsOutliers</span><span class="op">)</span></span>
-<span><span class="co">#&gt;            date station legend layer      lat       lon lonTheoretical</span></span>
-<span><span class="co">#&gt; 2970 2023-03-28     323    end     2 38.04039 -122.3035      -122.2863</span></span>
-<span><span class="co">#&gt; 2894 2023-03-30     338    end     2 38.05886 -122.2320      -122.2489</span></span>
-<span><span class="co">#&gt; 1153 2023-05-09     405  start     5 38.03381 -122.1600      -122.1467</span></span>
-<span><span class="co">#&gt; 3955 2023-06-07     322    end     7 38.01992 -122.3362      -122.3508</span></span>
-<span><span class="co">#&gt; 3236 2023-05-09     405    end     5 38.03381 -122.1587      -122.1467</span></span>
-<span><span class="co">#&gt; 811  2023-03-30     338  start     2 38.05886 -122.2356      -122.2489</span></span>
-<span><span class="co">#&gt;      latTheoretical  distance outlier</span></span>
-<span><span class="co">#&gt; 2970       38.04289 0.9521133    TRUE</span></span>
-<span><span class="co">#&gt; 2894       38.06003 0.9260127    TRUE</span></span>
-<span><span class="co">#&gt; 1153       38.03992 0.8366965    TRUE</span></span>
-<span><span class="co">#&gt; 3955       38.02364 0.8346230    TRUE</span></span>
-<span><span class="co">#&gt; 3236       38.03992 0.7760053    TRUE</span></span>
-<span><span class="co">#&gt; 811        38.06003 0.7330460    TRUE</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="comparing-water-quality-values-to-cdec-gages">Comparing water quality values to CDEC gages<a class="anchor" aria-label="anchor" href="#comparing-water-quality-values-to-cdec-gages"></a>
-</h4>
-<p>Many IEP surveys collect water quality data in addition to fish data. One way to QAQC this water quality data is to compare to nearby continuous sondes. We can do this with the <code><a href="reference/popCDEC.html">popCDEC()</a></code> function. This function will fetch surface (default) or bottom water temperature, turbidity, or electro-conductivity data from the nearest CDEC (California Data Exchange Center) sondes. Like the gps functions, <code><a href="reference/popCDEC.html">popCDEC()</a></code> requires several five columns: “time”, “station”, “lat”, “lon”, and the variable of interest (“temp”, “turbidity”, or “ec”).</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># For the 20 mm, water quality is taken at the beginning of the first tow (out of 3)</span></span>
-<span><span class="va">temperatureData</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">$</span><span class="va">SampleDate</span>,</span>
-<span>                              <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">filteredData</span><span class="op">$</span><span class="va">TowTime</span>, <span class="st">"%H:%M:%S"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>                        format <span class="op">=</span> <span class="st">"%Y-%m-%d %H:%M:%S"</span>,</span>
-<span>                        tz <span class="op">=</span> <span class="st">"America/Los_Angeles"</span><span class="op">)</span>,</span>
-<span>  station <span class="op">=</span> <span class="va">filteredData</span><span class="op">$</span><span class="va">Station</span>,</span>
-<span>  lat <span class="op">=</span> <span class="va">filteredData</span><span class="op">$</span><span class="va">startLatitude</span>,</span>
-<span>  lon <span class="op">=</span> <span class="va">filteredData</span><span class="op">$</span><span class="va">startLongitude</span>,</span>
-<span>  temp <span class="op">=</span> <span class="va">filteredData</span><span class="op">$</span><span class="va">Temp</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co"># Remove duplicates</span></span>
-<span><span class="va">temperatureData</span> <span class="op">&lt;-</span> <span class="va">temperatureData</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">duplicated</a></span><span class="op">(</span><span class="va">temperatureData</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"station"</span>, <span class="st">"lat"</span>, <span class="st">"lon"</span>, <span class="st">"temp"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, <span class="op">]</span></span>
-<span><span class="co"># Remove NAs</span></span>
-<span><span class="va">temperatureData</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span><span class="op">(</span><span class="va">temperatureData</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Now, we can populate the data frame with the required data. Depending on how large our data frame is, this can take several minutes.</span></span>
-<span><span class="va">temperatureOutlierCdec</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/popCDEC.html">popCDEC</a></span><span class="op">(</span><span class="va">temperatureData</span>, variable <span class="op">=</span> <span class="st">"temp"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Reading from: https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=OSJ,BIR,FCT,BET,HOL,PRI,TRN,RRI,BAC,LPS,DWS,LIB,TOE,HWB,TMS,MIR,UCS,C24,PCT,C31,PTS,ANH,BDL,NSL,VOL,GZL,OH4,FRK,TWI,SOI,HON,MAL,FLT,SJJ,MRZ,MOK,WCI,BLL,IBS,M13&amp;SensorNums=25&amp;dur_code=E&amp;Start=2023-03-13&amp;End=2023-07-08 </span></span>
-<span><span class="co">#&gt; Reading from: https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=JER,STI,BKS,EMM,ANC,CPP,CLL&amp;SensorNums=25&amp;dur_code=H&amp;Start=2023-03-13&amp;End=2023-07-06</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">temperatureOutlierCdec</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                    time station      lat       lon temp cdecStation tempCDEC</span></span>
-<span><span class="co">#&gt; 24  2023-03-15 09:34:00     815 38.08392 -121.5714 11.0         OSJ 11.50000</span></span>
-<span><span class="co">#&gt; 9   2023-03-13 13:05:00     914 37.97153 -121.5209 12.1         BIR 11.77778</span></span>
-<span><span class="co">#&gt; 420 2023-03-13 08:45:00     809 38.05289 -121.6926 10.5         JER 10.55556</span></span>
-<span><span class="co">#&gt; 26  2023-03-15 10:30:00     812 38.09003 -121.6395 11.0         FCT 11.22222</span></span>
-<span><span class="co">#&gt; 2   2023-03-13 09:43:00     901 38.04700 -121.6198 11.1         BET 11.55556</span></span>
-<span><span class="co">#&gt; 4   2023-03-13 10:35:00     902 38.02303 -121.5831 11.7         HOL 11.61111</span></span>
-<span><span class="co">#&gt;     timeDifference  distance sensorNumber         sensorDescription units</span></span>
-<span><span class="co">#&gt; 24               4 0.9729511           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 9                5 2.0880878           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 420             15 0.2063425           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 26               0 1.6144262           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 2                2 0.7900384           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 4                5 0.4620903           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt;     duration         dataAvailable</span></span>
-<span><span class="co">#&gt; 24     event 05/19/2006 to present</span></span>
-<span><span class="co">#&gt; 9      event 03/02/2018 to present</span></span>
-<span><span class="co">#&gt; 420   hourly 02/25/1999 to present</span></span>
-<span><span class="co">#&gt; 26     event 04/20/2015 to present</span></span>
-<span><span class="co">#&gt; 2      event 03/29/2006 to present</span></span>
-<span><span class="co">#&gt; 4      event 06/26/2006 to present</span></span></code></pre></div>
-<p>The function returns the desired water quality data from the nearest CDEC station for each sampling point, in terms of space (as-the-crow-flies) and time (the closest non-NA value is returned). The function also reports back various metadata: the nearest CDEC station (<code>cdecStation</code>), the time difference in minutes between the sample of interest and the CDEC sample (<code>timeDifference</code>), the distance in miles between the sampling point and the CDEC station (<code>distance</code>), and other metadata information about the CDEC station (<code>sensorNumber</code>, <code>sensorDescription</code>, <code>units</code>, <code>duration</code>, <code>dataAvailable</code>).</p>
-</div>
-<div class="section level4">
-<h4 id="all-in-one-function">All-in-one function<a class="anchor" aria-label="anchor" href="#all-in-one-function"></a>
-</h4>
-<p>The <code><a href="reference/qaqcData.html">qaqcData()</a></code> function attempts to apply various QAQC operations to an IEP dataset, all in one simple function call. The function runs several QAQC operations on an inputted data set:</p>
-<ol style="list-style-type: decimal">
-<li>outlying GPS points, defaulting to 0.5 mile away from the theoretical,</li>
-<li>inconsistent cable lengths that are expected based on the sampling depth,</li>
-<li>outlying flow meter readings that are based on the sampling duration,</li>
-<li>outlying water quality values (water temperature, Secchi, turbidity, electro-conductivity, and salinity) that are two standard deviations beyond the mean (per station and per station per month),</li>
-<li>and missing data points in the previously mentioned operations.</li>
-</ol>
-<p>Each operation is optional and are only ran if their supporting argument is provided:</p>
-<ol style="list-style-type: decimal">
-<li>gps outliers requires a table of theoretical gps coordinates of each station, provided to the <code>officialGPS</code> argument,</li>
-<li>cable length outliers require a tow schedule, provided to the <code>towSchedule</code> argument,</li>
-<li>flow meter reading outliers require a table of expected ranges, provided to the <code>meterSchedule</code> argument,</li>
-<li>and outlying water quality values require the column to exist in the inputted data frame.</li>
-</ol>
-<p>The package currently store tow and meter schedules of various CDFW IEP surveys for ease of use, as <code><a href="reference/towSchedule.html">deltadata::towSchedule</a></code> and <code><a href="reference/meterSchedule.html">deltadata::meterSchedule</a></code>. More surveys will be added to the package as this information becomes available. Users can specify their own schedules by modeling them against these existing ones.</p>
-<p>We can demonstrate this function with the 20 mm database:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Create the tow schedule for the 20 mm. This is also available in the package as towSchedule$ttmm</span></span>
-<span><span class="va">towSchedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  duration <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.5</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">7</span><span class="op">]</span>,</span>
-<span>  maxDepth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">13</span>, <span class="fl">17</span>, <span class="fl">21</span>, <span class="fl">26</span>, <span class="fl">32</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
-<span>  depth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">13</span>, <span class="fl">17</span>, <span class="fl">21</span>, <span class="fl">26</span>, <span class="fl">32</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
-<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span>, <span class="fl">13</span>, <span class="fl">17</span>, <span class="fl">21</span>, <span class="fl">26</span>, <span class="fl">32</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
-<span>              right <span class="op">=</span> <span class="cn">T</span>, include.lowest <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>,</span>
-<span>  cableLength <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">75</span>, <span class="fl">100</span>, <span class="fl">125</span>, <span class="fl">150</span>, <span class="fl">175</span>, <span class="fl">200</span>, <span class="fl">225</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Create the meter schedule for the 20 mm. This is also available in the package as meterSchedule$ttmm</span></span>
-<span><span class="va">meterSchedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  duration <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2.5</span>, <span class="fl">5</span>, <span class="fl">10</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span>,</span>
-<span>  meterMin <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">5000</span>, <span class="fl">10000</span>, <span class="fl">2500</span>, <span class="fl">5000</span><span class="op">)</span>,</span>
-<span>  meterMax <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">15000</span>, <span class="fl">30000</span>, <span class="fl">15000</span>, <span class="fl">25000</span><span class="op">)</span>,</span>
-<span>  gear <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># The function requires a joined database. We did this earlier using schemaJoin()</span></span>
-<span><span class="co"># We also must specify a year and survey that is being inputted.</span></span>
-<span><span class="va">ttmmQAQC</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/qaqcData.html">qaqcData</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">joinedData</span>, year <span class="op">=</span> <span class="fl">2023</span>, survey <span class="op">=</span> <span class="st">"20mm"</span>,</span>
-<span>                     officialGPS <span class="op">=</span> <span class="va">officialGPS</span>, gpsDistance <span class="op">=</span> <span class="fl">0.5</span>, startingGPSFormat <span class="op">=</span> <span class="st">"dms"</span>, <span class="co"># officialGPS was defined previously</span></span>
-<span>                     towSchedule <span class="op">=</span> <span class="va">towSchedule</span>,</span>
-<span>                     meterSchedule <span class="op">=</span> <span class="va">meterSchedule</span><span class="op">)</span></span></code></pre></div>
-<p>The function returns all results as part of a list, separating the outlying and the <code>NA</code> data points into their own data frames.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ttmmQAQC</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "gpsPlot"            "outlierGPS"         "outlierCableLength"</span></span>
-<span><span class="co">#&gt; [4] "outlierMeterCount"  "outlierDuration"    "waterQuality"      </span></span>
-<span><span class="co">#&gt; [7] "missingData"</span></span>
-<span></span>
-<span><span class="co"># Outlying water temperature data, per station per month, for 2023</span></span>
-<span><span class="va">temperatureOutliers</span> <span class="op">&lt;-</span> <span class="va">ttmmQAQC</span><span class="op">$</span><span class="va">waterQuality</span><span class="op">$</span><span class="va">StationCode_Month</span><span class="op">$</span><span class="va">WaterTemperatureTop</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">temperatureOutliers</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     Station Month SampleDate Survey             TowTime Temp     mean        sd</span></span>
-<span><span class="co">#&gt; 130     323     3 2023-03-28      2 1899-12-30 16:20:00  9.0 12.95152 1.4878930</span></span>
-<span><span class="co">#&gt; 131     323     3 2023-03-28      2 1899-12-30 16:35:00  9.0 12.95152 1.4878930</span></span>
-<span><span class="co">#&gt; 132     323     3 2023-03-28      2 1899-12-30 16:00:00  9.0 12.95152 1.4878930</span></span>
-<span><span class="co">#&gt; 285     336     5 2023-05-09      5 1899-12-30 08:13:00 15.1 17.04615 0.8875201</span></span>
-<span><span class="co">#&gt; 287     336     5 2023-05-09      5 1899-12-30 08:40:00 15.1 17.04615 0.8875201</span></span>
-<span><span class="co">#&gt; 288     336     5 2023-05-09      5 1899-12-30 08:27:00 15.1 17.04615 0.8875201</span></span>
-<span><span class="co">#&gt;     thresholdValueMin thresholdValueMax outlier Comments.x Comments.y Comments</span></span>
-<span><span class="co">#&gt; 130          9.975729          15.92730    TRUE       &lt;NA&gt;   YSI lost     &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 131          9.975729          15.92730    TRUE       &lt;NA&gt;   YSI lost     &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 132          9.975729          15.92730    TRUE       &lt;NA&gt;   YSI lost     &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 285         15.271113          18.82119    TRUE       &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 287         15.271113          18.82119    TRUE       &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 288         15.271113          18.82119    TRUE       &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;</span></span></code></pre></div>
-<p>Although the function does not automatically populate CDEC data for water quality variables, users can manipulate the outputted outlier data frames to be accepted in <code><a href="reference/popCDEC.html">popCDEC()</a></code>:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># The function needs at least five columns: "station", "lat", "lon", "time", and our variable, "temp"</span></span>
-<span><span class="co"># We already have station. We need to create the time column from the date and tow time columns</span></span>
-<span></span>
-<span><span class="va">temperatureOutliers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  station <span class="op">=</span> <span class="va">temperatureOutliers</span><span class="op">$</span><span class="va">Station</span>,</span>
-<span>  time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
-<span>    <span class="va">temperatureOutliers</span><span class="op">$</span><span class="va">SampleDate</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">temperatureOutliers</span><span class="op">$</span><span class="va">TowTime</span>, format <span class="op">=</span> <span class="st">"%H:%M:%S"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    format <span class="op">=</span> <span class="st">"%Y-%m-%d %H:%M:%S"</span>,</span>
-<span>    tz <span class="op">=</span> <span class="st">"America/Los_Angeles"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  temp <span class="op">=</span> <span class="va">temperatureOutliers</span><span class="op">$</span><span class="va">Temp</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># The lat/lon columns need to be joined into the dataset using the official GPS data frame from earlier</span></span>
-<span><span class="va">temperatureOutliers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span></span>
-<span>  <span class="va">temperatureOutliers</span>,</span>
-<span>  <span class="va">officialGPS</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"station"</span>, <span class="st">"lat"</span>, <span class="st">"lon"</span><span class="op">)</span><span class="op">]</span>,</span>
-<span>  by <span class="op">=</span> <span class="st">"station"</span>,</span>
-<span>  all.x <span class="op">=</span> <span class="cn">T</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># We now have all required columns.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="reference/popCDEC.html">popCDEC</a></span><span class="op">(</span><span class="va">temperatureOutliers</span>, variable <span class="op">=</span> <span class="st">"temp"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Reading from: https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=MRZ,FLT,TMS,SOI,LIB,MIR,FCT,TRN,RRI,BIR,BAC,WCI&amp;SensorNums=25&amp;dur_code=E&amp;Start=2023-03-14&amp;End=2023-05-10 </span></span>
-<span><span class="co">#&gt; Reading from: https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=CPP,EMM&amp;SensorNums=25&amp;dur_code=H&amp;Start=2023-03-30&amp;End=2023-06-09</span></span>
-<span><span class="co">#&gt;    station                time temp      lat       lon cdecStation tempCDEC</span></span>
-<span><span class="co">#&gt; 11     323 2023-03-28 16:20:00  9.0 38.04289 -122.2863         MRZ 11.88889</span></span>
-<span><span class="co">#&gt; 12     323 2023-03-28 16:35:00  9.0 38.04289 -122.2863         MRZ 11.88889</span></span>
-<span><span class="co">#&gt; 10     323 2023-03-28 16:00:00  9.0 38.04289 -122.2863         MRZ 11.88889</span></span>
-<span><span class="co">#&gt; 40     336 2023-05-09 08:13:00 15.1 38.06111 -122.2780         MRZ 15.44444</span></span>
-<span><span class="co">#&gt; 42     336 2023-05-09 08:40:00 15.1 38.06111 -122.2780         MRZ 15.50000</span></span>
-<span><span class="co">#&gt; 41     336 2023-05-09 08:27:00 15.1 38.06111 -122.2780         MRZ 15.44444</span></span>
-<span><span class="co">#&gt;    timeDifference distance sensorNumber         sensorDescription units</span></span>
-<span><span class="co">#&gt; 11              5 8.023662           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 12              5 8.023662           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 10              0 8.023662           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 40              2 7.847695           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 42              5 7.847695           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt; 41              3 7.847695           25 TEMPERATURE, WATER, DEG F DEG C</span></span>
-<span><span class="co">#&gt;    duration         dataAvailable</span></span>
-<span><span class="co">#&gt; 11    event 08/21/2008 to present</span></span>
-<span><span class="co">#&gt; 12    event 08/21/2008 to present</span></span>
-<span><span class="co">#&gt; 10    event 08/21/2008 to present</span></span>
-<span><span class="co">#&gt; 40    event 08/21/2008 to present</span></span>
-<span><span class="co">#&gt; 42    event 08/21/2008 to present</span></span>
-<span><span class="co">#&gt; 41    event 08/21/2008 to present</span></span>
-<span><span class="co"># We see here that EMM has a high time difference. This is because the sensor malfunctioned during the period of interest--the function returns the closest available value.</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
-</h2>
-<p>The <code>deltadata</code> package is a collection of workflow functions meant to help users efficiently work with IEP datasets. In this vignette, we explored how to QAQC the 20 mm database using the <code><a href="reference/bridgeAccess.html">bridgeAccess()</a></code>, <code><a href="reference/schemaJoin.html">schemaJoin()</a></code>, <code><a href="reference/plotGPS.html">plotGPS()</a></code>, <code><a href="reference/gpsOutlier.html">gpsOutlier()</a></code>, <code><a href="reference/popCDEC.html">popCDEC()</a></code>, and <code><a href="reference/qaqcData.html">qaqcData()</a></code> functions. It is the goal of this package to expand these functions and add others functions to better support IEP surveys and their QAQC procedures.</p>
-<p>If you have any suggestions or encounter any bugs, please feel free to open an <a href="https://github.com/trinhxuann/deltadata/issues" class="external-link">issue</a>, contribute to the package via a pull request, or directly contact <a href="mailto:trinh.nguyen@wildlife.ca.gov">Trinh Nguyen</a>.</p>
+  </main><aside class="col-md-3"><div class="links">
+<h2 data-toc-skip>Links</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/trinhxuann/deltadata">Browse source code</a></li>
+<li><a href="https://github.com/trinhxuann/deltadata/issues">Report a bug</a></li>
+</ul>
 </div>
 
-  </main><aside class="col-md-3"><div class="license">
+<div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
@@ -435,7 +124,7 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Trinh Nguyen <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/YOUR-ORCID-ID" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
+<li>Trinh Nguyen <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-9523-1466" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 </ul>
 </div>
 
