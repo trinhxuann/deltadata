@@ -1,0 +1,63 @@
+---
+title: "EDI Workflows"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{EDI Workflows}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r, include=F}
+tableNames <- deltadata:::tableNames
+relationalTables <- deltadata:::tables
+schema <- deltadata:::schema
+```
+
+The following demonstrates how to grab files from the EDI Repository. These functions offer similar services to those from the 'EDIUtils' package but are opinionated to work similarly to other workflows in 'deltadata'.
+
+```{r setup}
+library(deltadata)
+```
+
+## Reading in entities from EDI
+
+The `getEDI()` function is a one-stop shop function that allows us to download entities from an EDI repository. To get started, provide the function with a URL to the data package of interest.
+
+```{r}
+# Data package of the CDFW IEP SLS Survey
+getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9")
+```
+
+When only a URL is provided, the function will return a list of entities available to download. The `id` column is the unique hash of the entity, the `name` is the file name as listed by the authors, `extension` is the file extension (which may not always be in the specified file name), and the `link` is the api link to the file for download. 
+
+To download file(s), we can provide the values of interest in the `name` column to the function.
+
+```{r}
+entities <- getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9", 
+                   files = c("Catch.csv", "SLSTables", "SLS_Metadata"))
+```
+
+## Files are stored differently
+
+The function download and stores the entities based on what the file extension. Specifically, '.csv' and '.rds' files are read directly into R, while all other file types are downloaded to the temporary folder and a link to the file is provided. 
+
+```{r}
+# csv files are read in directly
+head(entities$Catch.csv)
+```
+
+```{r}
+# rds files are read in directly, outputted as a list
+lapply(entities$SLSTables, head)
+```
+
+```{r}
+# All other file types are temporarily downloaded and a file path provided
+entities$SLS_Metadata
+```
+
+You can use `shell.exec()` to open any downloaded files.
+
+```{r, eval=FALSE}
+shell.exec(entities$SLS_Metadata)
+```
+

@@ -29,4 +29,4 @@ LazyData: true
 VignetteBuilder: knitr
 License: MIT + file LICENSE
 Compression: xz
-URL: https://trinhxuann.github.io/deltadata/
+URL: https://github.com/trinhxuann/deltadata

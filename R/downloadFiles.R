@@ -33,7 +33,7 @@ parseEDI <- function(url) {
 
     scope <- parts[1]
     identifier <- parts[2]
-    revision <- parts[3]
+    revision <- as.numeric(parts[3])
 
     return(data.frame(scope = scope, identifier = identifier, revision = revision,
                       packageID = paste(scope, identifier, revision, sep = ".")))
@@ -53,27 +53,37 @@ parseEDI <- function(url) {
 #' @keywords internal
 tableNamesEDI <- function(packageInfo, version = "newest") {
 
+  baseUrl <- sprintf("https://pasta.lternet.edu/package")
+  versionUrl <- sprintf("%s/eml/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier)
+
   currentNewestVersion <- max(
-    suppressWarnings(utils::read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier))[1])
+    suppressWarnings(utils::read.table(versionUrl)[1])
   )
 
-  if (as.numeric(packageInfo$revision) != currentNewestVersion & version == "newest") {
+  if (packageInfo$revision != currentNewestVersion & version == "newest") {
     warning("Your current version is ", packageInfo$revision, " but the newest version available is ", currentNewestVersion, ". Pulling from the newest version, otherwise, specify the `version` argument.",
             call. = F)
+    version <- currentNewestVersion
+  } else version <- packageInfo$revision
+
+  entityUrl <- sprintf("%s/name/eml/%s/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier, version)
+  entities <- utils::read.csv(entityUrl, header = FALSE,
+                              col.names = c("id", "name"), stringsAsFactors = FALSE)
+  # Get extension info
+  getFormatType <- function(id) {
+    rmdUrl <- sprintf("%s/data/rmd/eml/%s/%s/%s/%s",
+                      baseUrl, packageInfo$scope, packageInfo$identifier, version, id)
+    doc <- suppressMessages(XML::xmlParse(httr::GET(rmdUrl), encoding = "UTF-8"))
+    format <- XML::xpathSApply(doc, "//dataFormat", XML::xmlValue)
+    sub("^.*/|\\.", "", format)
   }
 
-  tableLinks <- suppressWarnings(utils::read.table(paste0("https://pasta.lternet.edu/package/eml/edi/", packageInfo$identifier, "/", version), header = F)[[1]])
-  tableLinks <- tableLinks[which(grepl("/data/", tableLinks))]
+  entities$extension <- vapply(entities$id, getFormatType, character(1), USE.NAMES = F)
 
-  tableNames <- lapply(tableLinks, function(x) {
-    entityName <- readLines(gsub("data", "name", x), warn = F)
+  entities$link <- sprintf("%s/data/eml/%s/%s/%s/%s",
+                           baseUrl, packageInfo$scope, packageInfo$identifier, version, entities$id)
 
-    data.frame(id = gsub(".*\\/", "", x),
-               name = entityName,
-               url = x)
-  })
-
-  do.call(rbind, tableNames)
+  return(entities)
 }
 
 #' Pull files from an EDI package
@@ -124,27 +134,28 @@ getEDI <- function(url, files, version = "newest") {
   tables <- tables[tables[["name"]] %in% files, ]
 
   # For files that are csv, read them in directly
-  # For files that are NOT csvs, download them to the temp dir and provide the users with the file path?
-  downloadedFiles <- lapply(tables[["name"]], function(x) {
-    url <- (tables[tables[["name"]] == x, ])[["url"]]
+  # For files that are rds, read them in directly as a list output
+  # All other files are downloaded
+  fileFate <- function(name, extension, link) {
 
-    if (grepl("\\.csv$", x)) {
-      utils::read.csv(url)
-    } else {
-      filePath <- file.path(tempdir(), x)
-      if (!file.exists(filePath)) {
-        downloaded <- utils::download.file(url, destfile = filePath, mode = "wb")
-        if (downloaded == 0) {
-          filePath
-        } else {
-          stop("File download failed for: ", x, call. = F)
-        }
-      } else {
-        filePath
-      }
-    }
-  })
+    cat("Downloading", name, "\n")
+    switch(extension,
+           "csv" = utils::read.csv(link),
+           "rds" = readRDS(url(link)),
+           {
+             filePath <- file.path(tempdir(), name)
+             if (!file.exists(filePath)) {
+               if (utils::download.file(link, filePath, mode = "wb") != 0) {
+                 stop("Download failed for: ", name, call. = FALSE)
+               }
+             }
+             filePath
+           }
+    )
+  }
 
-  setNames(downloadedFiles, files)
+  mapply(fileFate,
+         tables$name, tables$extension, tables$link,
+         SIMPLIFY = FALSE)
 }
 
