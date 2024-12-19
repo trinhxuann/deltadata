@@ -48,7 +48,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getEDI</span><span class="op">(</span><span class="va">url</span>, <span class="va">files</span>, version <span class="op">=</span> <span class="st">"newest"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getEDI</span><span class="op">(</span><span class="va">url</span>, <span class="va">files</span>, version <span class="op">=</span> <span class="st">"newest"</span>, quiet <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -67,6 +67,11 @@ is on the website. Leave this blank to see the options.</p></dd>
 <dt id="arg-version">version<a class="anchor" aria-label="anchor" href="#arg-version"></a></dt>
 <dd><p>Version of interest for the package at hand. Defaults to
 <code>newest</code>, which pulls data from the newest version.</p></dd>
+
+
+<dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
+<dd><p>Defaults to FALSE. If TRUE, will not print the abbreviated table
+in the console.</p></dd>
 
 </dl></div>
     <div class="section level2">
