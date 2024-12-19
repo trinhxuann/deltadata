@@ -4,7 +4,7 @@
 \alias{getEDI}
 \title{Pull files from an EDI package}
 \usage{
-getEDI(url, files, version = "newest")
+getEDI(url, files, version = "newest", quiet = FALSE)
 }
 \arguments{
 \item{url}{URL of the EDI package with the version number, i.e., the package URL you would access in the browser.}
@@ -14,6 +14,9 @@ is on the website. Leave this blank to see the options.}
 
 \item{version}{Version of interest for the package at hand. Defaults to
 \code{newest}, which pulls data from the newest version.}
+
+\item{quiet}{Defaults to FALSE. If TRUE, will not print the abbreviated table
+in the console.}
 }
 \value{
 A list of the data files requested. If it is a CSV, this will be

@@ -111,6 +111,8 @@ tableNamesEDI <- function(packageInfo, version = "newest") {
 #' is on the website. Leave this blank to see the options.
 #' @param version Version of interest for the package at hand. Defaults to
 #' `newest`, which pulls data from the newest version.
+#' @param quiet Defaults to FALSE. If TRUE, will not print the abbreviated table
+#' in the console.
 #'
 #' @return A list of the data files requested. If it is a CSV, this will be
 #' read directly into R via the `utils::read.csv()` function. If any other file types,
@@ -124,13 +126,15 @@ tableNamesEDI <- function(packageInfo, version = "newest") {
 #' getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.8",
 #' files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
 #' }
-getEDI <- function(url, files, version = "newest") {
+getEDI <- function(url, files, version = "newest", quiet = FALSE) {
 
   tables <- getMetadataEdi(url, version = version)$df
 
   if (missing(files))  {
-    cat("Specify files to download: \n")
-    print(tables[c("name", "extension", "size", "description")])
+    if (!isTRUE(quiet)) {
+      cat("Specify files to download: \n")
+      print(tables[c("name", "extension", "size", "description")])
+    }
     return(tables)
   }
 
@@ -217,7 +221,6 @@ getMetadataEdi <- function(url, version = "newest", all = FALSE) {
   if (isTRUE(all)) return(doc)
 
   title <- XML::xpathSApply(doc, "//dataset//title", XML::xmlValue)
-  entityId <- XML::xpathSApply(doc, "//dataset/dataTable | //dataset/otherEntity", XML::xmlGetAttr, "id")
   entityNames <- XML::xpathSApply(doc, "//dataset//dataTable/physical/objectName |
                                   //dataset//otherEntity/physical/objectName", XML::xmlValue)
   entityExtension <- tools::file_ext(entityNames)
@@ -235,6 +238,7 @@ getMetadataEdi <- function(url, version = "newest", all = FALSE) {
                            character(1))
   entityLink <- XML::xpathSApply(doc, "//dataset/dataTable/physical/distribution/online/url |
                                  //dataset/otherEntity/physical/distribution/online/url", XML::xmlValue)
+  entityId <- basename(entityLink)
   publicationDate <- XML::xpathSApply(doc, "//dataset/pubDate", XML::xmlValue)
 
   list(
