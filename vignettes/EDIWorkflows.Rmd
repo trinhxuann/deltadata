@@ -6,12 +6,6 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-```{r, include=F}
-tableNames <- deltadata:::tableNames
-relationalTables <- deltadata:::tables
-schema <- deltadata:::schema
-```
-
 The following demonstrates how to grab files from the EDI Repository. These functions offer similar services to those from the 'EDIUtils' package but are opinionated to work similarly to other workflows in 'deltadata'.
 
 ```{r setup}
@@ -24,16 +18,21 @@ The `getEDI()` function is a one-stop shop function that allows us to download e
 
 ```{r}
 # Data package of the CDFW IEP SLS Survey
-getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9")
+possibleEntities <- getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9")
 ```
 
-When only a URL is provided, the function will return a list of entities available to download. The `id` column is the unique hash of the entity, the `name` is the file name as listed by the authors, `extension` is the file extension (which may not always be in the specified file name), and the `link` is the api link to the file for download. 
+When only a URL is provided, the function will return a list of entities available to download. The `name` is the file name of the entity, `extension` is the file extension, `size` is the file size, and `description` is a short description of the entity provided by the creators. This printed table contains only a subset of the entire data.frame, which can be accessible if you assign the function to a variable.
+
+```{r}
+# Full data.frame has more information than what is printed
+head(possibleEntities)
+```
 
 To download file(s), we can provide the values of interest in the `name` column to the function.
 
 ```{r}
 entities <- getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9", 
-                   files = c("Catch.csv", "SLSTables", "SLS_Metadata"))
+                   files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
 ```
 
 ## Files are stored differently

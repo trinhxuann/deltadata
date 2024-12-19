@@ -67,13 +67,28 @@ tableNamesEDI <- function(packageInfo, version = "newest") {
   } else version <- packageInfo$revision
 
   entityUrl <- sprintf("%s/name/eml/%s/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier, version)
-  entities <- utils::read.csv(entityUrl, header = FALSE,
-                              col.names = c("id", "name"), stringsAsFactors = FALSE)
+
+  parseEntityDf <- function(url) {
+    lines <- readLines(url)
+    parts <- strsplit(lines, ",")
+    data.frame(
+      id = sapply(parts, `[`, 1),
+      name = sapply(parts, function(x) paste(x[-1], collapse = ","))
+    )
+  }
+
+  entities <- parseEntityDf(entityUrl)
   # Get extension info
   getFormatType <- function(id) {
     rmdUrl <- sprintf("%s/data/rmd/eml/%s/%s/%s/%s",
                       baseUrl, packageInfo$scope, packageInfo$identifier, version, id)
-    doc <- suppressMessages(XML::xmlParse(httr::GET(rmdUrl), encoding = "UTF-8"))
+    doc <- tryCatch({
+      suppressMessages(XML::xmlParse(httr::GET(rmdUrl), encoding = "UTF-8"))
+    }, error = function(e) {
+      cat("Retrying...\n")
+      Sys.sleep(2)  # Wait 2 seconds
+      suppressMessages(XML::xmlParse(httr::GET(rmdUrl), encoding = "UTF-8"))  # Retry once
+    })
     format <- XML::xpathSApply(doc, "//dataFormat", XML::xmlValue)
     sub("^.*/|\\.", "", format)
   }
@@ -111,13 +126,12 @@ tableNamesEDI <- function(packageInfo, version = "newest") {
 #' }
 getEDI <- function(url, files, version = "newest") {
 
-  packageInfo <- parseEDI(url)
-
-  tables <- tableNamesEDI(packageInfo, version = version)
+  tables <- getMetadataEdi(url, version = version)$df
 
   if (missing(files))  {
     cat("Specify files to download: \n")
-    return(print(tables))
+    print(tables[c("name", "extension", "size", "description")])
+    return(tables)
   }
 
   matchedTables <- files %in% tables$name
@@ -159,3 +173,81 @@ getEDI <- function(url, files, version = "newest") {
          SIMPLIFY = FALSE)
 }
 
+#' Grab metadata from an EDI package webpage
+#'
+#' @details
+#' Only an opinionated set of metadata parameters will be returned by default,
+#' read from the EML XML metadata file.
+#'
+#' @param url URL to the EDI data package landing page
+#' @param version Defaults to pulling the newest version. Specify a number if
+#' you are interested in a specific version
+#' @param all Defaults to FALSE. If TRUE, will return the XML file of the metadata
+#' itself. If FALSE, provides only an opinionated set of parameters
+#'
+#' @return One of the following depending on all:
+#'  \item{list}{A list containing a data.frame of opinionated metadata, the
+#'  package title, and the publication date of the package}
+#'  \item{xml}{The EML XML file}
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Data package of the CDFW IEP SLS Survey
+#' getMetadataEdi("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9")
+#' }
+getMetadataEdi <- function(url, version = "newest", all = FALSE) {
+
+  packageInfo <- parseEDI(url)
+
+  baseUrl <- sprintf("https://pasta.lternet.edu/package")
+  versionUrl <- sprintf("%s/eml/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier)
+
+  currentNewestVersion <- max(
+    suppressWarnings(utils::read.table(versionUrl)[1])
+  )
+
+  if (packageInfo$revision != currentNewestVersion & version == "newest") {
+    version <- currentNewestVersion
+  } else version <- packageInfo$revision
+
+  fullMetadata <- sprintf("%s/metadata/eml/%s/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier, version)
+  doc <- suppressMessages(XML::xmlParse(httr::GET(fullMetadata), encoding = "UTF-8"))
+  if (isTRUE(all)) return(doc)
+
+  title <- XML::xpathSApply(doc, "//dataset//title", XML::xmlValue)
+  entityId <- XML::xpathSApply(doc, "//dataset/dataTable | //dataset/otherEntity", XML::xmlGetAttr, "id")
+  entityNames <- XML::xpathSApply(doc, "//dataset//dataTable/physical/objectName |
+                                  //dataset//otherEntity/physical/objectName", XML::xmlValue)
+  entityExtension <- tools::file_ext(entityNames)
+  entityDescription <- XML::xpathSApply(doc, "//dataset/dataTable/entityDescription |
+                                        //dataset/otherEntity/entityDescription", XML::xmlValue)
+  fileSize <- XML::xpathSApply(doc, "//dataset/dataTable/physical/size |
+                               //dataset/otherEntity/physical/size",
+                               function(x) {
+                                 as.numeric(XML::xmlValue(x))
+                               })
+  fileSizeParsed <- vapply(fileSize,
+                           function(size) {
+                             format(structure(size, class = "object_size"), units = "auto", standard = "IEC")
+                           },
+                           character(1))
+  entityLink <- XML::xpathSApply(doc, "//dataset/dataTable/physical/distribution/online/url |
+                                 //dataset/otherEntity/physical/distribution/online/url", XML::xmlValue)
+  publicationDate <- XML::xpathSApply(doc, "//dataset/pubDate", XML::xmlValue)
+
+  list(
+    df = data.frame(
+      name = entityNames,
+      extension = entityExtension,
+      size = fileSizeParsed,
+      sizeBytes = fileSize,
+      description = entityDescription,
+      link = entityLink,
+      id = entityId
+    ),
+    packageTitle = title,
+    publicationDate = publicationDate
+  )
+}
