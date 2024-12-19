@@ -85,54 +85,88 @@ package but are opinionated to work similarly to other workflows in
 ‘deltadata’.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/trinhxuann/deltadata">deltadata</a></span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Error in get(paste0(generic, ".", class), envir = get_method_env()) : </span></span>
+<span><span class="co">##   object 'type_sum.accel' not found</span></span></code></pre>
 <div class="section level2">
 <h2 id="reading-in-entities-from-edi">Reading in entities from EDI<a class="anchor" aria-label="anchor" href="#reading-in-entities-from-edi"></a>
 </h2>
 <p>The <code><a href="../reference/getEDI.html">getEDI()</a></code> function is a one-stop shop function that
 allows us to download entities from an EDI repository. To get started,
 provide the function with a URL to the data package of interest.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Data package of the CDFW IEP SLS Survey</span></span>
-<span><span class="fu"><a href="../reference/getEDI.html">getEDI</a></span><span class="op">(</span><span class="st">"https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">possibleEntities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getEDI.html">getEDI</a></span><span class="op">(</span><span class="st">"https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Specify files to download: </span></span>
-<span><span class="co">##                                  id                 name extension</span></span>
-<span><span class="co">## 1  81f62ff73abedbc542ee5e890f527af9            Catch.csv       csv</span></span>
-<span><span class="co">## 2  d80798177ea89ffbe78bcaee38dc51be        FishCodes.csv       csv</span></span>
-<span><span class="co">## 3  4653e53fa60d50832adb576d721abde5          Lengths.csv       csv</span></span>
-<span><span class="co">## 4  c29d02c289d2a3cd78e15b12135e2ff3 MeterCorrections.csv       csv</span></span>
-<span><span class="co">## 5  bdcccddc9053eebadded31ec92040128              SLS.csv       csv</span></span>
-<span><span class="co">## 6  f1a7a06f59e795bfae649619fdf84e1d   Station_Lookup.csv       csv</span></span>
-<span><span class="co">## 7  3e3805efe55cac11a3b5d6462dc33dda          TowInfo.csv       csv</span></span>
-<span><span class="co">## 8  bb03c800886e2b04b95bfdc54e9d020d            WaterInfo       csv</span></span>
-<span><span class="co">## 9  450516c75e409d0185b6cde7cb688fb9      SLSIntegrateEDI         R</span></span>
-<span><span class="co">## 10 f2f69149bc4c8fcfbb5c9007478960c8            SLSTables       rds</span></span>
-<span><span class="co">## 11 0a23706e3e09752a3baa7aafe080364d         SLS_Metadata       pdf</span></span>
-<span><span class="co">##                                                                                     link</span></span>
-<span><span class="co">## 1  https://pasta.lternet.edu/package/data/eml/edi/534/9/81f62ff73abedbc542ee5e890f527af9</span></span>
-<span><span class="co">## 2  https://pasta.lternet.edu/package/data/eml/edi/534/9/d80798177ea89ffbe78bcaee38dc51be</span></span>
-<span><span class="co">## 3  https://pasta.lternet.edu/package/data/eml/edi/534/9/4653e53fa60d50832adb576d721abde5</span></span>
-<span><span class="co">## 4  https://pasta.lternet.edu/package/data/eml/edi/534/9/c29d02c289d2a3cd78e15b12135e2ff3</span></span>
-<span><span class="co">## 5  https://pasta.lternet.edu/package/data/eml/edi/534/9/bdcccddc9053eebadded31ec92040128</span></span>
-<span><span class="co">## 6  https://pasta.lternet.edu/package/data/eml/edi/534/9/f1a7a06f59e795bfae649619fdf84e1d</span></span>
-<span><span class="co">## 7  https://pasta.lternet.edu/package/data/eml/edi/534/9/3e3805efe55cac11a3b5d6462dc33dda</span></span>
-<span><span class="co">## 8  https://pasta.lternet.edu/package/data/eml/edi/534/9/bb03c800886e2b04b95bfdc54e9d020d</span></span>
-<span><span class="co">## 9  https://pasta.lternet.edu/package/data/eml/edi/534/9/450516c75e409d0185b6cde7cb688fb9</span></span>
-<span><span class="co">## 10 https://pasta.lternet.edu/package/data/eml/edi/534/9/f2f69149bc4c8fcfbb5c9007478960c8</span></span>
-<span><span class="co">## 11 https://pasta.lternet.edu/package/data/eml/edi/534/9/0a23706e3e09752a3baa7aafe080364d</span></span></code></pre>
+<span><span class="co">##                    name extension      size</span></span>
+<span><span class="co">## 1             Catch.csv       csv 331.2 KiB</span></span>
+<span><span class="co">## 2         FishCodes.csv       csv   2.3 KiB</span></span>
+<span><span class="co">## 3           Lengths.csv       csv   7.3 MiB</span></span>
+<span><span class="co">## 4  MeterCorrections.csv       csv  15.8 KiB</span></span>
+<span><span class="co">## 5               SLS.csv       csv   7.5 MiB</span></span>
+<span><span class="co">## 6    Station_Lookup.csv       csv   7.1 KiB</span></span>
+<span><span class="co">## 7           TowInfo.csv       csv 384.9 KiB</span></span>
+<span><span class="co">## 8         WaterInfo.csv       csv 645.7 KiB</span></span>
+<span><span class="co">## 9     SLSIntegrateEDI.R         R  21.8 KiB</span></span>
+<span><span class="co">## 10        SLSTables.rds       rds 824.7 KiB</span></span>
+<span><span class="co">## 11     SLS_Metadata.pdf       pdf 855.7 KiB</span></span>
+<span><span class="co">##                                                                                                                                                                                                                                                  description</span></span>
+<span><span class="co">## 1                                                                                                                                                                                                               Fish catch data from the Smelt Larval Survey</span></span>
+<span><span class="co">## 2                                                                                                                                                                                                                          Taxa and corresponding fish codes</span></span>
+<span><span class="co">## 3                                                                                                                                                        Data related to fish size, including fork length, yolk sac, and adipose fin of measured individuals</span></span>
+<span><span class="co">## 4                                                                                                                                                                                         Instrument information for flow meters used throughout the seasons</span></span>
+<span><span class="co">## 5                                                                                                                                                      joined long formatted data frame of the base tables. This table is produced from the LTMRdata package</span></span>
+<span><span class="co">## 6                                                                                                                                                                                                            theoretical GPS coordinates of all SLS stations</span></span>
+<span><span class="co">## 7                                                                                                                                                                                                                       metrics relating directly to the tow</span></span>
+<span><span class="co">## 8                                                                                                                                                                                                 metrics relating directly to water measured during the tow</span></span>
+<span><span class="co">## 9                                                                                                                                                       R code to join 6 relational tables together (excluding "FishCodes.cs") to output the "SLS.csv" file.</span></span>
+<span><span class="co">## 10 Compressed data file of the 7 relational tables uploaded in csv format (containing exactly the same data). This file is for use in R. Once read, the 7 relational tables are structured in a list form, with each table being a named element of the list</span></span>
+<span><span class="co">## 11                                                                                                                                                                                                                                        Formatted metadata</span></span></code></pre>
 <p>When only a URL is provided, the function will return a list of
-entities available to download. The <code>id</code> column is the unique
-hash of the entity, the <code>name</code> is the file name as listed by
-the authors, <code>extension</code> is the file extension (which may not
-always be in the specified file name), and the <code>link</code> is the
-api link to the file for download.</p>
+entities available to download. The <code>name</code> is the file name
+of the entity, <code>extension</code> is the file extension,
+<code>size</code> is the file size, and <code>description</code> is a
+short description of the entity provided by the creators. This printed
+table contains only a subset of the entire data.frame, which can be
+accessible if you assign the function to a variable.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Full data.frame has more information than what is printed</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">possibleEntities</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##                   name extension      size sizeBytes</span></span>
+<span><span class="co">## 1            Catch.csv       csv 331.2 KiB    339194</span></span>
+<span><span class="co">## 2        FishCodes.csv       csv   2.3 KiB      2406</span></span>
+<span><span class="co">## 3          Lengths.csv       csv   7.3 MiB   7642912</span></span>
+<span><span class="co">## 4 MeterCorrections.csv       csv  15.8 KiB     16230</span></span>
+<span><span class="co">## 5              SLS.csv       csv   7.5 MiB   7856964</span></span>
+<span><span class="co">## 6   Station_Lookup.csv       csv   7.1 KiB      7265</span></span>
+<span><span class="co">##                                                                                             description</span></span>
+<span><span class="co">## 1                                                          Fish catch data from the Smelt Larval Survey</span></span>
+<span><span class="co">## 2                                                                     Taxa and corresponding fish codes</span></span>
+<span><span class="co">## 3   Data related to fish size, including fork length, yolk sac, and adipose fin of measured individuals</span></span>
+<span><span class="co">## 4                                    Instrument information for flow meters used throughout the seasons</span></span>
+<span><span class="co">## 5 joined long formatted data frame of the base tables. This table is produced from the LTMRdata package</span></span>
+<span><span class="co">## 6                                                       theoretical GPS coordinates of all SLS stations</span></span>
+<span><span class="co">##                                                                                    link</span></span>
+<span><span class="co">## 1 https://pasta.lternet.edu/package/data/eml/edi/534/9/81f62ff73abedbc542ee5e890f527af9</span></span>
+<span><span class="co">## 2 https://pasta.lternet.edu/package/data/eml/edi/534/9/d80798177ea89ffbe78bcaee38dc51be</span></span>
+<span><span class="co">## 3 https://pasta.lternet.edu/package/data/eml/edi/534/9/4653e53fa60d50832adb576d721abde5</span></span>
+<span><span class="co">## 4 https://pasta.lternet.edu/package/data/eml/edi/534/9/c29d02c289d2a3cd78e15b12135e2ff3</span></span>
+<span><span class="co">## 5 https://pasta.lternet.edu/package/data/eml/edi/534/9/bdcccddc9053eebadded31ec92040128</span></span>
+<span><span class="co">## 6 https://pasta.lternet.edu/package/data/eml/edi/534/9/f1a7a06f59e795bfae649619fdf84e1d</span></span>
+<span><span class="co">##                                 id</span></span>
+<span><span class="co">## 1 81f62ff73abedbc542ee5e890f527af9</span></span>
+<span><span class="co">## 2 d80798177ea89ffbe78bcaee38dc51be</span></span>
+<span><span class="co">## 3 4653e53fa60d50832adb576d721abde5</span></span>
+<span><span class="co">## 4 c29d02c289d2a3cd78e15b12135e2ff3</span></span>
+<span><span class="co">## 5 bdcccddc9053eebadded31ec92040128</span></span>
+<span><span class="co">## 6 f1a7a06f59e795bfae649619fdf84e1d</span></span></code></pre>
 <p>To download file(s), we can provide the values of interest in the
 <code>name</code> column to the function.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">entities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getEDI.html">getEDI</a></span><span class="op">(</span><span class="st">"https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9"</span>, </span>
-<span>                   files <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Catch.csv"</span>, <span class="st">"SLSTables"</span>, <span class="st">"SLS_Metadata"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>                   files <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Catch.csv"</span>, <span class="st">"SLSTables.rds"</span>, <span class="st">"SLS_Metadata.pdf"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Downloading Catch.csv </span></span>
-<span><span class="co">## Downloading SLSTables </span></span>
-<span><span class="co">## Downloading SLS_Metadata</span></span></code></pre>
+<span><span class="co">## Downloading SLSTables.rds </span></span>
+<span><span class="co">## Downloading SLS_Metadata.pdf</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="files-are-stored-differently">Files are stored differently<a class="anchor" aria-label="anchor" href="#files-are-stored-differently"></a>
@@ -141,7 +175,7 @@ api link to the file for download.</p>
 extension. Specifically, ‘.csv’ and ‘.rds’ files are read directly into
 R, while all other file types are downloaded to the temporary folder and
 a link to the file is provided.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># csv files are read in directly</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">entities</span><span class="op">$</span><span class="va">Catch.csv</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##         Date Station Tow FishCode Catch X1.4.Subsampled X1.2.Subsampled CatchID</span></span>
@@ -151,7 +185,7 @@ a link to the file is provided.</p>
 <span><span class="co">## 4 2009-01-05     914   1       49     1               0               0       7</span></span>
 <span><span class="co">## 5 2009-01-05     915   1       49     6               0               0       8</span></span>
 <span><span class="co">## 6 2009-01-05     918   1       49     1               0               0       9</span></span></code></pre>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># rds files are read in directly, outputted as a list</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">entities</span><span class="op">$</span><span class="va">SLSTables</span>, <span class="va">head</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## $Catch</span></span>
@@ -265,13 +299,13 @@ a link to the file is provided.</p>
 <span><span class="co">## 4        73  Pimephales promelas</span></span>
 <span><span class="co">## 5        74 Tridentiger barbatus</span></span>
 <span><span class="co">## 6        75     Tridentiger spp.</span></span></code></pre>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># All other file types are temporarily downloaded and a file path provided</span></span>
 <span><span class="va">entities</span><span class="op">$</span><span class="va">SLS_Metadata</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] "/tmp/Rtmp5JvqeS/SLS_Metadata"</span></span></code></pre>
+<pre><code><span><span class="co">## [1] "/tmp/RtmpzYkPUr/SLS_Metadata.pdf"</span></span></code></pre>
 <p>You can use <code>shell.exec()</code> to open any downloaded
 files.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">shell.exec</span><span class="op">(</span><span class="va">entities</span><span class="op">$</span><span class="va">SLS_Metadata</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
