@@ -154,9 +154,9 @@ getEDI <- function(url, files, version = "newest", quiet = FALSE) {
   # For files that are csv, read them in directly
   # For files that are rds, read them in directly as a list output
   # All other files are downloaded
-  fileFate <- function(name, extension, link) {
+  fileFate <- function(name, size, extension, link) {
 
-    cat("Downloading", name, "\n")
+    cat("Downloading", name, "; file size:", size, "\n")
     switch(extension,
            "csv" = utils::read.csv(link),
            "rds" = readRDS(url(link)),
@@ -173,7 +173,7 @@ getEDI <- function(url, files, version = "newest", quiet = FALSE) {
   }
 
   mapply(fileFate,
-         tables$name, tables$extension, tables$link,
+         tables$name, tables$size, tables$extension, tables$link,
          SIMPLIFY = FALSE)
 }
 
@@ -220,7 +220,7 @@ getMetadataEdi <- function(url, version = "newest", all = FALSE) {
   doc <- suppressMessages(XML::xmlParse(httr::GET(fullMetadata), encoding = "UTF-8"))
   if (isTRUE(all)) return(doc)
 
-  title <- XML::xpathSApply(doc, "//dataset//title", XML::xmlValue)
+  title <- XML::xpathSApply(doc, "//dataset/title", XML::xmlValue)
   entityNames <- XML::xpathSApply(doc, "//dataset//dataTable/physical/objectName |
                                   //dataset//otherEntity/physical/objectName", XML::xmlValue)
   entityExtension <- tools::file_ext(entityNames)
