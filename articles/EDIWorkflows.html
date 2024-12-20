@@ -164,9 +164,9 @@ accessible if you assign the function to a variable.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">entities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getEDI.html">getEDI</a></span><span class="op">(</span><span class="st">"https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9"</span>, </span>
 <span>                   files <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Catch.csv"</span>, <span class="st">"SLSTables.rds"</span>, <span class="st">"SLS_Metadata.pdf"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Downloading Catch.csv </span></span>
-<span><span class="co">## Downloading SLSTables.rds </span></span>
-<span><span class="co">## Downloading SLS_Metadata.pdf</span></span></code></pre>
+<pre><code><span><span class="co">## Downloading Catch.csv ; file size: 331.2 KiB </span></span>
+<span><span class="co">## Downloading SLSTables.rds ; file size: 824.7 KiB </span></span>
+<span><span class="co">## Downloading SLS_Metadata.pdf ; file size: 855.7 KiB</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="files-are-stored-differently">Files are stored differently<a class="anchor" aria-label="anchor" href="#files-are-stored-differently"></a>
@@ -302,7 +302,7 @@ a link to the file is provided.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># All other file types are temporarily downloaded and a file path provided</span></span>
 <span><span class="va">entities</span><span class="op">$</span><span class="va">SLS_Metadata</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] "/tmp/RtmpNE4Urm/SLS_Metadata.pdf"</span></span></code></pre>
+<pre><code><span><span class="co">## [1] "/tmp/RtmpUF6YOD/SLS_Metadata.pdf"</span></span></code></pre>
 <p>You can use <code>shell.exec()</code> to open any downloaded
 files.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
