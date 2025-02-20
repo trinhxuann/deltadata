@@ -65,6 +65,7 @@ architectureCheck <- function(officeBit = NULL) {
 #' @param driver ODBC driver. Defaults to using the Access drivers.
 #' @param uid Username credential, if applicable to your database.
 #' @param pwd Password credential, if applicable to your database.
+#' @param ... Other details specific to your database connection. Usually can ignore if working with an Access database
 #'
 #' @return A DBIConnection object to allow interactions with the database.
 #'
@@ -73,19 +74,20 @@ architectureCheck <- function(officeBit = NULL) {
 #' @importFrom odbc odbc
 #' @keywords internal
 connectAccess <- function(path,
-                          driver = "Microsoft Access Driver (*.mdb, *.accdb)", ...) {
+                          driver = "Microsoft Access Driver (*.mdb, *.accdb)",
+                          uid = "", pwd = "", ...) {
 
   file <- normalizePath(path, winslash = "\\", mustWork = T)
 
   # Driver and path required to connect from RStudio to Access
-  # dbString <- paste0("Driver={", driver,
-  #                    "};Dbq=", file,
-  #                    ";Uid=", uid,
-  #                    ";Pwd=", pwd,
-  #                    ";")
+  dbString <- paste0("Driver={", driver,
+                     "};Dbq=", file,
+                     ";Uid=", uid,
+                     ";Pwd=", pwd,
+                     ";")
 
   tryCatch(dbConnect(drv = odbc(),
-                     driver = driver,
+                     .connection_string = dbString,
                      ...),
            error = function(cond) {
              if (grepl(c("IM002.*ODBC Driver Manager"), cond$message)) {

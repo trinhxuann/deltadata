@@ -9,7 +9,7 @@ template:
       <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 home:
   links:
-  - text: Browse source code
-    href: https://github.com/trinhxuann/deltadata
+  # - text: Browse source code
+  #   href: https://github.com/trinhxuann/deltadata
   - text: Report a bug
     href: https://github.com/trinhxuann/deltadata/issues
