@@ -461,7 +461,7 @@ popCDEC <- function(df,
       dateEnd = dateRange[2] + 1
     )
 
-    if (is.null(cdecData) || nrow(cdecData) == 0) return(x)
+    if (is.null(cdecData) || nrow(cdecData) == 0) return(NULL)
 
     merged <- merge(x, cdecData,
                     by.x = "cdecStation",
@@ -487,7 +487,9 @@ popCDEC <- function(df,
   remainingData <- dfMerged[!dfMerged$cdecStation %in% pulledData$cdecStation, ]
   allCols <- union(names(pulledData), names(remainingData))
 
-  remainingData[setdiff(allCols, names(remainingData))] <- NA
+  if(nrow(remainingData) > 0) {
+    remainingData[setdiff(allCols, names(remainingData))] <- NA
+  }
   pulledData[setdiff(allCols, names(pulledData))] <- NA
 
   combinedData <- rbind(remainingData, pulledData)
