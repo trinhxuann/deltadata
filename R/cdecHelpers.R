@@ -354,6 +354,115 @@ calcNearestCDEC <- function(df, cdecGPS = deltadata:::cdecStations,
   })
 }
 
+#' Find the n^{th} closest CDEC gage
+#'
+#' @description
+#' Identifies the n^{th} nearest CDEC gage to a lat/lon of interest. This function
+#' requires metadata of all CDEC stations of interest. By default, all CDEC
+#' stations are used.
+#'
+#'
+#' @param df A data frame that contains at least the lat/lon of station(s) of
+#' interest, named as `lat` and `lon`.
+#' @param n A number reflecting the desired relative distance of the CDEC gage from 
+#' the lat/lon of interest. n=1 means return the closest gage, n=2 means return the 
+#' second closest gage, etc. n should be an integer or should otherwise be convertible 
+#' to an integer. 
+#' @param cdecGPS A data frame containing the GPS coordinates of the CDEC gages
+#' of interest, as `lat` and `lon`.
+#' @param cdecMetadata A data frame containing the metadata table of the CDEC
+#' gages of interest. This table must match the format provided by the DWR
+#' website. It is recommended to use `pullMetadataCDEC()` to get this data.
+#' @param variable The water quality variable of interest. Currently only
+#' supports water temperature as `temp`, turbidity as `turbidity`, and
+#' electro-conductivity as `ec`. This defaults to water temperature.
+#' @param waterColumn Where in the water column should the variable of interest
+#' be prioritized? Supports only `top` and `bottom`, defaulting to `top`. For
+#' now, top data will be used in the calculation even if you ask for bottom
+#' data.
+#'
+#' @return A data frame of the metadata of the n^{th} closest CDEC station to your
+#' point of interest that has data for the variable of interest.
+#' @export
+#'
+#' @importFrom geosphere distm distVincentyEllipsoid
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
+#'
+#' calcNthNearestCDEC(df)
+#' }
+calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
+                            cdecMetadata = deltadata:::cdecMetadata,
+                            variable = c("temp", "turbidity", "ec"),
+                            waterColumn = c("top", "bottom")) {
+
+  names(df) <- tolower(names(df))
+
+  if (all(!c("station", "lat", "lon") %in% names(df))) stop("Your `df` must contain at least `station`, `lat, `lon`.", call. = F)
+
+  if(length(n) > 1) { n <- match.arg(n) }
+  n <- as.integer(n)
+  if(is.na(n)) {
+    stop("Could not convert n to an integer.\n")
+  }
+
+  if (length(variable) > 1) variable <- match.arg(variable)
+  if (length(waterColumn) > 1) waterColumn <- match.arg(waterColumn)
+
+  if (variable == "ec" & variable != "elec.* conduct.* micro") {
+    variableWanted <- "elec.* conduct.* micro"
+  } else {
+    if (variable == "temp" & variable != "(temp).*(water)") {
+      variableWanted <- "(temp).*(water)"
+    } else variableWanted <- variable
+  }
+
+  waterColumnWanted <- ifelse(waterColumn %in% "bottom", "(lower|bottom)", waterColumn)
+
+  variableWanted <- ifelse(waterColumn == "bottom",
+                           paste0(variableWanted, ".*", waterColumnWanted),
+                           variableWanted)
+
+  # Closest gages with the required data for variable of interest
+  closestGages <- cdecMetadata[grepl(variableWanted, cdecMetadata[["sensorDescription"]], ignore.case = T), ]
+
+
+  cdecGPSFiltered <- cdecGPS[cdecGPS[["station"]] %in% closestGages[["gage"]], ]
+  if(n > nrow(cdecGPSFiltered)) {
+    stop("n is larger than the number of available stations.\n")
+  }
+	
+  lapply(1:nrow(df), function(x) {
+
+    distanceMatrix <- geosphere::distm(data.frame(longitude = df[["lon"]][[x]],
+                                                  latitude = df[["lat"]][[x]]),
+                                       data.frame(longitude = cdecGPSFiltered[["longitude"]],
+                                                  latitude = cdecGPSFiltered[["latitude"]]),
+                                       fun = geosphere::distVincentyEllipsoid)
+
+    distanceData <- data.frame(cdecStation = cdecGPSFiltered[["station"]],
+                               distance = as.vector(distanceMatrix)/1609.344
+                               # stationOfInterest = df[["station"]][x]
+                               )
+    distanceData <- distanceData[order(distanceData[["distance"]]), ]
+
+    # If you are asking for top temperature, removing sensors that are on the bottom; if you are asking for
+    # bottom sensors, will also give you top sensor--very few bottom sensors out there.
+    if (waterColumn != "bottom") {
+      gageWaterColumn <- closestGages[!grepl("(lower|bottom)", x = closestGages[["sensorDescription"]],
+                                             ignore.case = T), ]
+    }
+
+    metadata <- merge(distanceData[n,  ], gageWaterColumn,
+          by.x = "cdecStation", by.y = "gage", all.x = T)
+
+    metadata$rowIndex <- x
+    metadata
+  })
+}
+
 #' Populate the closest CDEC station data.
 #'
 #' @description
