@@ -394,9 +394,9 @@ calcNearestCDEC <- function(df, cdecGPS = deltadata:::cdecStations,
 #' calcNthNearestCDEC(df)
 #' }
 calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
-                            cdecMetadata = deltadata:::cdecMetadata,
-                            variable = c("temp", "turbidity", "ec"),
-                            waterColumn = c("top", "bottom")) {
+                               cdecMetadata = deltadata:::cdecMetadata,
+                               variable = c("temp", "turbidity", "ec"),
+                               waterColumn = c("top", "bottom")) {
 
   names(df) <- tolower(names(df))
 
@@ -448,7 +448,7 @@ calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
     distanceData <- data.frame(cdecStation = cdecGPSFiltered[["station"]],
                                distance = as.vector(distanceMatrix)/1609.344
                                # stationOfInterest = df[["station"]][x]
-                               )
+    )
     distanceData <- distanceData[order(distanceData[["distance"]]), ]
 
     # If you are asking for top temperature, removing sensors that are on the bottom; if you are asking for
@@ -459,7 +459,7 @@ calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
     }
 
     metadata <- merge(distanceData[n,  ], gageWaterColumn,
-          by.x = "cdecStation", by.y = "gage", all.x = T)
+                      by.x = "cdecStation", by.y = "gage", all.x = T)
 
     metadata$rowIndex <- x
     metadata
