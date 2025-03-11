@@ -364,10 +364,10 @@ calcNearestCDEC <- function(df, cdecGPS = deltadata:::cdecStations,
 #'
 #' @param df A data frame that contains at least the lat/lon of station(s) of
 #' interest, named as `lat` and `lon`.
-#' @param n A number reflecting the desired relative distance of the CDEC gage from 
-#' the lat/lon of interest. n=1 means return the closest gage, n=2 means return the 
-#' second closest gage, etc. n should be an integer or should otherwise be convertible 
-#' to an integer. 
+#' @param n A number reflecting the desired relative distance of the CDEC gage from
+#' the lat/lon of interest. n=1 means return the closest gage, n=2 means return the
+#' second closest gage, etc. n should be an integer or should otherwise be convertible
+#' to an integer.
 #' @param cdecGPS A data frame containing the GPS coordinates of the CDEC gages
 #' of interest, as `lat` and `lon`.
 #' @param cdecMetadata A data frame containing the metadata table of the CDEC
@@ -402,7 +402,10 @@ calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
 
   if (all(!c("station", "lat", "lon") %in% names(df))) stop("Your `df` must contain at least `station`, `lat, `lon`.", call. = F)
 
-  if(length(n) > 1) { n <- match.arg(n) }
+  if(length(n) > 1) {
+    n <- n[1]
+    warning("n has length > 1. Using only the first element.\n")
+  }
   n <- as.integer(n)
   if(is.na(n)) {
     stop("Could not convert n to an integer.\n")
@@ -433,7 +436,7 @@ calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
   if(n > nrow(cdecGPSFiltered)) {
     stop("n is larger than the number of available stations.\n")
   }
-	
+
   lapply(1:nrow(df), function(x) {
 
     distanceMatrix <- geosphere::distm(data.frame(longitude = df[["lon"]][[x]],
