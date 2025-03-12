@@ -393,7 +393,7 @@ calcNearestCDEC <- function(df, cdecGPS = deltadata:::cdecStations,
 #'
 #' calcNthNearestCDEC(df)
 #' }
-calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
+calcNthNearestCDEC <- function(df, n = 1, cdecGPS = deltadata:::cdecStations,
                                cdecMetadata = deltadata:::cdecMetadata,
                                variable = c("temp", "turbidity", "ec"),
                                waterColumn = c("top", "bottom")) {
@@ -458,7 +458,7 @@ calcNthNearestCDEC <- function(df, n=1, cdecGPS = deltadata:::cdecStations,
                                              ignore.case = T), ]
     }
 
-    metadata <- merge(distanceData[n,  ], gageWaterColumn,
+    metadata <- merge(distanceData[n, ], gageWaterColumn,
                       by.x = "cdecStation", by.y = "gage", all.x = T)
 
     metadata$rowIndex <- x
@@ -538,9 +538,9 @@ popCDEC <- function(df,
 
   # Get CDEC data
   if (is.null(cdecClosest)) {
-    cdecClosest <- calcNearestCDEC(df,
-                                   variable = variableWanted,
-                                   waterColumn = waterColumnWanted)
+    cdecClosest <- calcNthNearestCDEC(df,
+                                      variable = variableWanted,
+                                      waterColumn = waterColumnWanted)
   }
 
   # Process CDEC closest stations
