@@ -4,16 +4,19 @@
 \alias{pullMetadataCDEC}
 \title{Pulling CDEC gage metadata}
 \usage{
-pullMetadataCDEC(station, list = T)
+pullMetadataCDEC(gage, maxAttempt = 3, timeout = 60, verbose = TRUE)
 }
 \arguments{
-\item{station}{A character vector that supports one or more CDEC gage.}
+\item{gage}{Name of the CDEC gage, a singular value}
 
-\item{list}{Logical, should the output be provided as a list or data.frame?}
+\item{maxAttempt}{Number of times to retry a scrape. Defaults to 3.}
+
+\item{timeout}{Seconds before a connection is terminated. Defaults to 60.}
+
+\item{verbose}{Should the function annotate its progress? Defaults to TRUE.}
 }
 \value{
-A list or data frame of the metadata associated with the requested
-CDEC gage.
+A list containing the location and sensor metadata of a CDEC station.
 }
 \description{
 A function to pull the metadata table associated with a CDEC gage.

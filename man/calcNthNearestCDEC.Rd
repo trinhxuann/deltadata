@@ -7,7 +7,7 @@
 calcNthNearestCDEC(
   df,
   n = 1,
-  cdecGPS = deltadata:::cdecStations,
+  cdecGPS = deltadata:::cdecStation,
   cdecMetadata = deltadata:::cdecMetadata,
   variable = c("temp", "turbidity", "ec"),
   waterColumn = c("top", "bottom")
@@ -43,9 +43,13 @@ A data frame of the metadata of the n^{th} closest CDEC station to your
 point of interest that has data for the variable of interest.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 Identifies the n^{th} nearest CDEC gage to a lat/lon of interest. This function
-requires metadata of all CDEC stations of interest. By default, all CDEC
-stations are used.
+requires metadata of all CDEC station of interest. By default, all CDEC
+station are used.
+}
+\note{
+This functionality has been incorporated into \code{\link{calcNearestCDEC}}.
 }
 \examples{
 \dontrun{

@@ -7,6 +7,8 @@
 #' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access
 #' architectures match.
 #'
+#' @importFrom utils readRegistry
+#'
 #' @noRd
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
@@ -29,7 +31,7 @@ architectureCheck <- function(officeBit = NULL) {
       subkey <- "Bitness"
     }
 
-    officeBit <- tryCatch(utils:::readRegistry(fp)[[subkey]],
+    officeBit <- tryCatch(readRegistry(fp)[[subkey]],
                           error = function(cond) {
                             ifelse(grepl("not found", cond$message),
                                    stop("Cannot automatically detect the architecture of your Microsoft Office. Please fill in `x32` or `x64` manually in the `officeBit` argument.", call. = F),
@@ -195,6 +197,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
 #'
 #' @noRd
 #' @importFrom httr headers HEAD
+#' @importFrom utils download.file unzip
 #' @keywords internal
 getFile <- function(file, open = F, method) {
 
@@ -206,7 +209,7 @@ getFile <- function(file, open = F, method) {
   if (class(fileType)[[1]] == "url") {
     if (!file.exists(file.path(tempdir(), fileName))) {
 
-      fileSize <- as.numeric(httr::headers(httr::HEAD(file))$`content-length`)/1024^2
+      fileSize <- as.numeric(headers(HEAD(file))$`content-length`)/1024^2
       timeOut <- ceiling(fileSize)
 
       if (fileSize > 50) {
@@ -225,7 +228,7 @@ getFile <- function(file, open = F, method) {
   }
 
   if (grepl("\\.zip$", fileName)) {
-    databaseName <- utils::unzip(filePath, list = T)[["Name"]]
+    databaseName <- unzip(filePath, list = T)[["Name"]]
     databaseName <- databaseName[grepl("(\\.accdb)|(\\.mdb)", databaseName)]
     accessPath <- file.path(tempdir(), databaseName)
   } else {

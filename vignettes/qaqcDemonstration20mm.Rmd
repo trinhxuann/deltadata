@@ -6,11 +6,6 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-```{r, include=F}
-tableNames <- deltadata:::tableNames
-relationalTables <- deltadata:::tables
-schema <- deltadata:::schema
-```
 The following is a case study using tools in this package to help QAQC the 20 mm Survey Access database, a yearly process that precedes data publication.
 
 ```{r setup}
@@ -50,7 +45,7 @@ bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"
 ```{r, echo=F}
 # To get around the FTP website potentially being down, will just work from a saved version to create vignette. However, the code should work with the live FTP if it is behaving normally.
 cat("Specify at least one table to pull from:\n")
-print(deltadata:::tableNames)
+print(deltadata:::tableNames20mm)
 ```
 
 #### Extracting your tables of interest
@@ -65,7 +60,7 @@ relationalTables <- bridgeAccess(
   )
 ```
 ```{r, include=F}
-relationalTables <- deltadata:::tables
+relationalTables <- deltadata:::tables20mm
 ```
 We can also download the system relationship table. This is an important table that records the relationships between the relational tables in the database. We can leverage this table to automatically and reliably join the relational tables with one another. However, this table does require special permissions to download. We can give ourselves permissions by feeding this table (`MSysRelationships`) into `bridgeAccess()`. The function will open the Access file and provide a message with instructions:
 
@@ -84,7 +79,7 @@ schema <- bridgeAccess(
 schema <- schema[[1]]
 ```
 ```{r, include=F}
-schema <- deltadata:::schema
+schema <- deltadata:::schema20mm
 ```
 
 ## Data joining

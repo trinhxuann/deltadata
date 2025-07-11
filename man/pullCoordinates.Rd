@@ -4,10 +4,14 @@
 \alias{pullCoordinates}
 \title{Pull CDEC gage lat/lon}
 \usage{
-pullCoordinates(gage)
+pullCoordinates(gage, maxAttempt = 3, timeout = 60)
 }
 \arguments{
 \item{gage}{Name of the gage of interest, as a character.}
+
+\item{maxAttempt}{Number of attempts to retry the same pull}
+
+\item{timeout}{Max duration to wait for a download, in seconds}
 }
 \value{
 A data frame containing the station name, lat, and lon.
