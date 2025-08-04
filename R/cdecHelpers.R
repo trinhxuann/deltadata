@@ -696,7 +696,8 @@ calcNthNearestCDEC <- function(df, n = 1,
 #' water temperature (`temp`), turbidity (`turbidity`), or electroconductivity
 #' (`ec`). Will default to `temp`.
 #' @param waterColumn Where in the water column to look for sensor data, top
-#' (`top`) or bottom (`bottom`)? Will default to `top`
+#' (`top`) or bottom (`bottom`)? Will default to `top`.
+#' @param batch Should batch processing be used?
 #' @param ... Additional parameters to be passed onto `calcNearestCDEC()`.
 #'
 #' @return A data frame with water quality of interest from the closest CDEC
@@ -714,6 +715,7 @@ popCDEC <- function(df,
                     cdecClosest = NULL,
                     variable = c("temp", "turbidity", "ec"),
                     waterColumn = c("top", "bottom"),
+                    batch=FALSE,
                     ...) {
 
   # --- Validation and preprocessing ---
@@ -763,13 +765,23 @@ popCDEC <- function(df,
 
     dateRange <- range(as.Date(durationSensorGroup$time))
 
-    cdecData <- pullCDEC(
-      station = unique(durationSensorGroup$cdecStation),
-      sensor = unique(durationSensorGroup$sensorNumber),
-      duration = as.character(unique(durationSensorGroup$duration)),
-      dateStart = dateRange[1] - 1, # Add a 1-day buffers
-      dateEnd = dateRange[2] + 1
-    )
+    if(batch) {
+      cdecData <- batchCDEC(
+        station = unique(durationSensorGroup$cdecStation),
+        sensor = unique(durationSensorGroup$sensorNumber),
+        duration = as.character(unique(durationSensorGroup$duration)),
+        dateStart = dateRange[1] - 1, # Add a 1-day buffers
+        dateEnd = dateRange[2] + 1
+      )
+    } else {
+      cdecData <- pullCDEC(
+        station = unique(durationSensorGroup$cdecStation),
+        sensor = unique(durationSensorGroup$sensorNumber),
+        duration = as.character(unique(durationSensorGroup$duration)),
+        dateStart = dateRange[1] - 1, # Add a 1-day buffers
+        dateEnd = dateRange[2] + 1
+      )
+    }
 
     if (is.null(cdecData) || nrow(cdecData) == 0) return(NULL)
 

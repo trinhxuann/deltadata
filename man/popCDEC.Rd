@@ -9,6 +9,7 @@ popCDEC(
   cdecClosest = NULL,
   variable = c("temp", "turbidity", "ec"),
   waterColumn = c("top", "bottom"),
+  batch = FALSE,
   ...
 )
 }
@@ -28,7 +29,9 @@ water temperature (\code{temp}), turbidity (\code{turbidity}), or electroconduct
 (\code{ec}). Will default to \code{temp}.}
 
 \item{waterColumn}{Where in the water column to look for sensor data, top
-(\code{top}) or bottom (\code{bottom})? Will default to \code{top}}
+(\code{top}) or bottom (\code{bottom})? Will default to \code{top}.}
+
+\item{batch}{Should batch processing be used?}
 
 \item{...}{Additional parameters to be passed onto \code{calcNearestCDEC()}.}
 }
