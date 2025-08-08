@@ -1314,3 +1314,117 @@ retryGet <- function(url, maxAttempt = 3, verbose = TRUE, ...) {
   stop(sprintf("Failed to retrieve data from %s after %d attempts.", url, maxAttempt), call. = FALSE)
   # return(NULL)
 }
+
+#' Estimate row position of relevant data
+#'
+#' @param tableData data.frame
+#' @param headerRow Row number of the header, if the header is within the data frame
+#' @param maxSearchRows Max number of rows to search through. Defaults to 15 under
+#' the assumption that the row with relevant data is at the top of the data frame.
+#'
+#' @returns An integer indicating start of the data row
+#' @noRd
+#'
+#' @keywords internal
+findDataStart <- function(tableData, headerRow = NULL, maxSearchRows = 15) {
+
+  totalRows <- nrow(tableData)
+  searchStart <- if (is.null(headerRow)) 1 else headerRow + 1
+  searchEnd <- min(totalRows, searchStart + maxSearchRows - 1)
+
+  if (searchStart > totalRows) {
+    return(searchStart)
+  }
+
+  densityScores <- sapply(searchStart:searchEnd, function(i) {
+    row <- as.character(tableData[i, ])
+    nonNaRatio <- mean(!is.na(row) & row != "" & trimws(row) != "", na.rm = TRUE)
+    contentVariety <- length(unique(nchar(row[!is.na(row)])))
+
+    nonNaRatio * log(contentVariety + 1)
+  })
+
+  searchStart + which.max(densityScores) - 1
+}
+
+#' Scrape sensor list from CDEC webpage
+#'
+#' @param url Webpage to SENSLIST
+#' @param naStrings Vector of potential NAs used in the table
+#' @param naThreshold Threshold beyond which a column will be removed from the output
+#' @param maxSearchRows Max number of rows to search through to find: the header row and
+#' data start row
+#'
+#' @returns Data frame
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' readCdecSensorList()
+#' }
+readCdecSensorList <- function(url = "https://cdec.water.ca.gov/reportapp/javareports?name=SensList",
+                               naStrings = c("N/A", "XX", "xxx"),
+                               naThreshold = 0.9,
+                               maxSearchRows = 15) {
+
+  if (!is.character(url) || length(url) != 1) {
+    stop("url must be a single character string")
+  }
+
+  if (!is.character(naStrings)) {
+    stop("naStrings must be a character vector")
+  }
+
+  if (!is.numeric(naThreshold) || length(naThreshold) != 1 ||
+      naThreshold < 0 || naThreshold > 1) {
+    stop("naThreshold must be a number between 0 and 1")
+  }
+
+  tryCatch({
+    htmlContent <- rvest::read_html(url)
+    tableElement <- rvest::html_element(htmlContent, "#SENSLIST")
+
+    if (is.na(tableElement)) {
+      stop("Could not find table element with ID 'SENSLIST' on the webpage")
+    }
+
+    rawTable <- rvest::html_table(tableElement,
+                                  header = FALSE,
+                                  na.strings = naStrings)
+
+    # Convert any cell that becomes empty after removing ALL whitespace to NA
+    processedTable <- as.data.frame(lapply(rawTable, function(col) {
+      col <- as.character(col)
+      cleanedCol <- gsub("\\s+", "", col)
+      col[!is.na(col) & cleanedCol == ""] <- NA
+      col
+    }))
+
+    if (nrow(processedTable) < 3) {
+      stop("Table does not have enough rows for processing")
+    }
+
+    headerRow <- findDataStart(processedTable)
+    dataStartRow <- findDataStart(processedTable, headerRow, maxSearchRows)
+
+    dataRows <- processedTable[dataStartRow:nrow(processedTable), , drop = FALSE]
+    naProportion <- colSums(is.na(dataRows)) / nrow(dataRows)
+
+    validCols <- which(naProportion < naThreshold)
+
+    if (length(validCols) == 0) {
+      stop("No columns contain sufficient data")
+    }
+
+    selectedTable <- processedTable[, validCols, drop = FALSE]
+    colnames(selectedTable) <- as.character(selectedTable[headerRow, ])
+    cleanedTable <- selectedTable[dataStartRow:nrow(selectedTable), , drop = FALSE]
+
+    rownames(cleanedTable) <- NULL
+
+    return(cleanedTable)
+
+  }, error = function(e) {
+    stop("Failed to read or process data from URL: ", e$message)
+  })
+}

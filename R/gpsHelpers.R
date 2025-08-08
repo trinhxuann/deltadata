@@ -171,7 +171,7 @@ gpsOutlier <- function(df, d = 0.5, returnAll = F) {
     df
   })
 
-  outlierDF <- do.call(rbind, outlierDF)
+  outlierDF <- dplyr::bind_rows(outlierDF)
   if (is.null(outlierDF)) stop("No station matched the theoreticals.")
 
   finTheoreticalStations <- df[(df[["legend"]] == "Theoretical" & df[["station"]] %in% unique(outlierDF[["station"]])), ]
@@ -180,7 +180,7 @@ gpsOutlier <- function(df, d = 0.5, returnAll = F) {
   finTheoreticalStations$distance <- NA
   finTheoreticalStations$outlier <- NA
 
-  fin <- rbind(outlierDF, finTheoreticalStations)
+  fin <- dplyr::bind_rows(outlierDF, finTheoreticalStations)
 
   names(fin)[which(!names(fin) %in% c("lonTheoretical", "latTheoretical", "distance", "outlier"))] <-
     originalNames
