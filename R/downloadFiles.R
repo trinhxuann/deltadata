@@ -40,67 +40,6 @@ parseEDI <- function(url) {
   }
 }
 
-#' Table of file names and the associated url from an EDI webpage
-#'
-#' @param url URL of the EDI package.
-#' @param version Optional. Numeric value of the version number of interest.
-#' Defaults to `newest`, which will pull the newest version.
-#'
-#' @return A table of file names, hash values, and associated url of all files
-#' available in the data package.
-#'
-#' @noRd
-#' @keywords internal
-tableNamesEDI <- function(packageInfo, version = "newest") {
-
-  baseUrl <- sprintf("https://pasta.lternet.edu/package")
-  versionUrl <- sprintf("%s/eml/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier)
-
-  currentNewestVersion <- max(
-    suppressWarnings(utils::read.table(versionUrl)[1])
-  )
-
-  if (packageInfo$revision != currentNewestVersion & version == "newest") {
-    warning("Your current version is ", packageInfo$revision, " but the newest version available is ", currentNewestVersion, ". Pulling from the newest version, otherwise, specify the `version` argument.",
-            call. = F)
-    version <- currentNewestVersion
-  } else version <- packageInfo$revision
-
-  entityUrl <- sprintf("%s/name/eml/%s/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier, version)
-
-  parseEntityDf <- function(url) {
-    lines <- readLines(url)
-    parts <- strsplit(lines, ",")
-    data.frame(
-      id = sapply(parts, `[`, 1),
-      name = sapply(parts, function(x) paste(x[-1], collapse = ","))
-    )
-  }
-
-  entities <- parseEntityDf(entityUrl)
-  # Get extension info
-  getFormatType <- function(id) {
-    rmdUrl <- sprintf("%s/data/rmd/eml/%s/%s/%s/%s",
-                      baseUrl, packageInfo$scope, packageInfo$identifier, version, id)
-    doc <- tryCatch({
-      suppressMessages(XML::xmlParse(httr::GET(rmdUrl), encoding = "UTF-8"))
-    }, error = function(e) {
-      cat("Retrying...\n")
-      Sys.sleep(2)  # Wait 2 seconds
-      suppressMessages(XML::xmlParse(httr::GET(rmdUrl), encoding = "UTF-8"))  # Retry once
-    })
-    format <- XML::xpathSApply(doc, "//dataFormat", XML::xmlValue)
-    sub("^.*/|\\.", "", format)
-  }
-
-  entities$extension <- vapply(entities$id, getFormatType, character(1), USE.NAMES = F)
-
-  entities$link <- sprintf("%s/data/eml/%s/%s/%s/%s",
-                           baseUrl, packageInfo$scope, packageInfo$identifier, version, entities$id)
-
-  return(entities)
-}
-
 #' Pull files from an EDI package
 #'
 #' @description
@@ -156,19 +95,22 @@ getEDI <- function(url, files, version = "newest", quiet = FALSE) {
   # All other files are downloaded
   fileFate <- function(name, size, extension, link) {
 
-    cat("Downloading", name, "; file size:", size, "\n")
+    filePath <- file.path(tempdir(), name)
+    message("Downloading: ", name, " (", size, ")")
+
+    response <- httr::GET(
+      url = link,
+      httr::write_disk(path = filePath, overwrite = TRUE),
+      httr::progress()
+    )
+    httr::stop_for_status(response, task = paste("download", name))
+
     switch(extension,
-           "csv" = utils::read.csv(link),
-           "rds" = readRDS(url(link)),
-           {
-             filePath <- file.path(tempdir(), name)
-             if (!file.exists(filePath)) {
-               if (utils::download.file(link, filePath, mode = "wb") != 0) {
-                 stop("Download failed for: ", name, call. = FALSE)
-               }
-             }
-             filePath
-           }
+           csv = read.csv(filePath),
+           rds = readRDS(filePath),
+           # For any other file type, return the path to the temporary file,
+           # preserving the original function's behavior.
+           filePath
     )
   }
 
@@ -209,49 +151,56 @@ getMetadataEdi <- function(url, version = "newest", all = FALSE) {
   versionUrl <- sprintf("%s/eml/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier)
 
   currentNewestVersion <- max(
-    suppressWarnings(utils::read.table(versionUrl)[1])
+    scan(text = content(httr::GET(versionUrl), "text", encoding = "UTF-8"), quiet = T)
   )
 
   if (packageInfo$revision != currentNewestVersion & version == "newest") {
     version <- currentNewestVersion
   } else version <- packageInfo$revision
 
-  fullMetadata <- sprintf("%s/metadata/eml/%s/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier, version)
-  doc <- suppressMessages(XML::xmlParse(httr::GET(fullMetadata), encoding = "UTF-8"))
+  fullMetadataUrl <- sprintf("%s/metadata/eml/%s/%s/%s", baseUrl, packageInfo$scope, packageInfo$identifier, version)
+  fullMetadata <- httr::GET(fullMetadataUrl)
+  httr::stop_for_status(fullMetadata, task = "fetch EML metadata")
+
+  # Modernize with xml2 instead of XML
+  doc <- xml2::read_xml(fullMetadata)
   if (isTRUE(all)) return(doc)
 
-  title <- XML::xpathSApply(doc, "//dataset/title", XML::xmlValue)
-  entityNames <- XML::xpathSApply(doc, "//dataset//dataTable/physical/objectName |
-                                  //dataset//otherEntity/physical/objectName", XML::xmlValue)
-  entityExtension <- tools::file_ext(entityNames)
-  entityDescription <- XML::xpathSApply(doc, "//dataset/dataTable/entityDescription |
-                                        //dataset/otherEntity/entityDescription", XML::xmlValue)
-  fileSize <- XML::xpathSApply(doc, "//dataset/dataTable/physical/size |
-                               //dataset/otherEntity/physical/size",
-                               function(x) {
-                                 as.numeric(XML::xmlValue(x))
-                               })
-  fileSizeParsed <- vapply(fileSize,
-                           function(size) {
-                             format(structure(size, class = "object_size"), units = "auto", standard = "IEC")
-                           },
-                           character(1))
-  entityLink <- XML::xpathSApply(doc, "//dataset/dataTable/physical/distribution/online/url |
-                                 //dataset/otherEntity/physical/distribution/online/url", XML::xmlValue)
-  entityId <- basename(entityLink)
-  publicationDate <- XML::xpathSApply(doc, "//dataset/pubDate", XML::xmlValue)
+  # Get namespaces to use in XPath
+  ns <- xml2::xml_ns(doc)
 
-  list(
-    df = data.frame(
-      name = entityNames,
-      extension = entityExtension,
+  # Grab relevant elements
+  title <- xml2::xml_text(xml2::xml_find_first(doc, ".//dataset/title", ns))
+  pubDate <- xml2::xml_text(xml2::xml_find_first(doc, ".//dataset/pubDate", ns))
+  entities <- xml2::xml_find_all(doc, ".//dataTable | .//otherEntity", ns)
+
+  # Extract the metadata per entity
+  entityDf <- dplyr::bind_rows(lapply(entities, function(entity) {
+    name <- xml2::xml_text(xml2::xml_find_first(entity, ".//physical/objectName", ns))
+    fileSize <- as.numeric(xml2::xml_text(xml2::xml_find_first(entity, ".//physical/size", ns)))
+    link <- xml2::xml_text(xml2::xml_find_first(entity, ".//distribution/online/url", ns))
+    entityDescription <- xml2::xml_text(xml2::xml_find_first(entity, ".//entityDescription", ns))
+
+    fileSizeParsed <- if (!is.na(fileSize)) {
+      format(structure(fileSize, class = "object_size"), units = "auto", standard = "IEC")
+    } else {
+      NA_character_
+    }
+
+    data.frame(
+      name = name,
+      extension = tools::file_ext(name),
       size = fileSizeParsed,
       sizeBytes = fileSize,
       description = entityDescription,
-      link = entityLink,
-      id = entityId
-    ),
+      link = link,
+      id = basename(link)
+    )
+  }))
+
+  list(
+    df = entityDf,
     packageTitle = title,
-    publicationDate = publicationDate
+    publicationDate = pubDate
   )
 }

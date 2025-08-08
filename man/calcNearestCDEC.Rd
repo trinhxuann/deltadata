@@ -12,8 +12,8 @@ calcNearestCDEC(
   waterColumn = c("top", "bottom"),
   method = c("fast", "accurate"),
   verbose = T,
-  cdecGPS = deltadata:::cdecStation,
-  cdecMetadata = deltadata:::cdecMetadata
+  cdecGPS = NULL,
+  cdecMetadata = NULL
 )
 }
 \arguments{
@@ -50,7 +50,7 @@ A data.frame containing the input point identifiers,
 the found CDEC station, the distance, and the sensor metadata.
 }
 \description{
-Identifies the n^{th} nearest CDEC station to one or more
+Identifies the n-th nearest CDEC station to one or more
 input coordinates. It can filter station based on a specific sensor number
 or by a general variable and water column combination. By default, all CDEC
 station are searched.

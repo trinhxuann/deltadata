@@ -16,9 +16,10 @@ Imports:
     leaflet,
     rvest,
     lubridate,
-    XML,
     dplyr,
-    lifecycle
+    lifecycle,
+    xml2,
+    rlang
 Suggests: 
     knitr,
     rmarkdown,

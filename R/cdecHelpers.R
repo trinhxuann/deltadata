@@ -58,15 +58,23 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
     if (length(coordinates) != 2)
       stop("`coordinates` should be a vector of two numbers, lat and lon.",
            call. = FALSE)
+    if (nrow(coordinates) > 1)
+      stop("Metadata lookup not supported for multiple coordinates.",
+           call. = FALSE)
     # Assuming calcNearestCDEC is defined elsewhere or will be provided
     cdecClosest <- calcNearestCDEC(data.frame(lat = coordinates[[1]],
-                                              lon = coordinates[[2]]))
+                                              lon = coordinates[[2]]),
+                                   sensor = sensor)
 
-    station <- unique(cdecClosest[["cdecStation"]])
+    station <- unique(cdecClosest[["cdecGage"]])
   }
 
   # --- Metadata retrieval if missing ---
+  # There's pullMetadataCDEC, but this is faster, albiet perhaps more brittle.
   if (is.null(sensor) | length(duration) > 1 | missing(dateStart)) {
+    if (length(station) > 1)
+      stop("Metadata lookup not supported for multiple stations.",
+           call. = FALSE)
     # Retrieve metadata logic
     webpage <- session(paste0("http://cdec.water.ca.gov/dynamicapp/staMeta?station_id=",
                                      station))
@@ -100,7 +108,7 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
       ]
       availableData$duration <- gsub("\\(|\\)", "",
                                      availableData[["duration"]])
-      availableData$gage <- station
+      availableData$cdecGage <- station
     }
 
     if (isTRUE(verbose)) {
@@ -119,7 +127,8 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
                          "daily" = "D")
 
   dateStart <- parseDate(dateStart)
-  dateEnd <- if (is.null(dateEnd)) Sys.Date() else parseDate(dateEnd)
+  originalEnd <- dateEnd # For filtering at the end to ensure user only get the data they asked for
+  dateEnd <- if (is.null(dateEnd)) Sys.Date() + 1 else parseDate(dateEnd) + 1
 
   if (dateStart > dateEnd) {
     stop("`dateStart` cannot be after `dateEnd`.", call. = FALSE)
@@ -170,7 +179,7 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
 
     if (nrow(df) == 0) {
       # If no data found in any fallback duration, return empty data frame
-      warning("No data available for station ", station, " as specified.", call. = F)
+      warning("No data available for station ", paste(station, collapse = ", "), " as specified.", call. = F)
       return(data.frame())
     }
   }
@@ -249,12 +258,13 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
     df$units <- ifelse(df[["units"]] == "DEG C",
                        "DEG F", df[["units"]])
   }
-  df
+  # Final filtering to provide the range that the user wants
+  df[df$obsDate <= originalEnd, ]
 }
 
 #' Pulling CDEC gage metadata
 #'
-#' @param gage Name of the CDEC gage, a singular value
+#' @param cdecGage Name of the CDEC gage, a singular value
 #' @param maxAttempt Number of times to retry a scrape. Defaults to 3.
 #' @param timeout Seconds before a connection is terminated. Defaults to 60.
 #' @param verbose Should the function annotate its progress? Defaults to TRUE.
@@ -272,10 +282,10 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
 #' \dontrun{
 #' pullMetadataCDEC("MAL")
 #' }
-pullMetadataCDEC <- function(gage, maxAttempt = 3, timeout = 60, verbose = TRUE) {
+pullMetadataCDEC <- function(cdecGage, maxAttempt = 3, timeout = 60, verbose = TRUE) {
 
   # --- Network Request Block with Retry Logic ---
-  url <- paste0("https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=", gage)
+  url <- paste0("https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=", cdecGage)
   # Retry logic now wrapped in internal function retryGet
   response <- retryGet(url, maxAttempt = maxAttempt, timeout(timeout))
 
@@ -287,7 +297,7 @@ pullMetadataCDEC <- function(gage, maxAttempt = 3, timeout = 60, verbose = TRUE)
   # Check for "Station Not Found" on the page content itself
   titleElement <- html_element(page, "h1")
   if (!is.na(titleElement) && grepl("Station Not Found", html_text(titleElement), ignore.case = TRUE)) {
-    stop(sprintf("Gage '%s' not found on CDEC. The page exists but contains no station data.", gage), call. = FALSE)
+    stop(sprintf("Gage '%s' not found on CDEC. The page exists but contains no station data.", cdecGage), call. = FALSE)
   }
 
   # Target the metadata table using a robust selector
@@ -317,7 +327,7 @@ pullMetadataCDEC <- function(gage, maxAttempt = 3, timeout = 60, verbose = TRUE)
 
 #' Pull CDEC gage lat/lon
 #'
-#' @param gage Name of the gage of interest, as a character.
+#' @param cdecGage Name of the gage of interest, as a character.
 #' @param maxAttempt Number of attempts to retry the same pull
 #' @param timeout Max duration to wait for a download, in seconds
 #'
@@ -331,16 +341,16 @@ pullMetadataCDEC <- function(gage, maxAttempt = 3, timeout = 60, verbose = TRUE)
 #' \dontrun{
 #' pullCoordinates("MAL")
 #' }
-pullCoordinates <- function(gage, maxAttempt = 3, timeout = 60) {
+pullCoordinates <- function(cdecGage, maxAttempt = 3, timeout = 60) {
 
-  response <- retryGet(paste0("https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=", gage),
+  response <- retryGet(paste0("https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=", cdecGage),
                               maxAttempt = maxAttempt, timeout = timeout)
 
   htmlContent <- content(response, as = "text", encoding = "UTF-8")
   page <- read_html(htmlContent)
   # After the loop, check if we ultimately failed.
   if (is.null(response) || http_status(response)$category != "Success") {
-    stop(sprintf("Failed to retrieve data for gage '%s' after %d attempts.", gage, maxAttempt), call. = FALSE)
+    stop(sprintf("Failed to retrieve data for gage '%s' after %d attempts.", cdecGage, maxAttempt), call. = FALSE)
   }
 
   dataString <- html_element(page, "table")
@@ -353,7 +363,7 @@ pullCoordinates <- function(gage, maxAttempt = 3, timeout = 60) {
 
 #' Find the Nth nearest CDEC station with specific data
 #'
-#' Identifies the n^{th} nearest CDEC station to one or more
+#' Identifies the n-th nearest CDEC station to one or more
 #' input coordinates. It can filter station based on a specific sensor number
 #' or by a general variable and water column combination. By default, all CDEC
 #' station are searched.
@@ -396,8 +406,13 @@ calcNearestCDEC <- function(df, n = 1,
                             waterColumn = c("top", "bottom"),
                             method = c("fast", "accurate"),
                             verbose = T,
-                            cdecGPS = deltadata:::cdecStation,
-                            cdecMetadata = deltadata:::cdecMetadata) {
+                            cdecGPS = NULL,
+                            cdecMetadata = NULL) {
+
+  cdecGPS <- if (is.null(cdecGPS)) get("cdecStation", envir = asNamespace("deltadata"))
+  cdecMetadata <- if (is.null(cdecMetadata)) get("cdecMetadata", envir = asNamespace("deltadata"))
+  # cdecGPS <- if (is.null(cdecGPS)) cdecStation
+  # cdecMetadata <- if (is.null(cdecMetadata)) cdecMetadata
 
   # --- Validation ---
   if (!all(c("lat", "lon") %in% names(df))) {
@@ -480,8 +495,8 @@ calcNearestCDEC <- function(df, n = 1,
   if (is.character(n) && n == "all") {
     # --- Path 1: n = "all" ---
     if (verbose) {
-      message("n = 'all': Returning a data frame with a nested list-column 'cdecStation'.")
-      message("Use `tidyr::unnest(yourObject, cdecstation)` to expand the results.")
+      message("n = 'all': Returning a data frame with a nested list-column 'cdecGage'.")
+      message("Use `tidyr::unnest(yourObject, cdecGage)` to expand the results.")
     }
 
     # Use apply to process each input point (each row of the distance matrix)
@@ -489,7 +504,7 @@ calcNearestCDEC <- function(df, n = 1,
 
       # Create a data frame of all possible station and their distances
       results <- data.frame(
-        cdecStation = cdecGpsFiltered$station,
+        cdecGage = cdecGpsFiltered$station,
         distance = dist
       )
 
@@ -498,13 +513,13 @@ calcNearestCDEC <- function(df, n = 1,
 
       # Merge in the sensor metadata for complete information
       merge(results, availableSensors,
-            by.x = "cdecStation", by.y = "gage",
+            by.x = "cdecGage", by.y = "cdecGage",
             sort = F)
     })
 
     # Create the final data frame with the list-column
     resultDf <- df
-    resultDf$cdecstation <- rankedResults
+    resultDf$cdecGage <- rankedResults
 
     return(resultDf)
 
@@ -521,7 +536,7 @@ calcNearestCDEC <- function(df, n = 1,
 
     resultDf <- cbind(
       df,
-      cdecStation = nthStation$station,
+      cdecGage = nthStation$station,
       distance = nthDistance,
       rowIndex = 1:nrow(df)
     )
@@ -529,7 +544,7 @@ calcNearestCDEC <- function(df, n = 1,
     mergedDf <- merge(
       resultDf,
       availableSensors,
-      by.x = "cdecStation",
+      by.x = "cdecGage",
       by.y = "gage",
       all.x = TRUE
     )
@@ -537,7 +552,7 @@ calcNearestCDEC <- function(df, n = 1,
     # Will return only 1 data row, prioritizing: event > hourly > daily
     # There's a decision between the different sensor types, but will deal with that as necessary
     mergedDf$duration <- factor(mergedDf$duration, levels = c("event", "hourly", "daily"))
-    mergedDf <- mergedDf[order(mergedDf$duration), ]
+    mergedDf <- mergedDf[order(mergedDf$rowIndex, mergedDf$duration, -mergedDf$sensorNumber), ]
     # Seems a bit loose but I think this works fine if the goal is to get the first row regardless of sensorNumber
     resultDf <- mergedDf[!duplicated(mergedDf$rowIndex), ]
     resultDf$rowIndex <- NULL
@@ -546,11 +561,11 @@ calcNearestCDEC <- function(df, n = 1,
   }
 }
 
-#' Find the n^{th} closest CDEC gage
+#' Find the n-th closest CDEC gage
 #'
 #' @description
 #' `r lifecycle::badge("deprecated")`
-#' Identifies the n^{th} nearest CDEC gage to a lat/lon of interest. This function
+#' Identifies the n-th nearest CDEC gage to a lat/lon of interest. This function
 #' requires metadata of all CDEC station of interest. By default, all CDEC
 #' station are used.
 #'
@@ -576,7 +591,7 @@ calcNearestCDEC <- function(df, n = 1,
 #' now, top data will be used in the calculation even if you ask for bottom
 #' data.
 #'
-#' @return A data frame of the metadata of the n^{th} closest CDEC station to your
+#' @return A data frame of the metadata of the n-th closest CDEC station to your
 #' point of interest that has data for the variable of interest.
 #' @export
 #'
@@ -589,8 +604,8 @@ calcNearestCDEC <- function(df, n = 1,
 #' calcNthNearestCDEC(df)
 #' }
 calcNthNearestCDEC <- function(df, n = 1,
-                               cdecGPS = deltadata:::cdecStation,
-                               cdecMetadata = deltadata:::cdecMetadata,
+                               cdecGPS = cdecStation,
+                               cdecMetadata = cdecMetadata,
                                variable = c("temp", "turbidity", "ec"),
                                waterColumn = c("top", "bottom")) {
 
@@ -638,7 +653,7 @@ calcNthNearestCDEC <- function(df, n = 1,
   closestGages <- cdecMetadata[grepl(variableWanted, cdecMetadata[["sensorDescription"]], ignore.case = T), ]
 
 
-  cdecGPSFiltered <- cdecGPS[cdecGPS[["station"]] %in% closestGages[["gage"]], ]
+  cdecGPSFiltered <- cdecGPS[cdecGPS[["station"]] %in% closestGages[["cdecGage"]], ]
   if(n > nrow(cdecGPSFiltered)) {
     stop("n is larger than the number of available station.\n")
   }
@@ -651,7 +666,7 @@ calcNthNearestCDEC <- function(df, n = 1,
                                                   latitude = cdecGPSFiltered[["latitude"]]),
                                        fun = distVincentyEllipsoid)
 
-    distanceData <- data.frame(cdecStation = cdecGPSFiltered[["station"]],
+    distanceData <- data.frame(cdecGage = cdecGPSFiltered[["station"]],
                                distance = as.vector(distanceMatrix)/1609.344
                                # stationOfInterest = df[["station"]][x]
     )
@@ -665,7 +680,7 @@ calcNthNearestCDEC <- function(df, n = 1,
     }
 
     metadata <- merge(distanceData[n, ], gageWaterColumn,
-                      by.x = "cdecStation", by.y = "gage", all.x = T)
+                      by.x = "cdecGage", by.y = "cdecGage", all.x = T)
 
     metadata$rowIndex <- x
     metadata
@@ -688,7 +703,7 @@ calcNthNearestCDEC <- function(df, n = 1,
 #' longitude (`lon`), and time (`time`). Ensure that `time` is a date-time
 #' format, YYYY-MM-DD HH:MM:SS.
 #' @param cdecClosest A data frame of the closest station per coordinate of interest.
-#' This df should include three columns: `cdecStation` (the CDEC station name),
+#' This df should include three columns: `cdecGage` (the CDEC station name),
 #' `sensorNumber` (sensor number that you're interested in), and `duration`
 #' (the sampling interval of interest). If not provided, `calcNearestCDEC()` will
 #' automatically populate the closest cdec station per sampling location from `df`.
@@ -702,6 +717,9 @@ calcNthNearestCDEC <- function(df, n = 1,
 #' @return A data frame with water quality of interest from the closest CDEC
 #' gage at the closest time stamp.
 #' @export
+#'
+#' @importFrom utils modifyList
+#' @importFrom dplyr bind_rows
 #'
 #' @examples
 #' \dontrun{
@@ -718,7 +736,7 @@ popCDEC <- function(df,
 
   # --- Validation and preprocessing ---
   requiredCols <- c("station", "lat", "lon", "time")
-  names(df) <- tolower(names(df))
+  # names(df) <- tolower(names(df))
 
   if (!all(requiredCols %in% names(df))) {
     stop(sprintf("Missing required columns: %s",
@@ -743,7 +761,16 @@ popCDEC <- function(df,
   if (all(is.na(df$time))) stop("Time column could not be parsed. Ensure the time is in `%Y-%m-%d %H:%M:%S` format", call. = F)
 
   # --- Get cdec data ---
-  message("Step 1/2: Finding nearest CDEC stations with required data...")
+  defaults <- list(
+    method = "fast",
+    verbose = TRUE
+  )
+  # Merge in user arguments if they're provided instead of the default
+  userArguments <- list(...)
+  finalArguments <- modifyList(defaults, userArguments)
+
+  if (finalArguments$method == "accurate" && !identical(finalArguments$verbose, FALSE))
+    message("Step 1/2: Finding nearest CDEC stations with required data...")
 
   if (is.null(cdecClosest)) {
     cdecClosest <- calcNearestCDEC(df,
@@ -756,31 +783,48 @@ popCDEC <- function(df,
   dfSplitDuration <- split(cdecClosest, list(as.character(cdecClosest$duration),
                                              cdecClosest$sensorNumber),
                            drop = T)
-  message("Step 2/2: Downloading and finding nearest CDEC value...")
+  if (finalArguments$method == "accurate" && !identical(finalArguments$verbose, FALSE))
+    message("Step 2/2: Downloading and finding nearest CDEC value...")
 
-  pulledData <- do.call(rbind, lapply(dfSplitDuration, function(durationSensorGroup) {
+  pulledData <- bind_rows(lapply(dfSplitDuration, function(durationSensorGroup) {
     if (nrow(durationSensorGroup) == 0) return(NULL)
 
     dateRange <- range(as.Date(durationSensorGroup$time))
 
-    cdecData <- pullCDEC(
-      station = unique(durationSensorGroup$cdecStation),
-      sensor = unique(durationSensorGroup$sensorNumber),
-      duration = as.character(unique(durationSensorGroup$duration)),
-      dateStart = dateRange[1] - 1, # Add a 1-day buffers
-      dateEnd = dateRange[2] + 1
-    )
+    stations <- unique(durationSensorGroup$cdecGage)
+    durations <- as.character(unique(durationSensorGroup$duration))
+    dateStarting <- dateRange[1] - 1
+    dateEnding <- dateRange[2]
+
+    estimatedRows <- estimateCdecRows(length(stations), durations, dateStarting, dateEnding + 1)
+    if (estimatedRows < 2000000) {
+      cdecData <- pullCDEC(
+        station = unique(durationSensorGroup$cdecGage),
+        sensor = unique(durationSensorGroup$sensorNumber),
+        duration = as.character(unique(durationSensorGroup$duration)),
+        dateStart = dateRange[1] - 1, # Add a 1-day buffers
+        dateEnd = dateRange[2] # + 1 day buff now taken care of within pullCDEC
+      )
+    } else {
+      cdecData <- batchCDEC(
+        station = unique(durationSensorGroup$cdecGage),
+        sensor = unique(durationSensorGroup$sensorNumber),
+        duration = as.character(unique(durationSensorGroup$duration)),
+        dateStart = dateRange[1] - 1, # Add a 1-day buffers
+        dateEnd = dateRange[2] # + 1 day buff now taken care of within pullCDEC
+      )
+    }
 
     if (is.null(cdecData) || nrow(cdecData) == 0) return(NULL)
 
     # Split the location of interset data into groups of its nearest cdec station
-    cdecDataPerStation <- split(durationSensorGroup, durationSensorGroup$cdecStation)
+    cdecDataPerStation <- split(durationSensorGroup, durationSensorGroup$cdecGage)
 
     # To each sampling point, find closest time point from its closest cdec station
     results <- lapply(cdecDataPerStation, function(cdecDf) {
 
-      stationId <- cdecDf$cdecStation[1]
-      cdecStationDf <- cdecData[cdecData$stationId == stationId, ]
+      cdecGage <- cdecDf$cdecGage[1]
+      cdecStationDf <- cdecData[cdecData$cdecGage == cdecGage, ]
 
       # If there's no CDEC data for this station, return the original user data.
       if (nrow(cdecStationDf) == 0) {
@@ -813,12 +857,11 @@ popCDEC <- function(df,
       return(result)
     })
 
-    do.call(rbind, results)
-
+    bind_rows(results)
   }))
   # --- Clean up ---
   rownames(pulledData) <- NULL
-  finalNameOrder <- append(setdiff(names(pulledData), "cdecStation"), "cdecStation",
+  finalNameOrder <- append(setdiff(names(pulledData), "cdecGage"), "cdecGage",
                            after = ncol(pulledData) - 3)
 
   # Want cdec station name at the end of the data frame with the value and time difference
@@ -972,6 +1015,7 @@ popCDEC <- function(df,
 #' @export
 #'
 #' @importFrom dplyr distinct bind_rows
+#' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
@@ -988,14 +1032,14 @@ popCDEC <- function(df,
 #' )
 #' }
 batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
-                      rowLimit = 1000000, ...) {
+                      rowLimit = 2000000, ...) {
 
   # --- Validation and preprocessing ---
   dateStart <- parseDate(dateStart)
   dateEnd <- if (is.null(dateEnd)) Sys.Date() else parseDate(dateEnd)
   station <- unique(station)
 
-  if (is.na(dateStart) || is.na(dateEnd) || dateStart > dateEnd) {
+  if (is.na(dateStart) || is.na(dateEnd) || dateStart > dateEnd || is.infinite(dateStart) || is.infinite(dateEnd)) {
     stop("Invalid `dateStart` or `dateEnd` provided.", call. = FALSE)
   }
 
@@ -1005,7 +1049,7 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
     numberstation = length(station),
     duration = duration,
     startDate = dateStart,
-    endDate = dateEnd
+    endDate = dateEnd + 1
   )
 
   cat(sprintf("Total estimated rows for this request: %s\n", format(totalEstimatedRows, big.mark = ",")))
@@ -1032,12 +1076,13 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
   chunk <- 1
 
   while (currentDateStart <= dateEnd) {
-    currentDateEnd <- min(currentDateStart + chunkSizeInDays, dateEnd + 1)
+    # -1 needed as pullCDEC defaults to adding 1 to ending date
+    currentDateEnd <- min(currentDateStart + chunkSizeInDays - 1, dateEnd)
 
     cat(sprintf("--- Fetching data from %s to %s, Chunk %s/%s ---\n",
-                currentDateStart, currentDateEnd, chunk, numChunks))
+                currentDateStart, currentDateEnd + 1, chunk, numChunks))
 
-    chunkDf <- pullCDEC(
+    chunkDf <- pullCDEC( # I'd like to keep warnings form here if data were not downloaded for specific stations?
       station = station,
       sensor = sensor,
       duration = duration,
@@ -1050,7 +1095,8 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
       allDataChunks[[length(allDataChunks) + 1]] <- chunkDf
     }
 
-    currentDateStart <- currentDateEnd
+    # The + 1 here replicates the pullCDEC function defaulting to adding a day for its pull
+    currentDateStart <- currentDateEnd + 1
     chunk <- chunk + 1
   }
 
@@ -1060,7 +1106,7 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
 
   if (nrow(finalDf) > 0) {
     # Efficiently remove duplicates that may occur at chunk boundaries
-    finalDf <- distinct(finalDf, stationId, sensorNumber, duration, dateTime,
+    finalDf <- distinct(finalDf, .data$cdecGage, .data$sensorNumber, .data$duration, .data$dateTime,
                         .keep_all = T)
   }
 

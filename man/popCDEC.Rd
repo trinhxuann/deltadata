@@ -18,7 +18,7 @@ longitude (\code{lon}), and time (\code{time}). Ensure that \code{time} is a dat
 format, YYYY-MM-DD HH:MM:SS.}
 
 \item{cdecClosest}{A data frame of the closest station per coordinate of interest.
-This df should include three columns: \code{cdecStation} (the CDEC station name),
+This df should include three columns: \code{cdecGage} (the CDEC station name),
 \code{sensorNumber} (sensor number that you're interested in), and \code{duration}
 (the sampling interval of interest). If not provided, \code{calcNearestCDEC()} will
 automatically populate the closest cdec station per sampling location from \code{df}.}

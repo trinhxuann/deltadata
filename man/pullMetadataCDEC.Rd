@@ -4,10 +4,10 @@
 \alias{pullMetadataCDEC}
 \title{Pulling CDEC gage metadata}
 \usage{
-pullMetadataCDEC(gage, maxAttempt = 3, timeout = 60, verbose = TRUE)
+pullMetadataCDEC(cdecGage, maxAttempt = 3, timeout = 60, verbose = TRUE)
 }
 \arguments{
-\item{gage}{Name of the CDEC gage, a singular value}
+\item{cdecGage}{Name of the CDEC gage, a singular value}
 
 \item{maxAttempt}{Number of times to retry a scrape. Defaults to 3.}
 

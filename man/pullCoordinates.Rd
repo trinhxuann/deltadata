@@ -4,10 +4,10 @@
 \alias{pullCoordinates}
 \title{Pull CDEC gage lat/lon}
 \usage{
-pullCoordinates(gage, maxAttempt = 3, timeout = 60)
+pullCoordinates(cdecGage, maxAttempt = 3, timeout = 60)
 }
 \arguments{
-\item{gage}{Name of the gage of interest, as a character.}
+\item{cdecGage}{Name of the gage of interest, as a character.}
 
 \item{maxAttempt}{Number of attempts to retry the same pull}
 

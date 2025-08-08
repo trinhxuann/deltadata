@@ -10,7 +10,7 @@ batchCDEC(
   duration,
   dateStart,
   dateEnd = NULL,
-  rowLimit = 1e+06,
+  rowLimit = 2e+06,
   ...
 )
 }

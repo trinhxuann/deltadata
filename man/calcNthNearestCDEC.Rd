@@ -2,13 +2,13 @@
 % Please edit documentation in R/cdecHelpers.R
 \name{calcNthNearestCDEC}
 \alias{calcNthNearestCDEC}
-\title{Find the n^{th} closest CDEC gage}
+\title{Find the n-th closest CDEC gage}
 \usage{
 calcNthNearestCDEC(
   df,
   n = 1,
-  cdecGPS = deltadata:::cdecStation,
-  cdecMetadata = deltadata:::cdecMetadata,
+  cdecGPS = cdecStation,
+  cdecMetadata = cdecMetadata,
   variable = c("temp", "turbidity", "ec"),
   waterColumn = c("top", "bottom")
 )
@@ -39,12 +39,12 @@ now, top data will be used in the calculation even if you ask for bottom
 data.}
 }
 \value{
-A data frame of the metadata of the n^{th} closest CDEC station to your
+A data frame of the metadata of the n-th closest CDEC station to your
 point of interest that has data for the variable of interest.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-Identifies the n^{th} nearest CDEC gage to a lat/lon of interest. This function
+Identifies the n-th nearest CDEC gage to a lat/lon of interest. This function
 requires metadata of all CDEC station of interest. By default, all CDEC
 station are used.
 }

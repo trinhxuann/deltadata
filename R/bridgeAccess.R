@@ -7,12 +7,16 @@
 #' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access
 #' architectures match.
 #'
-#' @importFrom utils readRegistry
 #'
 #' @noRd
 #' @keywords internal
 architectureCheck <- function(officeBit = NULL) {
 
+  # Only works on a Windows computer
+  if (!Sys.info()["sysname"] %in% "Windows") {
+    message("Operating system is not Windows. This function will likely fail.")
+    return(NULL)
+  }
   # What architecture of R are you on?
   rBit <- ifelse((.Machine$sizeof.pointer == 4), "x32", "x64")
 
@@ -31,7 +35,7 @@ architectureCheck <- function(officeBit = NULL) {
       subkey <- "Bitness"
     }
 
-    officeBit <- tryCatch(readRegistry(fp)[[subkey]],
+    officeBit <- tryCatch(utils::readRegistry(fp)[[subkey]],
                           error = function(cond) {
                             ifelse(grepl("not found", cond$message),
                                    stop("Cannot automatically detect the architecture of your Microsoft Office. Please fill in `x32` or `x64` manually in the `officeBit` argument.", call. = F),
