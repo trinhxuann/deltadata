@@ -10,7 +10,7 @@
 #'
 #' @noRd
 #' @keywords internal
-architectureCheck <- function(officeBit = NULL) {
+architectureCheck <- function(officeBit = NULL, path32) {
 
   # Only works on a Windows computer
   if (!Sys.info()["sysname"] %in% "Windows") {
@@ -49,7 +49,10 @@ architectureCheck <- function(officeBit = NULL) {
     # First case = in 64bit R but have only 32bit office. Here, will have to use the terminal
     if (rBit == "x64" & officeBit == "x32") {
       # Check to see if a 32 bit R is installed
-      if (!file.exists(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"))) {
+      # if (!file.exists(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"))) {
+      #   stop("A 32-bit R could not be found on this machine and must be installed.", call. = F)
+      # }
+      if (!file.exists(r"(C:\Users\TXNguyen\Documents\R\R-4.1.3\bin\i386\Rscript.exe)")) {
         stop("A 32-bit R could not be found on this machine and must be installed.", call. = F)
       }
     }
@@ -292,12 +295,20 @@ getFile <- function(file, open = F, method) {
 #' tables = c("Catch", "FishCodes", "Lengths", "Meter Corrections",
 #' "SLS Stations", "Tow Info", "Water Info"))
 #' }
-bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
+bridgeAccess <- function(file, tables = "check",
+                         path32 = "default", method = "auto",
+                         ...) {
 
   retry <- if (is.null(list(...)$retry)) FALSE else list(...)$retry
 
   # First, check architecture. If ok then just source the script; if not then invoke system2
-  bitCheck <- architectureCheck()
+  # If using 4.3.1 for both 64 and 32 bits, then will be in the same folder
+  # If not, the user should provide directory to the Rscript.exe
+  path32 <- if (path32 == "default") paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe")
+  else path32
+  if (!file.exists(path32)) stop("A 32-bit R could not be found on this machine. \n Install R 4.3.1 or provide the path to the Rscript.exe path to `path32`.", call. = F)
+
+  bitCheck <- architectureCheck(path32 = path32)
 
   file <- getFile(file, open = F, method = method)
 
@@ -317,8 +328,11 @@ bridgeAccess <- function(file, tables = "check", method = "auto", ...) {
     script <- shQuote(normalizePath(system.file("internal", "connectAccessTerminal.R",
                                                 package = "deltadata"), winslash = "\\", mustWork = T))
     tables <- shQuote(tables)
-
-    terminalOutput <- system2(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"),
+    # "C:\Users\TXNguyen\Documents\R\R-4.1.3\bin\i386\Rscript.exe"
+    # terminalOutput <- system2(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"),
+    #                           args = c(script,
+    #                                    file, bitCheck, out, retry, tables))
+    terminalOutput <- system2(path32,
                               args = c(script,
                                        file, bitCheck, out, retry, tables))
 
