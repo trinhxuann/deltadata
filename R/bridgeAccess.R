@@ -275,6 +275,8 @@ getFile <- function(file, open = F, method) {
 #' "Enable Content" if prompted, `Ctrl + G`, paste in the "Immediate" window:
 #' `CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"`,
 #' and run the command by pressing `Enter` before exiting Access database.
+#' @param path32 File path to your 32 bit R executable, `Rscript.exe`. Only needed
+#' if you're using 32-bit Office.
 #' @param method `method` argument for `download.file`. Defaults to `auto` and
 #' it is recommended to not change this. See `download.file` for additional
 #' details if your downloaded file(s) cannot be read correctly.

@@ -4,7 +4,7 @@
 \alias{bridgeAccess}
 \title{Connect to an Access database}
 \usage{
-bridgeAccess(file, tables = "check", method = "auto", ...)
+bridgeAccess(file, tables = "check", path32 = "default", method = "auto", ...)
 }
 \arguments{
 \item{file}{File path to the Access database file. Can be a path to a hard
@@ -17,6 +17,9 @@ work. This has to be done in the Access DB itself. Open the file, select
 "Enable Content" if prompted, \code{Ctrl + G}, paste in the "Immediate" window:
 \verb{CurrentProject.Connection.Execute "GRANT SELECT ON MSysRelationships TO Admin;"},
 and run the command by pressing \code{Enter} before exiting Access database.}
+
+\item{path32}{File path to your 32 bit R executable, \code{Rscript.exe}. Only needed
+if you're using 32-bit Office.}
 
 \item{method}{\code{method} argument for \code{download.file}. Defaults to \code{auto} and
 it is recommended to not change this. See \code{download.file} for additional
