@@ -39,7 +39,6 @@
 #' @examples
 #' \dontrun{
 #' pullCDEC("MAL")
-#' pullCDEC(coordinates = c(38.04281, -121.9201))
 #' pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
 #' # If coordinates are used instead, must specify the argument names.
 #' pullCDEC(coordinates = c(38.04281, -121.9201), sensor = 25,
@@ -58,8 +57,8 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
     if (length(coordinates) != 2)
       stop("`coordinates` should be a vector of two numbers, lat and lon.",
            call. = FALSE)
-    if (nrow(coordinates) > 1)
-      stop("Metadata lookup not supported for multiple coordinates.",
+    if (is.null(sensor) | length(duration) > 1 | missing(dateStart))
+      stop("Metadata lookup not supported for coordinates. Use `calcNearestCDEC()`",
            call. = FALSE)
     # Assuming calcNearestCDEC is defined elsewhere or will be provided
     cdecClosest <- calcNearestCDEC(data.frame(lat = coordinates[[1]],
@@ -127,8 +126,9 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
                          "daily" = "D")
 
   dateStart <- parseDate(dateStart)
-  originalEnd <- parseDate(dateEnd) # For filtering at the end to ensure user only get the data they asked for
-  dateEnd <- if (is.null(dateEnd)) Sys.Date() + 1 else parseDate(dateEnd) + 1
+  # For filtering at the end to ensure user only get the data they asked for
+  originalEnd <- if (is.null(dateEnd)) Sys.Date() else parseDate(dateEnd)
+  dateEnd <- originalEnd + 1
 
   if (dateStart > dateEnd) {
     stop("`dateStart` cannot be after `dateEnd`.", call. = FALSE)
