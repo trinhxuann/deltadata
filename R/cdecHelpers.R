@@ -127,7 +127,7 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
                          "daily" = "D")
 
   dateStart <- parseDate(dateStart)
-  originalEnd <- dateEnd # For filtering at the end to ensure user only get the data they asked for
+  originalEnd <- parseDate(dateEnd) # For filtering at the end to ensure user only get the data they asked for
   dateEnd <- if (is.null(dateEnd)) Sys.Date() + 1 else parseDate(dateEnd) + 1
 
   if (dateStart > dateEnd) {
