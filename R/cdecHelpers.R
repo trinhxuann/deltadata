@@ -747,10 +747,10 @@ popCDEC <- function(df,
   if (nrow(df) == 0) return(data.frame())
 
   variable <- match.arg(variable)
-  if (!variable %in% names(df)) {
-    stop(sprintf("Variable '%s' not found in dataset", variable),
-         call. = FALSE)
-  }
+  # if (!variable %in% names(df)) {
+  #   stop(sprintf("Variable '%s' not found in dataset", variable),
+  #        call. = FALSE)
+  # }
 
   waterColumn <- match.arg(waterColumn)
 
@@ -824,7 +824,7 @@ popCDEC <- function(df,
     results <- lapply(cdecDataPerStation, function(cdecDf) {
 
       cdecGage <- cdecDf$cdecGage[1]
-      cdecStationDf <- cdecData[cdecData$cdecGage == cdecGage, ]
+      cdecStationDf <- cdecData[cdecData$stationId == cdecGage, ]
 
       # If there's no CDEC data for this station, return the original user data.
       if (nrow(cdecStationDf) == 0) {
