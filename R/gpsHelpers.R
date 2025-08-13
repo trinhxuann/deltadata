@@ -243,7 +243,8 @@ ddmToDD <- function(ddm, isLongitude = F) {
   # Extract degrees and minutes
   degrees <- as.numeric(substring(ddm, 1, startingValue))
   minutes <- as.numeric(substring(ddm, startingValue + 1))
-  decimalDegrees <- (degrees + minutes / 60)
+
+  decimalDegrees <- degrees + minutes / 60
 
   if (isLongitude) {
     -decimalDegrees

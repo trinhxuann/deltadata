@@ -77,7 +77,14 @@ findFieldOptions <- function(form) {
 #' @noRd
 #' @keywords internal
 uniqueNames <- function(x) {
-  firstIndex <- sapply(unique(x[duplicated(x)]), function(i) {
+
+  duplicates <- unique(x[duplicated(x)])
+
+  if (length(duplicates) == 0) {
+    return(list(uniqueNames = x, firstIndex = character(0)))
+  }
+
+  firstIndex <- sapply(duplicates, function(i) {
     matchedIndex <- which(x == i)
     releventIndex <- 2:length(x[matchedIndex])
     # <<- likely frowned on
