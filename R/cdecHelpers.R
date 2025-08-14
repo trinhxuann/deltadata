@@ -1111,7 +1111,7 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
 
   if (nrow(finalDf) > 0) {
     # Efficiently remove duplicates that may occur at chunk boundaries
-    finalDf <- distinct(finalDf, .data$cdecGage, .data$sensorNumber, .data$duration, .data$dateTime,
+    finalDf <- distinct(finalDf, .data$stationId, .data$sensorNumber, .data$duration, .data$dateTime,
                         .keep_all = T)
   }
 
