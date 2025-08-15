@@ -16,8 +16,13 @@ translateSchema <- function(schema, verbose = FALSE) {
 
   # Aggregate columns based on relationship details
   # Need this for relationships with multiple keys
-  schema <- aggregate(cbind(szColumn, szReferencedColumn) ~ grbit + szObject + szReferencedObject + szRelationship,
-                      data = schema, FUN = paste, collapse = ".")
+  if ("joinType" %in% names(schema)) {
+    schema <- aggregate(cbind(szColumn, szReferencedColumn) ~ grbit + szObject + szReferencedObject + szRelationship + joinType,
+                        data = schema, FUN = paste, collapse = ".")
+  } else {
+    schema <- aggregate(cbind(szColumn, szReferencedColumn) ~ grbit + szObject + szReferencedObject + szRelationship,
+                        data = schema, FUN = paste, collapse = ".")
+  }
 
   # Rename columns for clarity
   names(schema)[match(c("szColumn", "szReferencedColumn", "szObject", "szReferencedObject"),
@@ -27,8 +32,10 @@ translateSchema <- function(schema, verbose = FALSE) {
   # schema <- schema[order(schema$szRelationship), ]
 
   # Determine join type based on grbit value
-  schema$joinType <- ifelse(schema$grbit < 16777216, "inner_join",
-                            ifelse(schema$grbit < 33554432, "left_join", "right_join"))
+  if (!"joinType" %in% names(schema)) {
+    schema$joinType <- ifelse(schema$grbit < 16777216, "inner_join",
+                              ifelse(schema$grbit < 33554432, "left_join", "right_join"))
+  }
 
   # Create join function based on join type
   schema$joinFunction <- lapply(schema$joinType, function(x) {
@@ -36,7 +43,8 @@ translateSchema <- function(schema, verbose = FALSE) {
            inner_join = function(x, y, by.x, by.y) merge(x, y, by.x = by.x, by.y = by.y, all = FALSE),
            left_join = function(x, y, by.x, by.y) merge(x, y, by.x = by.x, by.y = by.y, all.x = TRUE),
            right_join = function(x, y, by.x, by.y) merge(x, y, by.x = by.x, by.y = by.y, all.y = TRUE),
-           stop("Supply joinType as `inner_join`, `left_join`, or `right_join` only.", call. = FALSE))
+           full_join = function(x, y, by.x, by.y) merge(x, y, by.x = by.x, by.y = by.y, all = TRUE),
+           stop("Supply joinType as `inner_join`, `left_join`, `right_join`, or `full_join` only.", call. = FALSE))
   })
 
   # Print verbose output if requested

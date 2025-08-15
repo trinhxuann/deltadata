@@ -223,10 +223,18 @@ qaqcData <- function(data,
 
   # Calculate year if not calculated
   if (is.null(data$Year)) {
+    if (any(names(data) %in% "year"))
+      warning("A `year` column was detected and will be ignored for filtering. Supply `Year` to filter.", call. = F)
     data[["Year"]] <- lubridate::year(data[["SampleDate"]])
-    # Also calculate month as well
+  }
+  if (is.null(data$Month)) {
     data[["Month"]] <- lubridate::month(data[["SampleDate"]])
   }
+
+  # There generally should be more than 1 year in the data frame. Mean/sd calculated from that for WQ data
+  if (length(unique(data[["Year"]])) == 1)
+    warning("Only 1 year of data available to calculate mean/sd of WQ data.", call. = F)
+
   dataYear <- data[data$Year == year, ]
   if (nrow(dataYear) == 0) {
     stop("Year ", year, " does not have any data.", call. = F)

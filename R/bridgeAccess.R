@@ -304,11 +304,11 @@ bridgeAccess <- function(file, tables = "check",
   retry <- if (is.null(list(...)$retry)) FALSE else list(...)$retry
 
   # First, check architecture. If ok then just source the script; if not then invoke system2
-  # If using 4.3.1 for both 64 and 32 bits, then will be in the same folder
+  # If using 4.1.3 for both 64 and 32 bits, then will be in the same folder
   # If not, the user should provide directory to the Rscript.exe
   path32 <- if (path32 == "default") paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe")
   else path32
-  if (!file.exists(path32)) stop("A 32-bit R could not be found on this machine. \n Install R 4.3.1 or provide the path to the Rscript.exe path to `path32`.", call. = F)
+  if (!file.exists(path32)) stop("A 32-bit R could not be found on this machine. \n Install R 4.1.3 or provide the path to the Rscript.exe path to `path32`.", call. = F)
 
   bitCheck <- architectureCheck(path32 = path32)
 

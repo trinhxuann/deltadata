@@ -518,7 +518,7 @@ calcNearestCDEC <- function(df, n = 1,
 
       # Merge in the sensor metadata for complete information
       merge(results, availableSensors,
-            by.x = "cdecGage", by.y = "cdecGage",
+            by.x = "cdecGage", by.y = "gage",
             sort = F)
     })
 
