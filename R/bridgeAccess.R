@@ -206,7 +206,7 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
 #' @importFrom httr headers HEAD
 #' @importFrom utils download.file unzip
 #' @keywords internal
-getFile <- function(file, open = F, method) {
+getFileOld <- function(file, open = F, method) {
 
   fileType <- file(file)
   on.exit(close(fileType))
@@ -259,6 +259,109 @@ getFile <- function(file, open = F, method) {
   }
 }
 
+#' Download or access a local file, with robust handling for URLs.
+#'
+#' @description
+#' This function downloads a file from a URL or verifies the path to a local
+#' file. It avoids re-downloading if the file already exists in the temporary
+#' directory. It includes robust error handling, dynamic timeouts for large
+#' files, and the ability to unzip and find specific file types (e.g., Access
+#' databases). It is a modern replacement for the original getFile function,
+#' using the httr package to handle downloads reliably and avoid common SSL/TLS
+#' issues.
+#'
+#' @param file A character string: either a URL to a file or a local file path.
+#' @param open A logical value. If `TRUE`, the final file will be opened using
+#'   the system's default application.
+#'
+#' @return The full path to the final, ready-to-use file (unzipped if necessary).
+#'
+#' @noRd
+#' @importFrom httr GET HEAD headers progress timeout write_disk stop_for_status
+#' @importFrom utils browseURL unzip
+#' @keywords internal
+getFile <- function(file, open = FALSE) {
+
+  # --- 1. Determine if the file is a URL or local path ---
+  isUrl <- grepl("^https?://", file, ignore.case = TRUE)
+  fileName <- basename(file)
+  filePath <- if (isUrl) file.path(tempdir(), fileName) else file
+
+  # --- 2. Handle URL Downloads (if necessary) ---
+  if (isUrl && !file.exists(filePath)) {
+    message("Downloading file from URL: ", sQuote(file))
+
+    # A. Get file size to set a dynamic timeout (safer than global options)
+    timeOut <- 60 # Default timeout
+    try({
+      head_response <- HEAD(file)
+      if (!is.null(headers(head_response)$`content-length`)) {
+        fileSize <- as.numeric(headers(head_response)$`content-length`) / 1024^2
+        # Set timeout to 1 second per MB, with a minimum of 60s
+        timeOut <- max(60, ceiling(fileSize))
+        message(sprintf("File size is approx %.2f MB. Setting download timeout to %d seconds.", fileSize, timeOut))
+      }
+    }, silent = TRUE)
+
+    # B. Perform the download using httr::GET for robustness
+    tryCatch({
+      response <- GET(
+        url = file,
+        write_disk(filePath, overwrite = TRUE), # Save directly to disk
+        progress(), # Display a progress bar
+        timeout(timeOut) # Use the calculated timeout
+      )
+
+    }, error = function(e) {
+      # Clean up partially downloaded file on error
+      if (file.exists(filePath)) file.remove(filePath)
+      stop(sprintf("Failed to download file. Error: %s", conditionMessage(e)), call. = FALSE)
+    })
+
+  }
+
+  # --- 3. Handle Zip File Extraction ---
+  finalPath <- filePath
+
+  if (grepl("\\.zip$", fileName, ignore.case = TRUE)) {
+    # List contents to find the target Access database
+    zip_contents <- utils::unzip(filePath, list = TRUE)
+    targetFile <- zip_contents$Name[grepl("(\\.accdb|\\.mdb)$", zip_contents$Name, ignore.case = TRUE)]
+
+    if (length(targetFile) == 0) {
+      stop("No Access file (.accdb or .mdb) was found in the .zip archive.")
+    }
+    # Handle cases with multiple matches (take the first one)
+    if (length(targetFile) > 1) {
+      warning(paste("Multiple Access files found, using the first one:", targetFile[1]), call. = FALSE)
+      targetFile <- targetFile[1]
+    }
+
+    extractedPath <- file.path(tempdir(), targetFile)
+
+    # Unzip only if the target file doesn't already exist
+    if (!file.exists(extractedPath)) {
+      message("Extracting file: ", sQuote(targetFile), " from the zip archive.")
+      unzip(filePath, files = targetFile, exdir = tempdir(), overwrite = TRUE)
+    }
+
+    finalPath <- extractedPath
+  }
+
+  # --- 4. Open File or Return Path ---
+  if (!file.exists(finalPath)) {
+    stop("Could not find the final file at path: ", finalPath, call. = FALSE)
+  }
+
+  if (isTRUE(open)) {
+    message("Opening file: ", sQuote(basename(finalPath)))
+    # Use browseURL for cross-platform compatibility (replaces shell.exec)
+    browseURL(finalPath)
+  }
+
+  return(finalPath)
+}
+
 
 #' Connect to an Access database
 #'
@@ -277,9 +380,6 @@ getFile <- function(file, open = F, method) {
 #' and run the command by pressing `Enter` before exiting Access database.
 #' @param path32 File path to your 32 bit R executable, `Rscript.exe`. Only needed
 #' if you're using 32-bit Office.
-#' @param method `method` argument for `download.file`. Defaults to `auto` and
-#' it is recommended to not change this. See `download.file` for additional
-#' details if your downloaded file(s) cannot be read correctly.
 #' @param ... Additional arguments to be passed onto `connectAccess()`. Used to
 #' pass on a specific driver if the default Access driver does not work, a user
 #' name, or password.
@@ -298,7 +398,7 @@ getFile <- function(file, open = F, method) {
 #' "SLS Stations", "Tow Info", "Water Info"))
 #' }
 bridgeAccess <- function(file, tables = "check",
-                         path32 = "default", method = "auto",
+                         path32 = "default",
                          ...) {
 
   retry <- if (is.null(list(...)$retry)) FALSE else list(...)$retry
@@ -312,7 +412,7 @@ bridgeAccess <- function(file, tables = "check",
 
   bitCheck <- architectureCheck(path32 = path32)
 
-  file <- getFile(file, open = F, method = method)
+  file <- getFile(file, open = F)
 
   out <- tempdir()
 
