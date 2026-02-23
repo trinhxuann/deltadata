@@ -2,44 +2,58 @@
 % Please edit documentation in R/cdecHelpers.R
 \name{calcNearestCDEC}
 \alias{calcNearestCDEC}
-\title{Find the closest CDEC gage}
+\title{Find the Nth nearest CDEC station with specific data}
 \usage{
 calcNearestCDEC(
   df,
-  cdecGPS = deltadata:::cdecStations,
-  cdecMetadata = deltadata:::cdecMetadata,
+  n = 1,
+  sensor = NULL,
   variable = c("temp", "turbidity", "ec"),
-  waterColumn = c("top", "bottom")
+  waterColumn = c("top", "bottom"),
+  method = c("fast", "accurate"),
+  verbose = T,
+  cdecGPS = NULL,
+  cdecMetadata = NULL
 )
 }
 \arguments{
-\item{df}{A data frame that contains at least the lat/lon of station(s) of
-interest, named as \code{lat} and \code{lon}.}
+\item{df}{A data.frame with at least 'lat' and 'lon' columns. All other columns
+will be retained.}
 
-\item{cdecGPS}{A data frame containing the GPS coordinates of the CDEC gages
-of interest, as \code{lat} and \code{lon}.}
+\item{n}{The rank of the nearest station to find (e.g., n = 1 for the closest).
+If n = "all", all applicable station and metadata will be returned in a nested format per point.}
 
-\item{cdecMetadata}{A data frame containing the metadata table of the CDEC
-gages of interest. This table must match the format provided by the DWR
-website. It is recommended to use \code{pullMetadataCDEC()} to get this data.}
+\item{sensor}{An optional integer sensor number. If provided, this will override
+the 'variable' and 'waterColumn' arguments.}
 
-\item{variable}{The water quality variable of interest. Currently only
-supports water temperature as \code{temp}, turbidity as \code{turbidity}, and
-electro-conductivity as \code{ec}. This defaults to water temperature.}
+\item{variable}{The type of sensor data required. One of "temp", "turbidity", "ec".
+Ignored if 'sensor' is provided.}
 
-\item{waterColumn}{Where in the water column should the variable of interest
-be prioritized? Supports only \code{top} and \code{bottom}, defaulting to \code{top}. For
-now, top data will be used in the calculation even if you ask for bottom
-data.}
+\item{waterColumn}{The position of the sensor in the water column. One of "top" or "bottom".
+Ignored if 'sensor' is provided.}
+
+\item{method}{Determines the distance calculation function. \code{fast} will utilize the
+Haversine method, while \code{accurate} the  Vincenty Ellipsoid method. For use within the Delta,
+the Haversine method is sufficient and is much less computationally intensive.
+Defaults to \code{fast}.}
+
+\item{verbose}{Set to FALSE to disable specific messages. Defaults to TRUE.}
+
+\item{cdecGPS}{Internal package data with station GPS locations. Can provide this
+if the internal package data is not updated, although you will have to adhere to formatting.}
+
+\item{cdecMetadata}{Internal package data with sensor metadata. Can provide this
+if the internal package data is not updated, although you will have to adhere to formatting.}
 }
 \value{
-A data frame of the metadata of the closest CDEC station to your
-point of interest that has data for the variable of interest.
+A data.frame containing the input point identifiers,
+the found CDEC station, the distance, and the sensor metadata.
 }
 \description{
-Identifies the nearest CDEC gage to a lat/lon of interest. This function
-requires metadata of all CDEC stations of interest. By default, all CDEC
-stations are used.
+Identifies the n-th nearest CDEC station to one or more
+input coordinates. It can filter station based on a specific sensor number
+or by a general variable and water column combination. By default, all CDEC
+station are searched.
 }
 \examples{
 \dontrun{

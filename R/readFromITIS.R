@@ -16,9 +16,6 @@
 #' should take care to check the 'validity' column for additional filtering
 #' criteria.
 #'
-#' @importFrom httr GET content timeout status_code
-#' @importFrom XML xmlParse xmlValue getNodeSet xpathSApply
-#'
 #' @examples
 #' \dontrun{
 #' taxa <- c("Chinese Mitten Crab", "Liparis", "Oncorhynchus tshawytscha")
@@ -26,9 +23,10 @@
 #' getTaxonomyFromItis(taxa)
 #' }
 getTaxonomyFromItis <- function(taxonNames, verbose = TRUE) {
+
   # Constants
   baseUrl <- "https://www.itis.gov/ITISWebService/services/ITISService/"
-  namespaces <- c(
+  ns <- c(
     ns = "http://itis_service.itis.usgs.gov",
     ax21 = "http://data.itis_service.itis.usgs.gov/xsd"
   )
@@ -48,68 +46,54 @@ getTaxonomyFromItis <- function(taxonNames, verbose = TRUE) {
     response
   }
 
-  parseXML <- function(response) {
-    tryCatch(
-      XML::xmlParse(response),
-      error = function(e) NULL
-    )
+  parseXml <- function(response) {
+    # Use content as raw to ensure xml2 can read it robustly
+    cont <- try(httr::content(response, as = "raw"), silent = TRUE)
+    if (inherits(cont, "try-error") || is.null(cont)) return(NULL)
+    doc <- try(xml2::read_xml(cont), silent = TRUE)
+    if (inherits(doc, "try-error")) return(NULL)
+    doc
+  }
+
+  xmlText0 <- function(nodeset) {
+    if (length(nodeset) == 0) character(0) else xml2::xml_text(nodeset)
   }
 
   processHierarchy <- function(tsn, currentRow, index) {
     # Get validity
     validityUrl <- paste0(baseUrl, "getTaxonomicUsageFromTSN?tsn=", tsn)
-    validityDoc <- parseXML(makeRequest(validityUrl))
+    validityDoc <- parseXml(makeRequest(validityUrl))
 
     if (!is.null(validityDoc)) {
-      validName <- XML::xpathSApply(
-        validityDoc,
-        "//ax21:taxonUsageRating",
-        XML::xmlValue,
-        namespaces = namespaces
-      )
-      currentRow$validity[index] <- if(length(validName) > 0)
-        gsub("\\s+(\\w)", "\\U\\1", tolower(validName), perl = TRUE) else "noItisValue"
+      validNode <- xml2::xml_find_all(validityDoc, "//ax21:taxonUsageRating", ns = ns)
+      validName <- xmlText0(validNode)
+      if (length(validName) > 0) {
+        currentRow$validity[index] <- gsub("\\s+(\\w)", "\\U\\1", tolower(validName), perl = TRUE)
+      } else {
+        currentRow$validity[index] <- "noItisValue"
+      }
     }
 
     # Get hierarchy
     hierarchyUrl <- paste0(baseUrl, "getFullHierarchyFromTSN?tsn=", tsn)
-    hierarchyDoc <- parseXML(makeRequest(hierarchyUrl))
+    hierarchyDoc <- parseXml(makeRequest(hierarchyUrl))
 
     if (!is.null(hierarchyDoc)) {
-      taxonUnits <- XML::getNodeSet(
-        hierarchyDoc,
-        "//ax21:hierarchyList",
-        namespaces = namespaces
-      )
-
+      taxonUnits <- xml2::xml_find_all(hierarchyDoc, "//ax21:hierarchyList", ns = ns)
       if (length(taxonUnits) > 0) {
         for (unit in taxonUnits) {
-          rankName <- tolower(XML::xpathSApply(
-            unit,
-            ".//ax21:rankName",
-            XML::xmlValue,
-            namespaces = namespaces
-          ))
-
+          rankNode <- xml2::xml_find_all(unit, ".//ax21:rankName", ns = ns)
+          rankName <- tolower(trimws(xmlText0(rankNode)))
           if (length(rankName) == 0) next
-
-          taxonName <- XML::xpathSApply(
-            unit,
-            ".//ax21:taxonName",
-            XML::xmlValue,
-            namespaces = namespaces
-          )
-
+          taxonNode <- xml2::xml_find_all(unit, ".//ax21:taxonName", ns = ns)
+          taxonName <- trimws(xmlText0(taxonNode))
           if (length(taxonName) == 0) next
-
-          rankName <- trimws(rankName)
           if (rankName %in% rankNames) {
-            currentRow[[rankName]][index] <- trimws(taxonName)
+            currentRow[[rankName]][index] <- taxonName
           }
         }
       }
     }
-
     currentRow
   }
 
@@ -127,7 +111,6 @@ getTaxonomyFromItis <- function(taxonNames, verbose = TRUE) {
 
     if (verbose) {
       message <- sprintf("Processing taxon %d of %d: %s", i, length(taxonNames), name)
-      # cat(sprintf("\r%-*s", 80, message), "\n")
       cat(message, "\n")
       utils::flush.console()
     }
@@ -146,23 +129,20 @@ getTaxonomyFromItis <- function(taxonNames, verbose = TRUE) {
     )
 
     # Check match count
-    matchCountUrl <- paste0(baseUrl, "getAnyMatchCount?srchKey=",
-                            utils::URLencode(name, reserved = TRUE))
-    matchCountDoc <- parseXML(makeRequest(matchCountUrl))
-
+    matchCountUrl <- paste0(
+      baseUrl, "getAnyMatchCount?srchKey=",
+      utils::URLencode(name, reserved = TRUE)
+    )
+    matchCountDoc <- parseXml(makeRequest(matchCountUrl))
     if (is.null(matchCountDoc)) {
       resultsList[[i]] <- currentRow
       next
     }
 
-    matchedCount <- as.numeric(XML::xpathSApply(
-      matchCountDoc,
-      "//ns:return",
-      XML::xmlValue,
-      namespaces = namespaces
-    ))
-
-    if (matchedCount == 0) {
+    matchedCountNode <- xml2::xml_find_all(matchCountDoc, "//ns:return", ns = ns)
+    matchedCountTxt <- xmlText0(matchedCountNode)
+    matchedCount <- suppressWarnings(as.numeric(matchedCountTxt))
+    if (length(matchedCount) == 0 || is.na(matchedCount) || matchedCount == 0) {
       if (verbose) cat(sprintf("No matches found for: %s\n", name))
       currentRow$validity <- "noMatch"
       resultsList[[i]] <- currentRow
@@ -170,33 +150,32 @@ getTaxonomyFromItis <- function(taxonNames, verbose = TRUE) {
     }
 
     # Search for matches
-    searchUrl <- paste0(baseUrl, "searchForAnyMatch?srchKey=",
-                        utils::URLencode(name, reserved = TRUE))
-    xmlDoc <- parseXML(makeRequest(searchUrl))
+    searchUrl <- paste0(
+      baseUrl, "searchForAnyMatch?srchKey=",
+      utils::URLencode(name, reserved = TRUE)
+    )
+    xmlDoc <- parseXml(makeRequest(searchUrl))
 
     if (is.null(xmlDoc)) {
       resultsList[[i]] <- currentRow
       next
     }
 
-    matches <- XML::getNodeSet(xmlDoc, "//ax21:anyMatchList", namespaces = namespaces)
-
-    tsns <- unique(unlist(lapply(matches, function(match) {
-
-      matchName <- XML::xpathSApply(
-        match,
+    matches <- xml2::xml_find_all(xmlDoc, "//ax21:anyMatchList", ns = ns)
+    tsns <- unique(unlist(lapply(matches, function(mn) {
+      matchNameNodes <- xml2::xml_find_all(
+        mn,
         ".//ax21:*[self::ax21:sciName or self::ax21:commonName]",
-        XML::xmlValue,
-        namespaces = namespaces
+        ns = ns
       )
-
-      if (any(tolower(matchName) %in% tolower(name))) {
-        XML::xpathSApply(
-          match,
-          ".//ax21:tsn",
-          function(x) as.numeric(XML::xmlValue(x)),
-          namespaces = namespaces
-        )
+      matchNames <- tolower(xmlText0(matchNameNodes))
+      if (length(matchNames) == 0) return(NULL)
+      if (any(matchNames %in% tolower(name))) {
+        tsnNodes <- xml2::xml_find_all(mn, ".//ax21:tsn", ns = ns)
+        tsnVals <- suppressWarnings(as.numeric(xmlText0(tsnNodes)))
+        tsnVals[!is.na(tsnVals)]
+      } else {
+        NULL
       }
     })))
 
@@ -224,5 +203,6 @@ getTaxonomyFromItis <- function(taxonNames, verbose = TRUE) {
     stop("No valid results obtained")
   }
 
-  do.call(rbind, lapply(resultsList, as.data.frame))
+  dplyr::bind_rows(lapply(resultsList, as.data.frame, stringsAsFactors = FALSE))
 }
+

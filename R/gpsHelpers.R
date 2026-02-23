@@ -171,16 +171,16 @@ gpsOutlier <- function(df, d = 0.5, returnAll = F) {
     df
   })
 
-  outlierDF <- do.call(rbind, outlierDF)
+  outlierDF <- dplyr::bind_rows(outlierDF)
   if (is.null(outlierDF)) stop("No station matched the theoreticals.")
 
   finTheoreticalStations <- df[(df[["legend"]] == "Theoretical" & df[["station"]] %in% unique(outlierDF[["station"]])), ]
-  finTheoreticalStations$lonTheoretical <- NA
-  finTheoreticalStations$latTheoretical <- NA
-  finTheoreticalStations$distance <- NA
-  finTheoreticalStations$outlier <- NA
+  # finTheoreticalStations$lonTheoretical <- NA
+  # finTheoreticalStations$latTheoretical <- NA
+  # finTheoreticalStations$distance <- NA
+  # finTheoreticalStations$outlier <- NA
 
-  fin <- rbind(outlierDF, finTheoreticalStations)
+  fin <- dplyr::bind_rows(outlierDF, finTheoreticalStations)
 
   names(fin)[which(!names(fin) %in% c("lonTheoretical", "latTheoretical", "distance", "outlier"))] <-
     originalNames
@@ -242,7 +242,7 @@ ddmToDD <- function(ddm, isLongitude = F) {
 
   # Extract degrees and minutes
   degrees <- as.numeric(substring(ddm, 1, startingValue))
-  minutes <- as.numeric(substring(ddm, startingValue + 1)) / 100
+  minutes <- as.numeric(substring(ddm, startingValue + 1))
   decimalDegrees <- (degrees + minutes / 60)
 
   if (isLongitude) {

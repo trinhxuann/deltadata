@@ -8,7 +8,8 @@ popCDEC(
   df,
   cdecClosest = NULL,
   variable = c("temp", "turbidity", "ec"),
-  waterColumn = c("top", "bottom")
+  waterColumn = c("top", "bottom"),
+  ...
 )
 }
 \arguments{
@@ -16,8 +17,11 @@ popCDEC(
 longitude (\code{lon}), and time (\code{time}). Ensure that \code{time} is a date-time
 format, YYYY-MM-DD HH:MM:SS.}
 
-\item{cdecClosest}{A list of the closest stations per coordinate of interest.
-If not provided, \code{calcNearestCDEC()} will be used on the provided \code{df}.}
+\item{cdecClosest}{A data frame of the closest station per coordinate of interest.
+This df should include three columns: \code{cdecGage} (the CDEC station name),
+\code{sensorNumber} (sensor number that you're interested in), and \code{duration}
+(the sampling interval of interest). If not provided, \code{calcNearestCDEC()} will
+automatically populate the closest cdec station per sampling location from \code{df}.}
 
 \item{variable}{Which water quality variable are you after. Supports only
 water temperature (\code{temp}), turbidity (\code{turbidity}), or electroconductivity
@@ -25,6 +29,8 @@ water temperature (\code{temp}), turbidity (\code{turbidity}), or electroconduct
 
 \item{waterColumn}{Where in the water column to look for sensor data, top
 (\code{top}) or bottom (\code{bottom})? Will default to \code{top}}
+
+\item{...}{Additional parameters to be passed onto \code{calcNearestCDEC()}.}
 }
 \value{
 A data frame with water quality of interest from the closest CDEC

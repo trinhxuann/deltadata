@@ -223,10 +223,18 @@ qaqcData <- function(data,
 
   # Calculate year if not calculated
   if (is.null(data$Year)) {
+    if (any(names(data) %in% "year"))
+      warning("A `year` column was detected and will be ignored for filtering. Supply `Year` to filter.", call. = F)
     data[["Year"]] <- lubridate::year(data[["SampleDate"]])
-    # Also calculate month as well
+  }
+  if (is.null(data$Month)) {
     data[["Month"]] <- lubridate::month(data[["SampleDate"]])
   }
+
+  # There generally should be more than 1 year in the data frame. Mean/sd calculated from that for WQ data
+  if (length(unique(data[["Year"]])) == 1)
+    warning("Only 1 year of data available to calculate mean/sd of WQ data.", call. = F)
+
   dataYear <- data[data$Year == year, ]
   if (nrow(dataYear) == 0) {
     stop("Year ", year, " does not have any data.", call. = F)
@@ -308,14 +316,14 @@ qaqcData <- function(data,
       }
     }
 
-    gpsActual <- rbind(gpsStart, gpsEnd)
+    gpsActual <- dplyr::bind_rows(gpsStart, gpsEnd)
     gpsNA <- split(gpsActual, is.na(gpsActual[["lat"]]) | is.na(gpsActual[["lon"]]))
 
     # Bind to official coordinates
     # Need an officialGPS data frame here...
     missingColumns <- setdiff(names(gpsNA$`FALSE`), names(officialGPS))
     officialGPS[missingColumns] <- NA
-    gpsTotal <- rbind(gpsNA$`FALSE`, officialGPS)
+    gpsTotal <- rbind(gpsNA$`FALSE`, officialGPS) # rbind here saves a line of converting layer to char
 
     # Grab the outlying points
     outlierGPS <- gpsOutlier(gpsTotal, d = gpsDistance, returnAll = F)
@@ -340,13 +348,16 @@ qaqcData <- function(data,
 
     # GPS stations that did not have a theoretical coordinate?
     missingTheoreticalGPS <- merge(gpsActual, officialGPS, by = "station", all.x = T)
-    missingGPS <- missingTheoreticalGPS[["station"]][is.na(missingTheoreticalGPS[["lat.y"]] |
-                                                             is.na(missingTheoreticalGPS[["lon.y"]]))]
+    missingTheoreticalGPS <- missingTheoreticalGPS[["station"]][is.na(missingTheoreticalGPS[["lat.y"]] |
+                                                                        is.na(missingTheoreticalGPS[["lon.y"]]))]
+    # GPS stations with missing lat/lon/both
+    missingGPS <- gpsNA$`TRUE`
 
   } else {
     gpsOutlierPlot <- "officialGPS not provided"
     outlierGPSDF <- "officialGPS not provided"
     missingTheoreticalGPS <- "officialGPS not provided"
+    missingGPS <- "officialGPS not provided"
   }
 
   # --- Cable length outliers ---
@@ -408,7 +419,12 @@ qaqcData <- function(data,
 
     outlierMeterDF <- meterDF[outlierMeterIndex, ]
     outlierMeterDF[["meterReadingTheoretical"]] <- meterReadingTheoretical
-    outlierMeterDF[["meterReadingOutlier"]] <- T
+    if (nrow(outlierMeterDF) > 0) {
+      outlierMeterDF[["meterReadingOutlier"]] <- TRUE
+    } else {
+      # If no outliers, still create the column but assign it as empty
+      outlierMeterDF[["meterReadingOutlier"]] <- logical(0)
+    }
     outlierMeterDF <- moveComments(outlierMeterDF, commentColumns)
 
     if (!convertNames) {
@@ -530,6 +546,7 @@ qaqcData <- function(data,
     waterQuality = lapply(outlierWaterQuality, "[[", "df"),
     missingData = list(
       missingGPS = missingGPS,
+      missingTheoreticalGPS = missingTheoreticalGPS,
       missingCableLength = missingCableLength,
       missingMeterGearCode = missingMeterGearCode,
       missingWaterQuality = outlierWaterQuality[[1]]$missingDF
