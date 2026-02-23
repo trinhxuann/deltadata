@@ -6,12 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>EDI Workflows • deltadata</title>
-<!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
-<link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
-<link rel="apple-touch-icon" type="image/png" sizes="120x120" href="../apple-touch-icon-120x120.png">
-<link rel="apple-touch-icon" type="image/png" sizes="76x76" href="../apple-touch-icon-76x76.png">
-<link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -27,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">deltadata</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,10 +39,11 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/20mmDemonstration.html">QAQC Workflows</a></li>
-    <li><a class="dropdown-item" href="../articles/EDIWorkflows.html">EDI Workflows</a></li>
+<li><a class="dropdown-item" href="../articles/EDIWorkflows.html">EDI Workflows</a></li>
+    <li><a class="dropdown-item" href="../articles/qaqcDemonstration20mm.html">QAQC Workflows</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -95,30 +95,32 @@ provide the function with a URL to the data package of interest.</p>
 <code class="sourceCode R"><span><span class="co"># Data package of the CDFW IEP SLS Survey</span></span>
 <span><span class="va">possibleEntities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getEDI.html">getEDI</a></span><span class="op">(</span><span class="st">"https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Specify files to download: </span></span>
-<span><span class="co">##                    name extension      size</span></span>
-<span><span class="co">## 1             Catch.csv       csv 331.2 KiB</span></span>
-<span><span class="co">## 2         FishCodes.csv       csv   2.3 KiB</span></span>
-<span><span class="co">## 3           Lengths.csv       csv   7.3 MiB</span></span>
-<span><span class="co">## 4  MeterCorrections.csv       csv  15.8 KiB</span></span>
-<span><span class="co">## 5               SLS.csv       csv   7.5 MiB</span></span>
-<span><span class="co">## 6    Station_Lookup.csv       csv   7.1 KiB</span></span>
-<span><span class="co">## 7           TowInfo.csv       csv 384.9 KiB</span></span>
-<span><span class="co">## 8         WaterInfo.csv       csv 645.7 KiB</span></span>
-<span><span class="co">## 9     SLSIntegrateEDI.R         R  21.8 KiB</span></span>
-<span><span class="co">## 10        SLSTables.rds       rds 824.7 KiB</span></span>
-<span><span class="co">## 11     SLS_Metadata.pdf       pdf 855.7 KiB</span></span>
+<span><span class="co">##                       name extension      size</span></span>
+<span><span class="co">## 1                  SLS.csv       csv   8.8 MiB</span></span>
+<span><span class="co">## 2                Catch.csv       csv 369.3 KiB</span></span>
+<span><span class="co">## 3            FishCodes.csv       csv     4 KiB</span></span>
+<span><span class="co">## 4              Lengths.csv       csv   8.1 MiB</span></span>
+<span><span class="co">## 5     MeterCorrections.csv       csv  16.3 KiB</span></span>
+<span><span class="co">## 6       Station_Lookup.csv       csv   7.8 KiB</span></span>
+<span><span class="co">## 7              TowInfo.csv       csv 375.1 KiB</span></span>
+<span><span class="co">## 8            WaterInfo.csv       csv 730.9 KiB</span></span>
+<span><span class="co">## 9        SLSIntegrateEDI.R         R  21.8 KiB</span></span>
+<span><span class="co">## 10           SLSTables.rds       rds 908.2 KiB</span></span>
+<span><span class="co">## 11        SLS_Metadata.pdf       pdf 843.4 KiB</span></span>
+<span><span class="co">## 12 SLSDatabaseEditLog.xlsx      xlsx  25.7 KiB</span></span>
 <span><span class="co">##                                                                                                                                                                                                                                                  description</span></span>
-<span><span class="co">## 1                                                                                                                                                                                                               Fish catch data from the Smelt Larval Survey</span></span>
-<span><span class="co">## 2                                                                                                                                                                                                                          Taxa and corresponding fish codes</span></span>
-<span><span class="co">## 3                                                                                                                                                        Data related to fish size, including fork length, yolk sac, and adipose fin of measured individuals</span></span>
-<span><span class="co">## 4                                                                                                                                                                                         Instrument information for flow meters used throughout the seasons</span></span>
-<span><span class="co">## 5                                                                                                                                                      joined long formatted data frame of the base tables. This table is produced from the LTMRdata package</span></span>
-<span><span class="co">## 6                                                                                                                                                                                                            theoretical GPS coordinates of all SLS stations</span></span>
-<span><span class="co">## 7                                                                                                                                                                                                                       metrics relating directly to the tow</span></span>
-<span><span class="co">## 8                                                                                                                                                                                                 metrics relating directly to water measured during the tow</span></span>
-<span><span class="co">## 9                                                                                                                                                       R code to join 6 relational tables together (excluding "FishCodes.cs") to output the "SLS.csv" file.</span></span>
+<span><span class="co">## 1                                                                                                                                                                                                        Joined long formatted data frame of the base tables</span></span>
+<span><span class="co">## 2                                                                                                                                                                                                                Fish catch data from the Smelt Larva Survey</span></span>
+<span><span class="co">## 3                                                                                                                                                                                                            Taxa, common name, and corresponding fish codes</span></span>
+<span><span class="co">## 4                                                                                                                                                         Data related to fish size including fork length, yolk sac, and adipose fin of measured individuals</span></span>
+<span><span class="co">## 5                                                                                                                                                                                          Instrument information for flowmeters used throughout the seasons</span></span>
+<span><span class="co">## 6                                                                                                                                                                                                            Theoretical GPS coordinates of all SLS stations</span></span>
+<span><span class="co">## 7                                                                                                                                                                                                                       Metrics relating directly to the tow</span></span>
+<span><span class="co">## 8                                                                                                                                                                                                 Metrics relating directly to water measured during the tow</span></span>
+<span><span class="co">## 9                                                                                                                                                       R code to join 6 relational tables together (excluding "FishCodes.cvs") to output the "SLS.csv" file</span></span>
 <span><span class="co">## 10 Compressed data file of the 7 relational tables uploaded in csv format (containing exactly the same data). This file is for use in R. Once read, the 7 relational tables are structured in a list form, with each table being a named element of the list</span></span>
-<span><span class="co">## 11                                                                                                                                                                                                                                        Formatted metadata</span></span></code></pre>
+<span><span class="co">## 11                                                                                                                                                                                                                                        Formatted metadata</span></span>
+<span><span class="co">## 12                                                                                                                                                                                                            Document outlining corrections made to dataset</span></span></code></pre>
 <p>When only a URL is provided, the function will return a list of
 entities available to download. The <code>name</code> is the file name
 of the entity, <code>extension</code> is the file extension,
@@ -130,41 +132,44 @@ accessible if you assign the function to a variable.</p>
 <code class="sourceCode R"><span><span class="co"># Full data.frame has more information than what is printed</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">possibleEntities</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##                   name extension      size sizeBytes</span></span>
-<span><span class="co">## 1            Catch.csv       csv 331.2 KiB    339194</span></span>
-<span><span class="co">## 2        FishCodes.csv       csv   2.3 KiB      2406</span></span>
-<span><span class="co">## 3          Lengths.csv       csv   7.3 MiB   7642912</span></span>
-<span><span class="co">## 4 MeterCorrections.csv       csv  15.8 KiB     16230</span></span>
-<span><span class="co">## 5              SLS.csv       csv   7.5 MiB   7856964</span></span>
-<span><span class="co">## 6   Station_Lookup.csv       csv   7.1 KiB      7265</span></span>
-<span><span class="co">##                                                                                             description</span></span>
-<span><span class="co">## 1                                                          Fish catch data from the Smelt Larval Survey</span></span>
-<span><span class="co">## 2                                                                     Taxa and corresponding fish codes</span></span>
-<span><span class="co">## 3   Data related to fish size, including fork length, yolk sac, and adipose fin of measured individuals</span></span>
-<span><span class="co">## 4                                    Instrument information for flow meters used throughout the seasons</span></span>
-<span><span class="co">## 5 joined long formatted data frame of the base tables. This table is produced from the LTMRdata package</span></span>
-<span><span class="co">## 6                                                       theoretical GPS coordinates of all SLS stations</span></span>
-<span><span class="co">##                                                                                    link</span></span>
-<span><span class="co">## 1 https://pasta.lternet.edu/package/data/eml/edi/534/9/81f62ff73abedbc542ee5e890f527af9</span></span>
-<span><span class="co">## 2 https://pasta.lternet.edu/package/data/eml/edi/534/9/d80798177ea89ffbe78bcaee38dc51be</span></span>
-<span><span class="co">## 3 https://pasta.lternet.edu/package/data/eml/edi/534/9/4653e53fa60d50832adb576d721abde5</span></span>
-<span><span class="co">## 4 https://pasta.lternet.edu/package/data/eml/edi/534/9/c29d02c289d2a3cd78e15b12135e2ff3</span></span>
-<span><span class="co">## 5 https://pasta.lternet.edu/package/data/eml/edi/534/9/bdcccddc9053eebadded31ec92040128</span></span>
-<span><span class="co">## 6 https://pasta.lternet.edu/package/data/eml/edi/534/9/f1a7a06f59e795bfae649619fdf84e1d</span></span>
+<span><span class="co">## 1              SLS.csv       csv   8.8 MiB   9225612</span></span>
+<span><span class="co">## 2            Catch.csv       csv 369.3 KiB    378117</span></span>
+<span><span class="co">## 3        FishCodes.csv       csv     4 KiB      4136</span></span>
+<span><span class="co">## 4          Lengths.csv       csv   8.1 MiB   8478413</span></span>
+<span><span class="co">## 5 MeterCorrections.csv       csv  16.3 KiB     16710</span></span>
+<span><span class="co">## 6   Station_Lookup.csv       csv   7.8 KiB      8032</span></span>
+<span><span class="co">##                                                                                          description</span></span>
+<span><span class="co">## 1                                                Joined long formatted data frame of the base tables</span></span>
+<span><span class="co">## 2                                                        Fish catch data from the Smelt Larva Survey</span></span>
+<span><span class="co">## 3                                                    Taxa, common name, and corresponding fish codes</span></span>
+<span><span class="co">## 4 Data related to fish size including fork length, yolk sac, and adipose fin of measured individuals</span></span>
+<span><span class="co">## 5                                  Instrument information for flowmeters used throughout the seasons</span></span>
+<span><span class="co">## 6                                                    Theoretical GPS coordinates of all SLS stations</span></span>
+<span><span class="co">##                                                                                     link</span></span>
+<span><span class="co">## 1 https://pasta.lternet.edu/package/data/eml/edi/534/11/d5f0c1509f89ff1784971832af4e7670</span></span>
+<span><span class="co">## 2 https://pasta.lternet.edu/package/data/eml/edi/534/11/c5d59568835d0760e318829b800ee06d</span></span>
+<span><span class="co">## 3 https://pasta.lternet.edu/package/data/eml/edi/534/11/93a50ec0337ddbc6df6d8f6d36ab8997</span></span>
+<span><span class="co">## 4 https://pasta.lternet.edu/package/data/eml/edi/534/11/b6911e22e9ac870f20a9da9854bb367a</span></span>
+<span><span class="co">## 5 https://pasta.lternet.edu/package/data/eml/edi/534/11/6da12710629f46831cbd02499c626532</span></span>
+<span><span class="co">## 6 https://pasta.lternet.edu/package/data/eml/edi/534/11/4905aa8f3bafdd75423c63e66a2256e9</span></span>
 <span><span class="co">##                                 id</span></span>
-<span><span class="co">## 1 81f62ff73abedbc542ee5e890f527af9</span></span>
-<span><span class="co">## 2 d80798177ea89ffbe78bcaee38dc51be</span></span>
-<span><span class="co">## 3 4653e53fa60d50832adb576d721abde5</span></span>
-<span><span class="co">## 4 c29d02c289d2a3cd78e15b12135e2ff3</span></span>
-<span><span class="co">## 5 bdcccddc9053eebadded31ec92040128</span></span>
-<span><span class="co">## 6 f1a7a06f59e795bfae649619fdf84e1d</span></span></code></pre>
+<span><span class="co">## 1 d5f0c1509f89ff1784971832af4e7670</span></span>
+<span><span class="co">## 2 c5d59568835d0760e318829b800ee06d</span></span>
+<span><span class="co">## 3 93a50ec0337ddbc6df6d8f6d36ab8997</span></span>
+<span><span class="co">## 4 b6911e22e9ac870f20a9da9854bb367a</span></span>
+<span><span class="co">## 5 6da12710629f46831cbd02499c626532</span></span>
+<span><span class="co">## 6 4905aa8f3bafdd75423c63e66a2256e9</span></span></code></pre>
 <p>To download file(s), we can provide the values of interest in the
 <code>name</code> column to the function.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">entities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getEDI.html">getEDI</a></span><span class="op">(</span><span class="st">"https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9"</span>, </span>
 <span>                   files <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Catch.csv"</span>, <span class="st">"SLSTables.rds"</span>, <span class="st">"SLS_Metadata.pdf"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Downloading Catch.csv ; file size: 331.2 KiB </span></span>
-<span><span class="co">## Downloading SLSTables.rds ; file size: 824.7 KiB </span></span>
-<span><span class="co">## Downloading SLS_Metadata.pdf ; file size: 855.7 KiB</span></span></code></pre>
+<pre><code><span><span class="co">## Downloading: Catch.csv (369.3 KiB)</span></span></code></pre>
+<pre><code><span><span class="co">##   |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |======                                                                |   9%  |                                                                              |=========                                                             |  13%  |                                                                              |============                                                          |  17%  |                                                                              |=================                                                     |  24%  |                                                                              |==================                                                    |  26%  |                                                                              |========================                                              |  35%  |                                                                              |==============================                                        |  43%  |                                                                              |=================================                                     |  48%  |                                                                              |==================================                                    |  48%  |                                                                              |===================================                                   |  51%  |                                                                              |=====================================                                 |  53%  |                                                                              |========================================                              |  57%  |                                                                              |=========================================                             |  59%  |                                                                              |===========================================                           |  61%  |                                                                              |============================================                          |  64%  |                                                                              |======================================================                |  77%  |                                                                              |================================================================      |  91%  |                                                                              |======================================================================| 100%</span></span></code></pre>
+<pre><code><span><span class="co">## Downloading: SLSTables.rds (908.2 KiB)</span></span></code></pre>
+<pre><code><span><span class="co">##   |                                                                              |                                                                      |   0%  |                                                                              |==                                                                    |   3%  |                                                                              |===                                                                   |   4%  |                                                                              |=====                                                                 |   7%  |                                                                              |=========                                                             |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |===========                                                           |  16%  |                                                                              |==============                                                        |  19%  |                                                                              |===============                                                       |  22%  |                                                                              |=======================                                               |  33%  |                                                                              |==========================                                            |  37%  |                                                                              |===========================                                           |  38%  |                                                                              |============================                                          |  41%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================                                  |  51%  |                                                                              |=============================================                         |  64%  |                                                                              |=========================================================             |  81%  |                                                                              |=========================================================             |  82%  |                                                                              |=============================================================         |  87%  |                                                                              |======================================================================| 100%</span></span></code></pre>
+<pre><code><span><span class="co">## Downloading: SLS_Metadata.pdf (843.4 KiB)</span></span></code></pre>
+<pre><code><span><span class="co">##   |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   1%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |===                                                                   |   5%  |                                                                              |=====                                                                 |   8%  |                                                                              |=======                                                               |   9%  |                                                                              |========                                                              |  11%  |                                                                              |==========                                                            |  14%  |                                                                              |===========                                                           |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=============                                                         |  19%  |                                                                              |===============                                                       |  21%  |                                                                              |================                                                      |  23%  |                                                                              |=================                                                     |  24%  |                                                                              |===================                                                   |  27%  |                                                                              |============================                                          |  40%  |                                                                              |====================================                                  |  51%  |                                                                              |=====================================                                 |  52%  |                                                                              |=======================================                               |  56%  |                                                                              |========================================                              |  57%  |                                                                              |=================================================                     |  70%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="files-are-stored-differently">Files are stored differently<a class="anchor" aria-label="anchor" href="#files-are-stored-differently"></a>
@@ -173,7 +178,7 @@ accessible if you assign the function to a variable.</p>
 extension. Specifically, ‘.csv’ and ‘.rds’ files are read directly into
 R, while all other file types are downloaded to the temporary folder and
 a link to the file is provided.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># csv files are read in directly</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">entities</span><span class="op">$</span><span class="va">Catch.csv</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##         Date Station Tow FishCode Catch X1.4.Subsampled X1.2.Subsampled CatchID</span></span>
@@ -183,7 +188,7 @@ a link to the file is provided.</p>
 <span><span class="co">## 4 2009-01-05     914   1       49     1               0               0       7</span></span>
 <span><span class="co">## 5 2009-01-05     915   1       49     6               0               0       8</span></span>
 <span><span class="co">## 6 2009-01-05     918   1       49     1               0               0       9</span></span></code></pre>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># rds files are read in directly, outputted as a list</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">entities</span><span class="op">$</span><span class="va">SLSTables</span>, <span class="va">head</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## $Catch</span></span>
@@ -214,13 +219,13 @@ a link to the file is provided.</p>
 <span><span class="co">## 6      1994       11228      1994-08-30 0.026947  &lt;NA&gt;</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $TowInfo</span></span>
-<span><span class="co">##         Date Station Tow                Time Tide BottomDepth CableOut Duration</span></span>
-<span><span class="co">## 1 2009-01-05     902   1 1899-12-30 02:12:00    4          26      110       10</span></span>
-<span><span class="co">## 2 2009-01-05     906   1 1899-12-30 06:23:00    2          39      140       10</span></span>
-<span><span class="co">## 3 2009-01-05     910   1 1899-12-30 04:49:00    4          40      155       10</span></span>
-<span><span class="co">## 4 2009-01-05     912   1 1899-12-30 05:26:00    4          36      140       10</span></span>
-<span><span class="co">## 5 2009-01-05     914   1 1899-12-30 04:08:00    4          35      110       10</span></span>
-<span><span class="co">## 6 2009-01-05     915   1 1899-12-30 02:41:00    4          21       90       10</span></span>
+<span><span class="co">##         Date Station Tow  Time Tide BottomDepth CableOut Duration</span></span>
+<span><span class="co">## 1 2009-01-05     902   1 10:12    4          26      110       10</span></span>
+<span><span class="co">## 2 2009-01-05     906   1 14:23    2          39      140       10</span></span>
+<span><span class="co">## 3 2009-01-05     910   1 12:49    4          40      155       10</span></span>
+<span><span class="co">## 4 2009-01-05     912   1 13:26    4          36      140       10</span></span>
+<span><span class="co">## 5 2009-01-05     914   1 12:08    4          35      110       10</span></span>
+<span><span class="co">## 6 2009-01-05     915   1 10:41    4          21       90       10</span></span>
 <span><span class="co">##   NetMeterSerial NetMeterStart NetMeterEnd NetMeterCheck</span></span>
 <span><span class="co">## 1          21920        103454      124337         20883</span></span>
 <span><span class="co">## 2          21920        247554      267406         19852</span></span>
@@ -268,42 +273,42 @@ a link to the file is provided.</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## $Station_Lookup</span></span>
 <span><span class="co">##   ID Station</span></span>
-<span><span class="co">## 1  1     340</span></span>
-<span><span class="co">## 2  2     342</span></span>
-<span><span class="co">## 3  3     343</span></span>
-<span><span class="co">## 4  4     344</span></span>
-<span><span class="co">## 5  5     345</span></span>
-<span><span class="co">## 6  6     346</span></span>
-<span><span class="co">##                                                                     Description</span></span>
-<span><span class="co">## 1                Napa River. Along Vallejo seawall and park @ 10-12  feet depth</span></span>
-<span><span class="co">## 2              Napa River. Tow across South Slough on west bank @ 22 feet depth</span></span>
-<span><span class="co">## 3                     Napa River. Tow between lights #9 and #11 @ 10 Feet depth</span></span>
-<span><span class="co">## 4        Napa River. Just past railroad bridge across Fagan Sl. @ 15 Feet depth</span></span>
-<span><span class="co">## 5 Napa River. Just past entrance to marina up to Cuttings Wharf @ 15 feet depth</span></span>
-<span><span class="co">## 6          Napa River. Just past last bend before Hwy 12 bridge @ 17 feet depth</span></span>
+<span><span class="co">## 1 25     705</span></span>
+<span><span class="co">## 2 26     706</span></span>
+<span><span class="co">## 3 27     707</span></span>
+<span><span class="co">## 4 28     711</span></span>
+<span><span class="co">## 5 29     716</span></span>
+<span><span class="co">## 6 30     723</span></span>
+<span><span class="co">##                                                                                                                                    Description</span></span>
+<span><span class="co">## 1                               Horse Shoe Bend. Inside Horse Shoe Bend by north entrance to Sacramento River. Tow on west side @ 11-13' depth</span></span>
+<span><span class="co">## 2          Sacramento River. below south tip of Decker Is. Target midpoint is between PG&amp;E towers. Tow on north side out of main channel @ 22'</span></span>
+<span><span class="co">## 3                                Sacramento River at Three Mile Sl. Target midpoint in between light #19 &amp; #21. Tow in channel @ 24-26' depth.</span></span>
+<span><span class="co">## 4  Sacramento River at the tip of Grand Is. Start upstream of light #1 and towing upstream only @ 13-16' depth. Tow along north side in shoal.</span></span>
+<span><span class="co">## 5 Cache Sl. by old ferry crossing near south end of Prospect Sl.Tow parallel to road after scour hole. Do not tow scour hole. Tow @ 30' depth.</span></span>
+<span><span class="co">## 6                                           Sacramento Deepwater Channel. Midpoint target @ Channel markers 51 &amp; 52. Tow in middle of channel.</span></span>
 <span><span class="co">##          Lat        Long</span></span>
-<span><span class="co">## 1 38 05 57.2 122 15 47.8</span></span>
-<span><span class="co">## 2 38 08 46.5 122 17 19.5</span></span>
-<span><span class="co">## 3 38 10 56.5 122 18 33.4</span></span>
-<span><span class="co">## 4 38 12 45.7 122 18 31.3</span></span>
-<span><span class="co">## 5 38 13 25.8 122 18 32.3</span></span>
-<span><span class="co">## 6 38 14 11.0 122 17 13.8</span></span>
+<span><span class="co">## 1 38 05 51.4 121 42 31.5</span></span>
+<span><span class="co">## 2 38 05 09.9 121 45 01.6</span></span>
+<span><span class="co">## 3 38 06 52.9 121 42 28.3</span></span>
+<span><span class="co">## 4 38 10 38.7 121 39 44.1</span></span>
+<span><span class="co">## 5 38 14 18.8 121 41 02.1</span></span>
+<span><span class="co">## 6 38 14 14.1 121 40 23.1</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $FishCodes</span></span>
-<span><span class="co">##   Fish.Code                 Taxa</span></span>
-<span><span class="co">## 1        18       Ameiurus melas</span></span>
-<span><span class="co">## 2        76  Symphurus atricauda</span></span>
-<span><span class="co">## 3        72   Notropis lutrensis</span></span>
-<span><span class="co">## 4        73  Pimephales promelas</span></span>
-<span><span class="co">## 5        74 Tridentiger barbatus</span></span>
-<span><span class="co">## 6        75     Tridentiger spp.</span></span></code></pre>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<span><span class="co">##   Fish.Code           Common.Name                 Taxa</span></span>
+<span><span class="co">## 1        18        Black Bullhead       Ameiurus melas</span></span>
+<span><span class="co">## 2        76 California Tonguefish  Symphurus atricauda</span></span>
+<span><span class="co">## 3        72            Red Shiner   Notropis lutrensis</span></span>
+<span><span class="co">## 4        73        Fathead Minnow  Pimephales promelas</span></span>
+<span><span class="co">## 5        74        Shokihaze Goby Tridentiger barbatus</span></span>
+<span><span class="co">## 6        75      Tridentiger spp.     Tridentiger spp.</span></span></code></pre>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># All other file types are temporarily downloaded and a file path provided</span></span>
 <span><span class="va">entities</span><span class="op">$</span><span class="va">SLS_Metadata</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] "/tmp/Rtmp821uvh/SLS_Metadata.pdf"</span></span></code></pre>
+<pre><code><span><span class="co">## [1] "/tmp/Rtmpxo6g05/SLS_Metadata.pdf"</span></span></code></pre>
 <p>You can use <code>shell.exec()</code> to open any downloaded
 files.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">shell.exec</span><span class="op">(</span><span class="va">entities</span><span class="op">$</span><span class="va">SLS_Metadata</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -317,7 +322,7 @@ files.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>

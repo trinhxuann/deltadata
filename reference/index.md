@@ -1,0 +1,52 @@
+# Package index
+
+## All functions
+
+- [`batchCDEC()`](https://github.com/trinhxuann/deltadata/reference/batchCDEC.md)
+  : Batch download CDEC data
+- [`bridgeAccess()`](https://github.com/trinhxuann/deltadata/reference/bridgeAccess.md)
+  : Connect to an Access database
+- [`calcNearestCDEC()`](https://github.com/trinhxuann/deltadata/reference/calcNearestCDEC.md)
+  : Find the Nth nearest CDEC station with specific data
+- [`calcNthNearestCDEC()`](https://github.com/trinhxuann/deltadata/reference/calcNthNearestCDEC.md)
+  **\[deprecated\]** : Find the n-th closest CDEC gage
+- [`crosswalk`](https://github.com/trinhxuann/deltadata/reference/crosswalk.md)
+  : A crosswalk of IEP survey names
+- [`decimalDegrees()`](https://github.com/trinhxuann/deltadata/reference/decimalDegrees.md)
+  : Convert GPS Coordinates to Decimal Degrees
+- [`getEDI()`](https://github.com/trinhxuann/deltadata/reference/getEDI.md)
+  : Pull files from an EDI package
+- [`getMetadataEdi()`](https://github.com/trinhxuann/deltadata/reference/getMetadataEdi.md)
+  : Grab metadata from an EDI package webpage
+- [`getTaxonomyFromItis()`](https://github.com/trinhxuann/deltadata/reference/getTaxonomyFromItis.md)
+  : Get full taxonomic information from ITIS
+- [`gpsOutlier()`](https://github.com/trinhxuann/deltadata/reference/gpsOutlier.md)
+  : Isolate outlying stations
+- [`meterSchedule`](https://github.com/trinhxuann/deltadata/reference/meterSchedule.md)
+  : Meter schedules of IEP surveys
+- [`plotGPS()`](https://github.com/trinhxuann/deltadata/reference/plotGPS.md)
+  : Plot station GPS coordinates with layer control.
+- [`popCDEC()`](https://github.com/trinhxuann/deltadata/reference/popCDEC.md)
+  : Populate the closest CDEC station data.
+- [`pullCDEC()`](https://github.com/trinhxuann/deltadata/reference/pullCDEC.md)
+  : Pulling CDEC gage data
+- [`pullCoordinates()`](https://github.com/trinhxuann/deltadata/reference/pullCoordinates.md)
+  : Pull CDEC gage lat/lon
+- [`pullMetadataCDEC()`](https://github.com/trinhxuann/deltadata/reference/pullMetadataCDEC.md)
+  : Pulling CDEC gage metadata
+- [`pullWyt()`](https://github.com/trinhxuann/deltadata/reference/pullWyt.md)
+  : Scrape water year type data from DWR
+- [`qaqcData()`](https://github.com/trinhxuann/deltadata/reference/qaqcData.md)
+  : Apply basic QAQC procedures to a survey dataset
+- [`readCdecSensorList()`](https://github.com/trinhxuann/deltadata/reference/readCdecSensorList.md)
+  : Scrape sensor list from CDEC webpage
+- [`saveRelationalTables()`](https://github.com/trinhxuann/deltadata/reference/saveRelationalTables.md)
+  : Save the data tables pulled from an Access database as .csv files
+- [`schemaJoin()`](https://github.com/trinhxuann/deltadata/reference/schemaJoin.md)
+  : Applies the joins in accordance to a relationship schema.
+- [`scrapeForm()`](https://github.com/trinhxuann/deltadata/reference/scrapeForm.md)
+  : Scrape, fill, and submit a static html form from the SacPas website
+- [`towSchedule`](https://github.com/trinhxuann/deltadata/reference/towSchedule.md)
+  : Tow schedules of IEP surveys
+- [`wytDate()`](https://github.com/trinhxuann/deltadata/reference/wytDate.md)
+  : Water year type of a date

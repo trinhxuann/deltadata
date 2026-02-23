@@ -1,0 +1,55 @@
+# Pull files from an EDI package
+
+This function works with the API provided by EDI to download the files
+of a package. The default behavior is to download the newest version of
+the data package, but this can be changed via the `version` argument.
+The function handles different file types differently, i.e., .csv files
+are read directly into R while all other file types are downloaded in
+the temporary folder and a file path to the file is returned. Bear in
+mind that the EDI servers are very slow and the execution of this code
+will be thus affected.
+
+## Usage
+
+``` r
+getEDI(url, files, version = "newest", quiet = FALSE)
+```
+
+## Arguments
+
+- url:
+
+  URL of the EDI package with the version number, i.e., the package URL
+  you would access in the browser.
+
+- files:
+
+  Vector of file names of interest. Should match exactly what is on the
+  website. Leave this blank to see the options.
+
+- version:
+
+  Version of interest for the package at hand. Defaults to `newest`,
+  which pulls data from the newest version.
+
+- quiet:
+
+  Defaults to FALSE. If TRUE, will not print the abbreviated table in
+  the console.
+
+## Value
+
+A list of the data files requested. If it is a CSV, this will be read
+directly into R via the
+[`utils::read.csv()`](https://rdrr.io/r/utils/read.table.html) function.
+If any other file types, the file will be downloaded and the file path
+will be provided as an output for that element.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.8",
+files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
+} # }
+```

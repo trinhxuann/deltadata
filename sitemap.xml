@@ -2,11 +2,13 @@
 <url><loc>https://github.com/trinhxuann/deltadata/404.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/LICENSE-text.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/LICENSE.html</loc></url>
-<url><loc>https://github.com/trinhxuann/deltadata/articles/20mmDemonstration.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/articles/EDIWorkflows.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/articles/index.html</loc></url>
+<url><loc>https://github.com/trinhxuann/deltadata/articles/qaqcDemonstration20mm.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/authors.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/index.html</loc></url>
+<url><loc>https://github.com/trinhxuann/deltadata/news/index.html</loc></url>
+<url><loc>https://github.com/trinhxuann/deltadata/reference/batchCDEC.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/bridgeAccess.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/calcNearestCDEC.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/calcNthNearestCDEC.html</loc></url>
@@ -25,6 +27,7 @@
 <url><loc>https://github.com/trinhxuann/deltadata/reference/pullMetadataCDEC.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/pullWyt.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/qaqcData.html</loc></url>
+<url><loc>https://github.com/trinhxuann/deltadata/reference/readCdecSensorList.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/saveRelationalTables.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/schemaJoin.html</loc></url>
 <url><loc>https://github.com/trinhxuann/deltadata/reference/scrapeForm.html</loc></url>
