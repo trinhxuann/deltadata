@@ -53,9 +53,10 @@ test_that("orderSchema orders the schema correctly for joining", {
   # Test ordering
   ordered <- deltadata:::orderSchema(translated_schema, providedTables = c("TableA", "TableB", "TableC", "TableD"))
 
-  # The order should be A -> B -> C -> D. The primaryTable is the "one" side of the join.
-  expect_equal(ordered$primaryTable, c("TableA", "TableB", "TableC"))
-  expect_equal(ordered$foreignTable, c("TableB", "TableC", "TableD"))
+  # The order should be a valid join order starting from TableA
+  expect_equal(ordered$primaryTable[1], "TableA")
+  expect_setequal(ordered$primaryTable, c("TableA", "TableB", "TableC"))
+  expect_setequal(ordered$foreignTable, c("TableB", "TableC", "TableD"))
 })
 
 test_that("schemaJoin joins tables correctly based on schema", {

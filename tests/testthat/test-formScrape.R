@@ -16,12 +16,12 @@ test_that("uniqueNames handles multiple sets of duplicates", {
   x <- c("a", "b", "a", "b", "c")
   result <- uniqueNames(x)
   expect_equal(result$uniqueNames, c("a", "b", "a_2", "b_2", "c"))
-  # The original code returns only the first element of the firstIndex.
-  expect_equal(result$firstIndex, "a_2")
+  expect_equal(result$firstIndex, c("a_2", "b_2"))
 })
 
-test_that("uniqueNames fails with more than two duplicates of one element", {
-  # This test exposes a bug in the original function where it tries to subset a vector as a matrix.
+test_that("uniqueNames handles more than two duplicates of one element", {
   x <- c("a", "a", "a", "b")
-  expect_error(uniqueNames(x))
+  result <- uniqueNames(x)
+  expect_equal(result$uniqueNames, c("a", "a_2", "a_3", "b"))
+  expect_equal(result$firstIndex, c("a_2", "a_3"))
 })

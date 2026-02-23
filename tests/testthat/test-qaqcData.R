@@ -18,9 +18,9 @@ test_that("physicalOutliers identifies outliers correctly", {
   expect_false(any(result_y$outlier[1:5]))
 
   # Test with NAs
-  x_na <- c(1, 2, 3, NA, 5, 100)
+  x_na <- c(1, 2, 3, NA, 5, 10, 12, 11, 9, 100)
   result_na <- physicalOutliers(x_na, na.rm = TRUE)
-  expect_true(result_na$outlier[6])
+  expect_true(result_na$outlier[10])
   expect_true(is.na(result_na$outlier[4]))
 })
 

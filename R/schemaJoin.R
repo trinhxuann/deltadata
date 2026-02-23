@@ -91,26 +91,25 @@ orderSchema <- function(schema, providedTables) {
 
   # Reorder the schema
   # May break if the starting table is a foreign table...
-  start <- filteredSchema[filteredSchema$primaryTable == startTable |
-                            filteredSchema$foreignTable == startTable, ]
-  usedTables <- startTable
+  start <- filteredSchema[filteredSchema$primaryTable %in% startTable |
+                            filteredSchema$foreignTable %in% startTable, ]
+  usedTables <- unique(c(startTable, start$primaryTable, start$foreignTable))
 
-  while (nrow(start) > 0) {
-    if (!start$grbit[nrow(start)] %in% oneToOne) {
-      nextTable <- filteredSchema[filteredSchema$primaryTable == start$foreignTable[nrow(start)], ]
-    } else {
-      nextTable <- filteredSchema[filteredSchema$primaryTable == start$primaryTable[nrow(start)], ]
-      if (nrow(nextTable) > 1) {
-        # Occurs if there was a one-to-one and a table is listed as primary across 1+ relationships
-        nextTable <- nextTable[!nextTable$grbit %in% oneToOne, ]
-      }
-    }
+  while (nrow(start) < nrow(filteredSchema)) {
+    # Find any relationship that connects to our currently used tables but isn't used yet
+    nextTable <- filteredSchema[!(filteredSchema$primaryTable %in% start$primaryTable &
+                                  filteredSchema$foreignTable %in% start$foreignTable &
+                                  filteredSchema$szRelationship %in% start$szRelationship), ]
 
-    if (nrow(nextTable) > 0 && !(nextTable$primaryTable %in% usedTables)) {
-      start <- rbind(start, nextTable)
-      usedTables <- c(usedTables, nextTable$primaryTable)
+    # Connection could be via primary or foreign table
+    matches <- which(nextTable$primaryTable %in% usedTables | nextTable$foreignTable %in% usedTables)
+
+    if (length(matches) > 0) {
+      newRow <- nextTable[matches[1], ]
+      start <- rbind(start, newRow)
+      usedTables <- unique(c(usedTables, newRow$primaryTable, newRow$foreignTable))
     } else {
-      break  # Exit the loop if no more related tables or if a cycle is detected
+      break
     }
   }
   start

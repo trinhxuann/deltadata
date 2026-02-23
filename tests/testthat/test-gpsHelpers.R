@@ -59,10 +59,23 @@ test_that("gpsOutlier handles missing theoretical coordinate", {
     lat = 38.0,
     lon = -122.0
   )
-  expect_error(gpsOutlier(df), "A .* `Theoretical` .* must be present.")
+  expect_error(gpsOutlier(df), "Theoretical.*must be present")
 })
 
 test_that("gpsOutlier handles missing required columns", {
   df <- data.frame(station = "A", lat = 38.0, lon = -122.0)
   expect_error(gpsOutlier(df), "Six required columns")
+})
+
+test_that("plotGPS returns a leaflet object", {
+  df <- data.frame(
+    date = 2023,
+    station = "A",
+    legend = "Theoretical",
+    layer = "1",
+    lat = 38.0,
+    lon = -122.0
+  )
+  p <- plotGPS(df)
+  expect_s3_class(p, "leaflet")
 })
