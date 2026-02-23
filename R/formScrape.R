@@ -84,15 +84,19 @@ uniqueNames <- function(x) {
     return(list(uniqueNames = x, firstIndex = character(0)))
   }
 
-  firstIndex <- sapply(duplicates, function(i) {
+  newNames <- x
+  allRenamed <- character(0)
+
+  for (i in duplicates) {
     matchedIndex <- which(x == i)
-    releventIndex <- 2:length(x[matchedIndex])
-    # <<- likely frowned on
-    x[matchedIndex][releventIndex] <<- paste(i, releventIndex, sep = "_")
-    x[matchedIndex[releventIndex]]
-  })
-  list(uniqueNames = x,
-       firstIndex = firstIndex[, 1])
+    releventIndex <- 2:length(matchedIndex)
+    newVals <- paste(i, releventIndex, sep = "_")
+    newNames[matchedIndex[releventIndex]] <- newVals
+    allRenamed <- c(allRenamed, newVals)
+  }
+
+  list(uniqueNames = newNames,
+       firstIndex = allRenamed)
 }
 
 #' Scrape, fill, and submit a static html form from the SacPas website

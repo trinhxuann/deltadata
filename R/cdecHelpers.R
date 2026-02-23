@@ -609,10 +609,13 @@ calcNearestCDEC <- function(df, n = 1,
 #' calcNthNearestCDEC(df)
 #' }
 calcNthNearestCDEC <- function(df, n = 1,
-                               cdecGPS = cdecStation,
-                               cdecMetadata = cdecMetadata,
+                               cdecGPS = NULL,
+                               cdecMetadata = NULL,
                                variable = c("temp", "turbidity", "ec"),
                                waterColumn = c("top", "bottom")) {
+
+  cdecGPS <- if (is.null(cdecGPS)) get("cdecStation", envir = asNamespace("deltadata"))
+  cdecMetadata <- if (is.null(cdecMetadata)) get("cdecMetadata", envir = asNamespace("deltadata"))
 
   lifecycle::deprecate_warn(
     when = "0.1.0",
@@ -658,7 +661,7 @@ calcNthNearestCDEC <- function(df, n = 1,
   closestGages <- cdecMetadata[grepl(variableWanted, cdecMetadata[["sensorDescription"]], ignore.case = T), ]
 
 
-  cdecGPSFiltered <- cdecGPS[cdecGPS[["station"]] %in% closestGages[["cdecGage"]], ]
+  cdecGPSFiltered <- cdecGPS[cdecGPS[["station"]] %in% closestGages[["gage"]], ]
   if(n > nrow(cdecGPSFiltered)) {
     stop("n is larger than the number of available station.\n")
   }
@@ -685,7 +688,7 @@ calcNthNearestCDEC <- function(df, n = 1,
     }
 
     metadata <- merge(distanceData[n, ], gageWaterColumn,
-                      by.x = "cdecGage", by.y = "cdecGage", all.x = T)
+                      by.x = "cdecGage", by.y = "gage", all.x = T)
 
     metadata$rowIndex <- x
     metadata

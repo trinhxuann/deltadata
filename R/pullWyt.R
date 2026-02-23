@@ -110,5 +110,7 @@ wytDate <- function(date, wyt,
 
   # Vectorize into a vector
   lookup <- setNames(wyt[[column]], wyt$waterYear)
-  lookup[as.character(waterYear)]
+  res <- lookup[as.character(waterYear)]
+  names(res) <- as.character(waterYear)
+  res
 }

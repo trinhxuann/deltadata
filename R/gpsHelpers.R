@@ -164,8 +164,12 @@ gpsOutlier <- function(df, d = 0.5, returnAll = F) {
       }
     } else {
       if (nrow(theoretical) == 0 & nrow(tows) > 0) {
-        df <- tows
-        df[, c("lonTheoretical", "latTheoretical", "distance", "outlier")] <- NA
+        if (returnAll) {
+          df <- tows
+          df[, c("lonTheoretical", "latTheoretical", "distance", "outlier")] <- NA
+        } else {
+          df <- NULL
+        }
       } else df <- NULL
     }
     df
