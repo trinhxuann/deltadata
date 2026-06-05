@@ -3,10 +3,10 @@
 #' @param officeBit NULL, the architecture (32 or 64-bit) of your Microsoft
 #' Access program. If you are on Windows, this will automatically be detected;
 #' on a Linux system, you will have to provide this manually.
+#' @param path32 Path to folder containing the 32-bit R executable.
 #'
 #' @return `TRUE`/`FALSE`, where `TRUE` means that your R and Access
 #' architectures match.
-#'
 #'
 #' @noRd
 #' @keywords internal
@@ -19,6 +19,8 @@ architectureCheck <- function(officeBit = NULL, path32) {
   }
   # What architecture of R are you on?
   rBit <- ifelse((.Machine$sizeof.pointer == 4), "x32", "x64")
+
+  rscriptExe <- ""
 
   # Do you have 32 bit or 64 bit office installed
   # Can attempt to read this from the registry itself;
@@ -46,14 +48,57 @@ architectureCheck <- function(officeBit = NULL, path32) {
 
   # Are they the same?
   if (officeBit != rBit) {
-    # First case = in 64bit R but have only 32bit office. Here, will have to use the terminal
     if (rBit == "x64" & officeBit == "x32") {
-      # Check to see if a 32 bit R is installed
-      # if (!file.exists(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"))) {
-      #   stop("A 32-bit R could not be found on this machine and must be installed.", call. = F)
-      # }
-      if (!file.exists(r"(C:\Users\TXNguyen\Documents\R\R-4.1.3\bin\i386\Rscript.exe)")) {
-        stop("A 32-bit R could not be found on this machine and must be installed.", call. = F)
+      if (path32 == "default") {
+        # Try to find the 32-bit R path dynamically via the Registry
+        path32Found <- tryCatch({
+          utils::readRegistry("SOFTWARE\\R-core\\R32", hive = "HLM")[["InstallPath"]]
+        }, error = function(e) NULL)
+
+        # For non-admin right users
+        if (is.null(path32Found)) {
+          path32Found <- tryCatch({
+            utils::readRegistry("SOFTWARE\\R-core\\R32", hive = "HCU")[["InstallPath"]]
+          }, error = function(e) NULL)
+        }
+
+        if (!is.null(path32Found)) {
+          path32 <- path32Found
+        }
+      }
+
+      # Build the expected executable path if found
+      if (!is.null(path32) && path32 != "default" && path32 != "") {
+        if (grepl("Rscript\\.exe$", path32, ignore.case = TRUE)) {
+          rscriptExe <- path32
+        } else {
+          rscriptExe <- file.path(path32, "bin", "i386", "Rscript.exe")
+        }
+      }
+
+      if (!file.exists(rscriptExe)) {
+
+        downloadURL <- "https://cran.r-project.org/bin/windows/base/old/4.1.3/"
+
+        msg <- paste(
+          "Error: A 32-bit R installation is required because your Microsoft Office is 32-bit.",
+          "R 4.1.3 is the last version of R that supports 32-bit compilation on Windows.",
+          "Please download and install it from the CRAN archive:",
+          paste0("  -> ", downloadURL),
+          sep = "\n"
+        )
+
+        # Interactive helper to assist the user directly in RStudio/Console
+        if (interactive()) {
+          message(msg)
+          ans <- readline("Would you like to open the CRAN download page in your browser? (y/n): ")
+          if (tolower(trimws(ans)) %in% c("y", "yes")) {
+            utils::browseURL(downloadURL)
+          }
+          stop("32-bit R is missing. Please install R 4.1.3 32-bit to proceed.", call. = FALSE)
+        } else {
+          stop(msg, call. = FALSE)
+        }
       }
     }
   }
@@ -62,7 +107,8 @@ architectureCheck <- function(officeBit = NULL, path32) {
 
   list(check = check,
        rBit = rBit,
-       officeBit = officeBit)
+       officeBit = officeBit,
+       path32 = rscriptExe)
 }
 
 #' Facilitates connection from R to Access.
@@ -123,6 +169,8 @@ connectAccess <- function(path,
 #' @param tables The tables that you wish to pull from the database. This can
 #' be left as its default, equal to "check", to return a list of tables to
 #' choose from.
+#' @param rBit Architecture of your R, "x32" or "x64"
+#' @param officeBit Architecture of your Microsoft Office, "x32" or "x64"
 #' @param out File path to store the rds file. This is required if you are on
 #' 64-bit R but have a 32-bit version of your database application, e.g., Access
 #' @param retry Logical. If `TRUE`, the function will retry extracting after waiting 25 seconds.
@@ -191,74 +239,6 @@ extractTables <- function(con, tables, rBit, officeBit, out = out, retry = T) {
   }
 }
 
-#' Download a file
-#'
-#' @description
-#' Grab the file from a website link, or provide the file path if a file path
-#' is provided. Provides option to open the file.
-#'
-#' @param file File path to the file, most useful if provided as a URL.
-#' @param open T/F if the file should be opened or not.
-#'
-#' @return A file path or opens the file if open is `TRUE`
-#'
-#' @noRd
-#' @importFrom httr headers HEAD
-#' @importFrom utils download.file unzip
-#' @keywords internal
-getFileOld <- function(file, open = F, method) {
-
-  fileType <- file(file)
-  on.exit(close(fileType))
-
-  fileName <- basename(file)
-
-  if (class(fileType)[[1]] == "url") {
-    if (!file.exists(file.path(tempdir(), fileName))) {
-
-      fileSize <- as.numeric(headers(HEAD(file))$`content-length`)/1024^2
-      timeOut <- ceiling(fileSize)
-
-      if (fileSize > 50) {
-        message(paste("File size is > 50 mb. Increasing `timeout` to", timeOut, "to download file fully. If not long enough, specify the time out manually via `options(timeout = value)`."))
-        options(timeout = timeOut)
-      }
-      filePath <- file.path(tempdir(), fileName)
-
-      fileDownloaded <- download.file(file, destfile = filePath, method = method)
-      options(timeout = 60)
-    } else {
-      filePath <- file.path(tempdir(), fileName)
-    }
-  } else {
-    filePath <- file
-  }
-
-  if (grepl("\\.zip$", fileName)) {
-    databaseName <- unzip(filePath, list = T)[["Name"]]
-    databaseName <- databaseName[grepl("(\\.accdb)|(\\.mdb)", databaseName)]
-    accessPath <- file.path(tempdir(), databaseName)
-  } else {
-    databaseName <- fileName
-    accessPath <- file.path(dirname(filePath), databaseName)
-  }
-
-  if (length(databaseName) == 0) stop("An Access file was not found in the .zip file.")
-
-  if (!file.exists(accessPath)) {
-    message("Extracting file: ", sQuote(databaseName), " from the zip file.")
-    file <- unzip(filePath, files = databaseName, exdir = tempdir())
-  } else {
-    file <- accessPath
-  }
-
-  if (isTRUE(open)) {
-    shell.exec(file)
-  } else {
-    file
-  }
-}
-
 #' Download or access a local file, with robust handling for URLs.
 #'
 #' @description
@@ -273,6 +253,9 @@ getFileOld <- function(file, open = F, method) {
 #' @param file A character string: either a URL to a file or a local file path.
 #' @param open A logical value. If `TRUE`, the final file will be opened using
 #'   the system's default application.
+#' @param timeout A numeric value in seconds to override the download timeout.
+#'   If `NULL` (the default), the timeout is calculated dynamically based on
+#'   the file size, with R's global `getOption("timeout")` (defaulting to 60) used as the floor.
 #'
 #' @return The full path to the final, ready-to-use file (unzipped if necessary).
 #'
@@ -280,7 +263,7 @@ getFileOld <- function(file, open = F, method) {
 #' @importFrom httr GET HEAD headers progress timeout write_disk stop_for_status
 #' @importFrom utils browseURL unzip
 #' @keywords internal
-getFile <- function(file, open = FALSE) {
+getFile <- function(file, open = FALSE, timeout = NULL) {
 
   # --- 1. Determine if the file is a URL or local path ---
   isUrl <- grepl("^https?://", file, ignore.case = TRUE)
@@ -291,17 +274,25 @@ getFile <- function(file, open = FALSE) {
   if (isUrl && !file.exists(filePath)) {
     message("Downloading file from URL: ", sQuote(file))
 
-    # A. Get file size to set a dynamic timeout (safer than global options)
-    timeOut <- 60 # Default timeout
-    try({
-      head_response <- HEAD(file)
-      if (!is.null(headers(head_response)$`content-length`)) {
-        fileSize <- as.numeric(headers(head_response)$`content-length`) / 1024^2
-        # Set timeout to 1 second per MB, with a minimum of 60s
-        timeOut <- max(60, ceiling(fileSize))
-        message(sprintf("File size is approx %.2f MB. Setting download timeout to %d seconds.", fileSize, timeOut))
-      }
-    }, silent = TRUE)
+    # Read R's global option if set, otherwise default to 60s
+    defaultTimeout <- getOption("timeout", 60)
+    timeOut <- defaultTimeout
+
+    # If no explicit timeout is provided, calculate it dynamically
+    if (is.null(timeout)) {
+      try({
+        head_response <- HEAD(file)
+        if (!is.null(headers(head_response)$`content-length`)) {
+          fileSize <- as.numeric(headers(head_response)$`content-length`) / 1024^2
+          # Dynamic calculation: 1 second per MB, with the global default as the floor
+          timeOut <- max(defaultTimeout, ceiling(fileSize))
+          message(sprintf("File size is approx %.2f MB. Setting download timeout to %d seconds.", fileSize, timeOut))
+        }
+      }, silent = TRUE)
+    } else {
+      timeOut <- as.numeric(timeout)
+      message(sprintf("Using user-specified download timeout of %d seconds.", timeOut))
+    }
 
     # B. Perform the download using httr::GET for robustness
     tryCatch({
@@ -362,7 +353,6 @@ getFile <- function(file, open = FALSE) {
   return(finalPath)
 }
 
-
 #' Connect to an Access database
 #'
 #' @description
@@ -403,13 +393,6 @@ bridgeAccess <- function(file, tables = "check",
 
   retry <- if (is.null(list(...)$retry)) FALSE else list(...)$retry
 
-  # First, check architecture. If ok then just source the script; if not then invoke system2
-  # If using 4.1.3 for both 64 and 32 bits, then will be in the same folder
-  # If not, the user should provide directory to the Rscript.exe
-  path32 <- if (path32 == "default") paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe")
-  else path32
-  if (!file.exists(path32)) stop("A 32-bit R could not be found on this machine. \n Install R 4.1.3 or provide the path to the Rscript.exe path to `path32`.", call. = F)
-
   bitCheck <- architectureCheck(path32 = path32)
 
   file <- getFile(file, open = F)
@@ -426,22 +409,33 @@ bridgeAccess <- function(file, tables = "check",
                   out = out,
                   retry = retry)
   } else {
-    file <- shQuote(normalizePath(file, winslash = "\\", mustWork = T))
     script <- shQuote(normalizePath(system.file("internal", "connectAccessTerminal.R",
                                                 package = "deltadata"), winslash = "\\", mustWork = T))
-    tables <- shQuote(tables)
-    # "C:\Users\TXNguyen\Documents\R\R-4.1.3\bin\i386\Rscript.exe"
-    # terminalOutput <- system2(paste0(Sys.getenv("R_HOME"), "/bin/i386/Rscript.exe"),
-    #                           args = c(script,
-    #                                    file, bitCheck, out, retry, tables))
-    terminalOutput <- system2(path32,
-                              args = c(script,
-                                       file, bitCheck, out, retry, tables))
 
-    # All is needed here in case length(tables) > 1 (throws warning)
+    params <- list(
+      file = normalizePath(file, winslash = "\\", mustWork = T),
+      rBit = bitCheck$rBit,
+      officeBit = bitCheck$officeBit,
+      out = out,
+      retry = retry,
+      tables = tables,
+      extraArgs = list(...)
+    )
 
-    if (all(tables != shQuote("check")) & terminalOutput == 0) {
-      readRDS(file.path(tempdir(), "savedAccessTables.rds"))
+    paramFile <- tempfile(pattern = "access_params_", fileext = ".rds")
+    saveRDS(params, file = paramFile)
+    on.exit(unlink(paramFile), add = TRUE)
+
+    path32Exe <- bitCheck$path32
+
+    # Run the 32-bit Rscript. Paths are quoted to safely handle directory structures with spaces.
+    terminalOutput <- system2(
+      command = path32Exe,
+      args = c(script, paramFile)
+    )
+
+    if (!any(tables %in% "check")) {
+      readRDS(file.path(out, "savedAccessTables.rds"))
     }
   }
 }

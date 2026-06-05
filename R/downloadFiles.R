@@ -74,18 +74,21 @@ getEDI <- function(url, files, version = "newest", quiet = FALSE) {
       cat("Specify files to download: \n")
       print(tables[c("name", "extension", "size", "description")])
     }
-    return(tables)
+    return(invisible(tables))
   }
 
   matchedTables <- files %in% tables$name
 
   if (!all(matchedTables)) {
-    unmatchedNames <- files[!which(matchedTables)]
-    print(tables)
+    unmatchedNames <- files[!matchedTables]
+
+    if (!isTRUE(quiet)) {
+      print(tables[c("name", "extension", "size", "description")])
+    }
 
     stop("The specified table(s) cannot be found in the EDI publication: ",
-            paste(files[which(!matchedTables)], collapse = ", "),
-            ". Please check your spelling.", call. = F)
+         paste(unmatchedNames, collapse = ", "),
+         ". Please check your spelling.", call. = FALSE)
   }
 
   tables <- tables[tables[["name"]] %in% files, ]
