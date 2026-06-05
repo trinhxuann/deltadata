@@ -1,6 +1,6 @@
 Package: deltadata
 Title: Various functions for acquiring data within the SFE
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     person("Trinh", "Nguyen", , "trinh.nguyen@wildlife.ca.gov", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-9523-1466"))
@@ -32,4 +32,4 @@ LazyData: true
 VignetteBuilder: knitr
 License: MIT + file LICENSE
 Compression: xz
-URL: https://github.com/trinhxuann/deltadata
+URL: https://github.com/trinhxuann/deltadata, https://trinhxuann.github.io/deltadata/

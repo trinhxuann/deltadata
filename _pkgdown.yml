@@ -1,15 +1,14 @@
-url: https://github.com/trinhxuann/deltadata
+url: https://trinhxuann.github.io/deltadata/
 template:
   bootstrap: 5
   theme: github-light
   theme-dark: github-dark
-  light-switch: true
+  light-switch: yes
   includes:
     in_header: |
       <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 home:
   links:
-  # - text: Browse source code
-  #   href: https://github.com/trinhxuann/deltadata
   - text: Report a bug
     href: https://github.com/trinhxuann/deltadata/issues
+

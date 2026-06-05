@@ -1,3 +1,10 @@
+# deltadata 0.1.1
+
+### Bug fixes
+
+*   Fixed a bug in which 32-bit R would not correctly launch from 64-bit R (#11)
+*   `bridgeAccess()` no longer uses `download.file()`. Solves SSL and corrupted file issues (#3)
+
 # deltadata 0.1.0
 
 First major release of the package, focusing on making the various CDEC functions more robust.
