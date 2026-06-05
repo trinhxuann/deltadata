@@ -41,7 +41,7 @@ calcNthNearestCDEC(
   A data frame containing the metadata table of the CDEC gages of
   interest. This table must match the format provided by the DWR
   website. It is recommended to use
-  [`pullMetadataCDEC()`](https://github.com/trinhxuann/deltadata/reference/pullMetadataCDEC.md)
+  [`pullMetadataCDEC()`](https://trinhxuann.github.io/deltadata/reference/pullMetadataCDEC.md)
   to get this data.
 
 - variable:
@@ -65,7 +65,7 @@ point of interest that has data for the variable of interest.
 ## Note
 
 This functionality has been incorporated into
-[`calcNearestCDEC`](https://github.com/trinhxuann/deltadata/reference/calcNearestCDEC.md).
+[`calcNearestCDEC`](https://trinhxuann.github.io/deltadata/reference/calcNearestCDEC.md).
 
 ## Examples
 

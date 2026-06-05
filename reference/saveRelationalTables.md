@@ -13,7 +13,7 @@ saveRelationalTables(relationalTables, folderPath, fileNames = NULL)
 - relationalTables:
 
   A list of the relational tables, ideally taken from
-  [`bridgeAccess`](https://github.com/trinhxuann/deltadata/reference/bridgeAccess.md).
+  [`bridgeAccess`](https://trinhxuann.github.io/deltadata/reference/bridgeAccess.md).
 
 - folderPath:
 

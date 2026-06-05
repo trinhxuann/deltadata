@@ -80,7 +80,7 @@ A data frame of the requested data pull.
 
 The `coordinates` argument can be used in place of the `station`
 argument. The
-[`calcNearestCDEC`](https://github.com/trinhxuann/deltadata/reference/calcNearestCDEC.md)
+[`calcNearestCDEC`](https://trinhxuann.github.io/deltadata/reference/calcNearestCDEC.md)
 function will be used to calculate the nearest CDEC station to your
 point of interest and pull data from that gage. use that function if you
 are specifically only interested in the metadata of the nearest CDEC

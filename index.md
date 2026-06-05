@@ -21,6 +21,7 @@ The main use cases of this package are:
 The `deltadata` package can be installed from its GitHub repository.
 
 ``` r
+
 # Install `devtools` if we need to
 install.packages("devtools")
 # Installing `deltadata` if we do not already have it

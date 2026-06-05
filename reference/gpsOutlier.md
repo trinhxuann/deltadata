@@ -15,7 +15,7 @@ gpsOutlier(df, d = 0.5, returnAll = F)
 
   A dataframe with 6 required columns: date, station, legend, layer,
   lat, and lon. See
-  [`plotGPS`](https://github.com/trinhxuann/deltadata/reference/plotGPS.md)
+  [`plotGPS`](https://trinhxuann.github.io/deltadata/reference/plotGPS.md)
   for details.
 
 - d:

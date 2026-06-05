@@ -54,7 +54,7 @@ batchCDEC(
 - ...:
 
   Any other arguments to be passed onto
-  [`pullCDEC`](https://github.com/trinhxuann/deltadata/reference/pullCDEC.md).
+  [`pullCDEC`](https://trinhxuann.github.io/deltadata/reference/pullCDEC.md).
 
 ## Value
 

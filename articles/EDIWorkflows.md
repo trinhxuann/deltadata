@@ -6,36 +6,38 @@ package but are opinionated to work similarly to other workflows in
 ‘deltadata’.
 
 ``` r
+
 library(deltadata)
 ```
 
 ## Reading in entities from EDI
 
 The
-[`getEDI()`](https://github.com/trinhxuann/deltadata/reference/getEDI.md)
+[`getEDI()`](https://trinhxuann.github.io/deltadata/reference/getEDI.md)
 function is a one-stop shop function that allows us to download entities
 from an EDI repository. To get started, provide the function with a URL
 to the data package of interest.
 
 ``` r
+
 # Data package of the CDFW IEP SLS Survey
 possibleEntities <- getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9")
 ```
 
     ## Specify files to download: 
     ##                       name extension      size
-    ## 1                  SLS.csv       csv   8.8 MiB
-    ## 2                Catch.csv       csv 369.3 KiB
-    ## 3            FishCodes.csv       csv     4 KiB
-    ## 4              Lengths.csv       csv   8.1 MiB
-    ## 5     MeterCorrections.csv       csv  16.3 KiB
+    ## 1                  SLS.csv       csv   9.7 MiB
+    ## 2                Catch.csv       csv 408.9 KiB
+    ## 3            FishCodes.csv       csv   4.1 KiB
+    ## 4              Lengths.csv       csv   8.8 MiB
+    ## 5     MeterCorrections.csv       csv  16.9 KiB
     ## 6       Station_Lookup.csv       csv   7.8 KiB
-    ## 7              TowInfo.csv       csv 375.1 KiB
-    ## 8            WaterInfo.csv       csv 730.9 KiB
-    ## 9        SLSIntegrateEDI.R         R  21.8 KiB
-    ## 10           SLSTables.rds       rds 908.2 KiB
-    ## 11        SLS_Metadata.pdf       pdf 843.4 KiB
-    ## 12 SLSDatabaseEditLog.xlsx      xlsx  25.7 KiB
+    ## 7              TowInfo.csv       csv 413.9 KiB
+    ## 8            WaterInfo.csv       csv 807.4 KiB
+    ## 9        SLSIntegrateEDI.R         R  21.9 KiB
+    ## 10           SLSTables.rds       rds 995.7 KiB
+    ## 11        SLS_Metadata.pdf       pdf   847 KiB
+    ## 12 SLSDatabaseEditLog.xlsx      xlsx  25.9 KiB
     ##                                                                                                                                                                                                                                                  description
     ## 1                                                                                                                                                                                                        Joined long formatted data frame of the base tables
     ## 2                                                                                                                                                                                                                Fish catch data from the Smelt Larva Survey
@@ -59,16 +61,17 @@ data.frame, which can be accessible if you assign the function to a
 variable.
 
 ``` r
+
 # Full data.frame has more information than what is printed
 head(possibleEntities)
 ```
 
     ##                   name extension      size sizeBytes
-    ## 1              SLS.csv       csv   8.8 MiB   9225612
-    ## 2            Catch.csv       csv 369.3 KiB    378117
-    ## 3        FishCodes.csv       csv     4 KiB      4136
-    ## 4          Lengths.csv       csv   8.1 MiB   8478413
-    ## 5 MeterCorrections.csv       csv  16.3 KiB     16710
+    ## 1              SLS.csv       csv   9.7 MiB  10140505
+    ## 2            Catch.csv       csv 408.9 KiB    418748
+    ## 3        FishCodes.csv       csv   4.1 KiB      4243
+    ## 4          Lengths.csv       csv   8.8 MiB   9208018
+    ## 5 MeterCorrections.csv       csv  16.9 KiB     17283
     ## 6   Station_Lookup.csv       csv   7.8 KiB      8032
     ##                                                                                          description
     ## 1                                                Joined long formatted data frame of the base tables
@@ -78,12 +81,12 @@ head(possibleEntities)
     ## 5                                  Instrument information for flowmeters used throughout the seasons
     ## 6                                                    Theoretical GPS coordinates of all SLS stations
     ##                                                                                     link
-    ## 1 https://pasta.lternet.edu/package/data/eml/edi/534/11/d5f0c1509f89ff1784971832af4e7670
-    ## 2 https://pasta.lternet.edu/package/data/eml/edi/534/11/c5d59568835d0760e318829b800ee06d
-    ## 3 https://pasta.lternet.edu/package/data/eml/edi/534/11/93a50ec0337ddbc6df6d8f6d36ab8997
-    ## 4 https://pasta.lternet.edu/package/data/eml/edi/534/11/b6911e22e9ac870f20a9da9854bb367a
-    ## 5 https://pasta.lternet.edu/package/data/eml/edi/534/11/6da12710629f46831cbd02499c626532
-    ## 6 https://pasta.lternet.edu/package/data/eml/edi/534/11/4905aa8f3bafdd75423c63e66a2256e9
+    ## 1 https://pasta.lternet.edu/package/data/eml/edi/534/12/d5f0c1509f89ff1784971832af4e7670
+    ## 2 https://pasta.lternet.edu/package/data/eml/edi/534/12/c5d59568835d0760e318829b800ee06d
+    ## 3 https://pasta.lternet.edu/package/data/eml/edi/534/12/93a50ec0337ddbc6df6d8f6d36ab8997
+    ## 4 https://pasta.lternet.edu/package/data/eml/edi/534/12/b6911e22e9ac870f20a9da9854bb367a
+    ## 5 https://pasta.lternet.edu/package/data/eml/edi/534/12/6da12710629f46831cbd02499c626532
+    ## 6 https://pasta.lternet.edu/package/data/eml/edi/534/12/4905aa8f3bafdd75423c63e66a2256e9
     ##                                 id
     ## 1 d5f0c1509f89ff1784971832af4e7670
     ## 2 c5d59568835d0760e318829b800ee06d
@@ -96,21 +99,22 @@ To download file(s), we can provide the values of interest in the `name`
 column to the function.
 
 ``` r
+
 entities <- getEDI("https://portal.edirepository.org/nis/mapbrowse?packageid=edi.534.9", 
                    files = c("Catch.csv", "SLSTables.rds", "SLS_Metadata.pdf"))
 ```
 
-    ## Downloading: Catch.csv (369.3 KiB)
+    ## Downloading: Catch.csv (408.9 KiB)
 
-    ##   |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |======                                                                |   9%  |                                                                              |=========                                                             |  13%  |                                                                              |============                                                          |  17%  |                                                                              |=================                                                     |  24%  |                                                                              |==================                                                    |  26%  |                                                                              |========================                                              |  35%  |                                                                              |==============================                                        |  43%  |                                                                              |=================================                                     |  48%  |                                                                              |==================================                                    |  48%  |                                                                              |===================================                                   |  51%  |                                                                              |=====================================                                 |  53%  |                                                                              |========================================                              |  57%  |                                                                              |=========================================                             |  59%  |                                                                              |===========================================                           |  61%  |                                                                              |============================================                          |  64%  |                                                                              |======================================================                |  77%  |                                                                              |================================================================      |  91%  |                                                                              |======================================================================| 100%
+    ##   |                                                                              |                                                                      |   0%  |                                                                              |=====                                                                 |   8%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  37%  |                                                                              |====================================                                  |  51%  |                                                                              |==========================================                            |  61%  |                                                                              |============================================                          |  63%  |                                                                              |====================================================                  |  75%  |                                                                              |======================================================================| 100%
 
-    ## Downloading: SLSTables.rds (908.2 KiB)
+    ## Downloading: SLSTables.rds (995.7 KiB)
 
-    ##   |                                                                              |                                                                      |   0%  |                                                                              |==                                                                    |   3%  |                                                                              |===                                                                   |   4%  |                                                                              |=====                                                                 |   7%  |                                                                              |=========                                                             |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |===========                                                           |  16%  |                                                                              |==============                                                        |  19%  |                                                                              |===============                                                       |  22%  |                                                                              |=======================                                               |  33%  |                                                                              |==========================                                            |  37%  |                                                                              |===========================                                           |  38%  |                                                                              |============================                                          |  41%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================                                  |  51%  |                                                                              |=============================================                         |  64%  |                                                                              |=========================================================             |  81%  |                                                                              |=========================================================             |  82%  |                                                                              |=============================================================         |  87%  |                                                                              |======================================================================| 100%
+    ##   |                                                                              |                                                                      |   0%  |                                                                              |==                                                                    |   3%  |                                                                              |========                                                              |  11%  |                                                                              |==========                                                            |  14%  |                                                                              |=============                                                         |  18%  |                                                                              |====================                                                  |  29%  |                                                                              |=========================                                             |  36%  |                                                                              |==============================                                        |  44%  |                                                                              |===============================                                       |  44%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================                                  |  51%  |                                                                              |======================================                                |  54%  |                                                                              |========================================                              |  57%  |                                                                              |========================================================              |  80%  |                                                                              |==========================================================            |  82%  |                                                                              |===========================================================           |  85%  |                                                                              |===================================================================== |  99%  |                                                                              |======================================================================| 100%
 
-    ## Downloading: SLS_Metadata.pdf (843.4 KiB)
+    ## Downloading: SLS_Metadata.pdf (847 KiB)
 
-    ##   |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   1%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |===                                                                   |   5%  |                                                                              |=====                                                                 |   8%  |                                                                              |=======                                                               |   9%  |                                                                              |========                                                              |  11%  |                                                                              |==========                                                            |  14%  |                                                                              |===========                                                           |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=============                                                         |  19%  |                                                                              |===============                                                       |  21%  |                                                                              |================                                                      |  23%  |                                                                              |=================                                                     |  24%  |                                                                              |===================                                                   |  27%  |                                                                              |============================                                          |  40%  |                                                                              |====================================                                  |  51%  |                                                                              |=====================================                                 |  52%  |                                                                              |=======================================                               |  56%  |                                                                              |========================================                              |  57%  |                                                                              |=================================================                     |  70%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%
+    ##   |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   1%  |                                                                              |===                                                                   |   4%  |                                                                              |====                                                                  |   6%  |                                                                              |=====                                                                 |   8%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  14%  |                                                                              |=============                                                         |  19%  |                                                                              |====================                                                  |  29%  |                                                                              |=============================                                         |  41%  |                                                                              |==========================================                            |  60%  |                                                                              |===========================================                           |  61%  |                                                                              |====================================================================  |  97%  |                                                                              |======================================================================| 100%
 
 ## Files are stored differently
 
@@ -120,6 +124,7 @@ R, while all other file types are downloaded to the temporary folder and
 a link to the file is provided.
 
 ``` r
+
 # csv files are read in directly
 head(entities$Catch.csv)
 ```
@@ -133,6 +138,7 @@ head(entities$Catch.csv)
     ## 6 2009-01-05     918   1       49     1               0               0       9
 
 ``` r
+
 # rds files are read in directly, outputted as a list
 lapply(entities$SLSTables, head)
 ```
@@ -219,26 +225,26 @@ lapply(entities$SLSTables, head)
     ## 
     ## $Station_Lookup
     ##   ID Station
-    ## 1 25     705
-    ## 2 26     706
-    ## 3 27     707
-    ## 4 28     711
-    ## 5 29     716
-    ## 6 30     723
-    ##                                                                                                                                    Description
-    ## 1                               Horse Shoe Bend. Inside Horse Shoe Bend by north entrance to Sacramento River. Tow on west side @ 11-13' depth
-    ## 2          Sacramento River. below south tip of Decker Is. Target midpoint is between PG&E towers. Tow on north side out of main channel @ 22'
-    ## 3                                Sacramento River at Three Mile Sl. Target midpoint in between light #19 & #21. Tow in channel @ 24-26' depth.
-    ## 4  Sacramento River at the tip of Grand Is. Start upstream of light #1 and towing upstream only @ 13-16' depth. Tow along north side in shoal.
-    ## 5 Cache Sl. by old ferry crossing near south end of Prospect Sl.Tow parallel to road after scour hole. Do not tow scour hole. Tow @ 30' depth.
-    ## 6                                           Sacramento Deepwater Channel. Midpoint target @ Channel markers 51 & 52. Tow in middle of channel.
+    ## 1  1     340
+    ## 2  2     342
+    ## 3  3     343
+    ## 4  4     344
+    ## 5  5     345
+    ## 6  6     346
+    ##                                                                                           Description
+    ## 1                 Napa River. Along Vallejo seawall and park. Downstream of Ferry. Tow @ 10-12' depth
+    ## 2                Napa River. Target midpoint is opening to South Slough. Tow on west bank @ 22' depth
+    ## 3                                               Napa River. Tow between lights #9 and #11 @ 10' depth
+    ## 4     Napa River. Just past railroad bridge. Target midpoint is at mouth of Fagan Sl. Tow @ 15' depth
+    ## 5 Napa River. Target midpoint about quarter mile from entrance to Napa Valley Marina. Tow @ 15' depth
+    ## 6                                    Napa River. Just past last bend before Hwy 12 bridge @ 17' depth
     ##          Lat        Long
-    ## 1 38 05 51.4 121 42 31.5
-    ## 2 38 05 09.9 121 45 01.6
-    ## 3 38 06 52.9 121 42 28.3
-    ## 4 38 10 38.7 121 39 44.1
-    ## 5 38 14 18.8 121 41 02.1
-    ## 6 38 14 14.1 121 40 23.1
+    ## 1 38 05 51.0 122 15 43.9
+    ## 2 38 08 46.5 122 17 19.5
+    ## 3 38 10 54.9 122 18 34.2
+    ## 4 38 12 45.7 122 18 31.3
+    ## 5 38 13 25.8 122 18 32.3
+    ## 6 38 14 11.0 122 17 13.8
     ## 
     ## $FishCodes
     ##   Fish.Code           Common.Name                 Taxa
@@ -250,14 +256,16 @@ lapply(entities$SLSTables, head)
     ## 6        75      Tridentiger spp.     Tridentiger spp.
 
 ``` r
+
 # All other file types are temporarily downloaded and a file path provided
 entities$SLS_Metadata
 ```
 
-    ## [1] "/tmp/Rtmpxo6g05/SLS_Metadata.pdf"
+    ## [1] "/tmp/RtmpJKPXRI/SLS_Metadata.pdf"
 
 You can use `shell.exec()` to open any downloaded files.
 
 ``` r
+
 shell.exec(entities$SLS_Metadata)
 ```

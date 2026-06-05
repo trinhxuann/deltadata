@@ -5,13 +5,14 @@ the 20 mm Survey Access database, a yearly process that precedes data
 publication.
 
 ``` r
+
 library(deltadata)
 ```
 
 ## Reading in your data
 
 The
-[`bridgeAccess()`](https://github.com/trinhxuann/deltadata/reference/bridgeAccess.md)
+[`bridgeAccess()`](https://trinhxuann.github.io/deltadata/reference/bridgeAccess.md)
 function is our primary tool to download, connect to, and extract data
 tables from an Access database. However, there is a prerequisite that we
 must fulfill.
@@ -29,7 +30,7 @@ you have two potential solutions:
     version
     [4.1.3](https://cran.r-project.org/bin/windows/base/old/4.1.3). Once
     installed,
-    [`bridgeAccess()`](https://github.com/trinhxuann/deltadata/reference/bridgeAccess.md)
+    [`bridgeAccess()`](https://trinhxuann.github.io/deltadata/reference/bridgeAccess.md)
     will run this instance in the background, allowing you to stay
     working in 64-bit R.
 2.  Install 64-bit Office. This likely requires installation by your IT
@@ -40,6 +41,7 @@ We can replicate the architecture check using an internal function of
 the package:
 
 ``` r
+
 # This function is ran internally in bridgeAccess()
 deltadata:::architectureCheck()
 ```
@@ -60,7 +62,7 @@ use my 32-bit R to proceed.
 #### Connecting to your Access database
 
 The first argument of
-[`bridgeAccess()`](https://github.com/trinhxuann/deltadata/reference/bridgeAccess.md)
+[`bridgeAccess()`](https://trinhxuann.github.io/deltadata/reference/bridgeAccess.md)
 is the path to your file. This argument is flexible and can take a
 filepath to the file on your hard drive or a URL to a file online. The
 file must be an Access database or a compressed file (e.g., .zip) with
@@ -76,6 +78,7 @@ the file has already been downloaded, the function will skip downloading
 the file again.
 
 ``` r
+
 bridgeAccess("https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip")
 ```
 
@@ -107,6 +110,7 @@ The 20 mm has five main relational tables needed for QAQC. We can
 specify them here:
 
 ``` r
+
 relationalTables <- bridgeAccess(
   file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
   tables = c("Station", "Survey", "Tow", "Gear", "20mmStations")
@@ -119,7 +123,7 @@ the database. We can leverage this table to automatically and reliably
 join the relational tables with one another. However, this table does
 require special permissions to download. We can give ourselves
 permissions by feeding this table (`MSysRelationships`) into
-[`bridgeAccess()`](https://github.com/trinhxuann/deltadata/reference/bridgeAccess.md).
+[`bridgeAccess()`](https://trinhxuann.github.io/deltadata/reference/bridgeAccess.md).
 The function will open the Access file and provide a message with
 instructions:
 
@@ -128,6 +132,7 @@ instructions:
     hit `Enter`, exit file, and rerun this code."
 
 ``` r
+
 schema <- bridgeAccess(
   "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
   tables = c("MSysRelationships"), retry = T
@@ -140,14 +145,15 @@ schema <- schema[[1]]
 
 The relational tables must be joined together before we can properly
 QAQC the data. To do this, we can use the
-[`schemaJoin()`](https://github.com/trinhxuann/deltadata/reference/schemaJoin.md)
+[`schemaJoin()`](https://trinhxuann.github.io/deltadata/reference/schemaJoin.md)
 function to decipher the relationship table. Although we can join the
 tables by hand, the
-[`schemaJoin()`](https://github.com/trinhxuann/deltadata/reference/schemaJoin.md)
+[`schemaJoin()`](https://trinhxuann.github.io/deltadata/reference/schemaJoin.md)
 function provide an automatic and consistent way to join the tables
 correctly.
 
 ``` r
+
 joinedData <- schemaJoin(schema, relationalTables)
 ```
 
@@ -175,7 +181,7 @@ leverage.
 There are two functions dedicated to visualizing and detecting GPS
 coordinates that are too far from the desired sampling location:
 
-1.  [`plotGPS()`](https://github.com/trinhxuann/deltadata/reference/plotGPS.md):
+1.  [`plotGPS()`](https://trinhxuann.github.io/deltadata/reference/plotGPS.md):
     plots GPS coordinates on a leaflet map. Requires a data frame with 6
     columns, `date`, `station`, `legend`, `layer`, `lat`, and `lon.` The
     `legend` column should contain the legend labels for the plotted
@@ -183,20 +189,21 @@ coordinates that are too far from the desired sampling location:
     coordinates of each sampling station. The `layer` column is used in
     the layer control (toggling the display of a layer) and is generally
     the survey number. See `?plotGPS()` for more information.
-2.  [`gpsOutlier()`](https://github.com/trinhxuann/deltadata/reference/gpsOutlier.md):
+2.  [`gpsOutlier()`](https://trinhxuann.github.io/deltadata/reference/gpsOutlier.md):
     returns a data frame of GPS coordinates that are beyond a specified
     distance (default is 0.5 mile, measured “as-the-crow-flies”, or the
     most direct path) from a theoretical. This function requires the
     same 6 columns as
-    [`plotGPS()`](https://github.com/trinhxuann/deltadata/reference/plotGPS.md)
+    [`plotGPS()`](https://trinhxuann.github.io/deltadata/reference/plotGPS.md)
     with a firm requirement for a `Theoretical` (named as so) group of
     GPS coordinates in the `legend` column.
 
 Below, we explore the 20 mm 2023 sampling season for outlying sampling
 points. We first manipulate our joined data frame for use in
-[`plotGPS()`](https://github.com/trinhxuann/deltadata/reference/plotGPS.md).
+[`plotGPS()`](https://trinhxuann.github.io/deltadata/reference/plotGPS.md).
 
 ``` r
+
 filteredData <- joinedData
 
 # Filter for 2023 season
@@ -261,11 +268,12 @@ We can click on any point of interest and a pop-up will appear with
 `layer` (here, the survey number) and sampling date information.
 Although this step is useful for a quick glance at our points, we can do
 a specific search for only potentially outlying points using
-[`gpsOutlier()`](https://github.com/trinhxuann/deltadata/reference/gpsOutlier.md)
+[`gpsOutlier()`](https://trinhxuann.github.io/deltadata/reference/gpsOutlier.md)
 and then feeding those points into
-[`plotGPS()`](https://github.com/trinhxuann/deltadata/reference/plotGPS.md).
+[`plotGPS()`](https://trinhxuann.github.io/deltadata/reference/plotGPS.md).
 
 ``` r
+
 # By default, d = 0.5
 gpsOutliers <- gpsOutlier(gpsDF)
 plotGPS(gpsOutliers, height = 500)
@@ -276,6 +284,7 @@ frame contains the distance from the theoretical sampling point, in case
 your distance is not a strict threshold.
 
 ``` r
+
 head(gpsOutliers)
 ```
 
@@ -299,15 +308,16 @@ head(gpsOutliers)
 Many IEP surveys collect water quality data in addition to fish data.
 One way to QAQC this water quality data is to compare to nearby
 continuous sondes. We can do this with the
-[`popCDEC()`](https://github.com/trinhxuann/deltadata/reference/popCDEC.md)
+[`popCDEC()`](https://trinhxuann.github.io/deltadata/reference/popCDEC.md)
 function. This function will fetch surface (default) or bottom water
 temperature, turbidity, or electro-conductivity data from the nearest
 CDEC (California Data Exchange Center) sondes. Like the gps functions,
-[`popCDEC()`](https://github.com/trinhxuann/deltadata/reference/popCDEC.md)
+[`popCDEC()`](https://trinhxuann.github.io/deltadata/reference/popCDEC.md)
 requires several five columns: “time”, “station”, “lat”, “lon”, and the
 variable of interest (“temp”, “turbidity”, or “ec”).
 
 ``` r
+
 # For the 20 mm, water quality is taken at the beginning of the first tow (out of 3)
 temperatureData <- data.frame(
   time = as.POSIXct(paste(filteredData$SampleDate,
@@ -334,6 +344,7 @@ temperatureOutlierCdec <- popCDEC(temperatureData, variable = "temp")
     ## Reading from: https://cdec.water.ca.gov/dynamicapp/req/CSVDataServlet?Stations=BKS,CPP&SensorNums=146&dur_code=H&Start=2023-03-13&End=2023-07-04
 
 ``` r
+
 head(temperatureOutlierCdec)
 ```
 
@@ -372,7 +383,7 @@ metadata information about the CDEC station (`sensorNumber`,
 #### All-in-one function
 
 The
-[`qaqcData()`](https://github.com/trinhxuann/deltadata/reference/qaqcData.md)
+[`qaqcData()`](https://trinhxuann.github.io/deltadata/reference/qaqcData.md)
 function attempts to apply various QAQC operations to an IEP dataset,
 all in one simple function call. The function runs several QAQC
 operations on an inputted data set:
@@ -402,9 +413,9 @@ is provided:
 
 The package currently store tow and meter schedules of various CDFW IEP
 surveys for ease of use, as
-[`deltadata::towSchedule`](https://github.com/trinhxuann/deltadata/reference/towSchedule.md)
+[`deltadata::towSchedule`](https://trinhxuann.github.io/deltadata/reference/towSchedule.md)
 and
-[`deltadata::meterSchedule`](https://github.com/trinhxuann/deltadata/reference/meterSchedule.md).
+[`deltadata::meterSchedule`](https://trinhxuann.github.io/deltadata/reference/meterSchedule.md).
 More surveys will be added to the package as this information becomes
 available. Users can specify their own schedules by modeling them
 against these existing ones.
@@ -412,6 +423,7 @@ against these existing ones.
 We can demonstrate this function with the 20 mm database:
 
 ``` r
+
 # Create the tow schedule for the 20 mm. This is also available in the package as towSchedule$ttmm
 towSchedule <- data.frame(
   duration = c(2.5, 5, 10)[1:7],
@@ -444,6 +456,7 @@ The function returns all results as part of a list, separating the
 outlying and the `NA` data points into their own data frames.
 
 ``` r
+
 names(ttmmQAQC)
 ```
 
@@ -452,6 +465,7 @@ names(ttmmQAQC)
     ## [7] "missingData"
 
 ``` r
+
 # Outlying water temperature data, per station per month, for 2023
 temperatureOutliers <- ttmmQAQC$waterQuality$StationCode_Month$WaterTemperatureTop
 head(temperatureOutliers)
@@ -475,9 +489,10 @@ head(temperatureOutliers)
 Although the function does not automatically populate CDEC data for
 water quality variables, users can manipulate the outputted outlier data
 frames to be accepted in
-[`popCDEC()`](https://github.com/trinhxuann/deltadata/reference/popCDEC.md):
+[`popCDEC()`](https://trinhxuann.github.io/deltadata/reference/popCDEC.md):
 
 ``` r
+
 # The function needs at least five columns: "station", "lat", "lon", "time", and our variable, "temp"
 # We already have station. We need to create the time column from the date and tow time columns
 
@@ -531,6 +546,7 @@ head(popCDEC(temperatureOutliers, variable = "temp"))
     ## 6 03/02/2018 to present      BIR 15.88889              5
 
 ``` r
+
 # We see here that EMM has a high time difference. 
 # This is because the sensor malfunctioned during the period of interest--
 # the function returns the closest available value.
@@ -541,13 +557,13 @@ head(popCDEC(temperatureOutliers, variable = "temp"))
 The `deltadata` package is a collection of workflow functions meant to
 help users efficiently work with IEP datasets. In this vignette, we
 explored how to QAQC the 20 mm database using the
-[`bridgeAccess()`](https://github.com/trinhxuann/deltadata/reference/bridgeAccess.md),
-[`schemaJoin()`](https://github.com/trinhxuann/deltadata/reference/schemaJoin.md),
-[`plotGPS()`](https://github.com/trinhxuann/deltadata/reference/plotGPS.md),
-[`gpsOutlier()`](https://github.com/trinhxuann/deltadata/reference/gpsOutlier.md),
-[`popCDEC()`](https://github.com/trinhxuann/deltadata/reference/popCDEC.md),
+[`bridgeAccess()`](https://trinhxuann.github.io/deltadata/reference/bridgeAccess.md),
+[`schemaJoin()`](https://trinhxuann.github.io/deltadata/reference/schemaJoin.md),
+[`plotGPS()`](https://trinhxuann.github.io/deltadata/reference/plotGPS.md),
+[`gpsOutlier()`](https://trinhxuann.github.io/deltadata/reference/gpsOutlier.md),
+[`popCDEC()`](https://trinhxuann.github.io/deltadata/reference/popCDEC.md),
 and
-[`qaqcData()`](https://github.com/trinhxuann/deltadata/reference/qaqcData.md)
+[`qaqcData()`](https://trinhxuann.github.io/deltadata/reference/qaqcData.md)
 functions. It is the goal of this package to expand these functions and
 add others functions to better support IEP surveys and their QAQC
 procedures.

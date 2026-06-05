@@ -34,7 +34,7 @@ popCDEC(
   df should include three columns: `cdecGage` (the CDEC station name),
   `sensorNumber` (sensor number that you're interested in), and
   `duration` (the sampling interval of interest). If not provided,
-  [`calcNearestCDEC()`](https://github.com/trinhxuann/deltadata/reference/calcNearestCDEC.md)
+  [`calcNearestCDEC()`](https://trinhxuann.github.io/deltadata/reference/calcNearestCDEC.md)
   will automatically populate the closest cdec station per sampling
   location from `df`.
 
@@ -52,7 +52,7 @@ popCDEC(
 - ...:
 
   Additional parameters to be passed onto
-  [`calcNearestCDEC()`](https://github.com/trinhxuann/deltadata/reference/calcNearestCDEC.md).
+  [`calcNearestCDEC()`](https://trinhxuann.github.io/deltadata/reference/calcNearestCDEC.md).
 
 ## Value
 
