@@ -70,6 +70,7 @@ duration = "hourly", dateStart = "06/13/1986", dateEnd = "06/14/1986")
 # Can specify multiple coordinates, just like you can with multiple station names
 pullCDEC(coordinates =
 data.frame(c(38.04281, 38.04281),
-c(121.9201, -121.9203)),
+c(-121.9201, -121.9203)),
+sensor = 25, duration = "hourly", dateStart = Sys.Date() - 5)
 }
 }

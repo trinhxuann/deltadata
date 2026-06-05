@@ -150,7 +150,7 @@ convertName <- function(outlierDF, survey) {
 #' file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
 #' tables = "MSysRelationships")[[1]]
 #' # Grab relational tables of interest. The minimum should include station,
-#' tow, and water sample data. Other columns are preserved but are not used
+#' # tow, and water sample data. Other columns are preserved but are not used
 #' tmmTables <- bridgeAccess(file =
 #' "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
 #' tables = c("Station", "Survey", "Tow", "Gear"))

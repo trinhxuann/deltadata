@@ -46,8 +46,8 @@
 #' # Can specify multiple coordinates, just like you can with multiple station names
 #' pullCDEC(coordinates =
 #' data.frame(c(38.04281, 38.04281),
-#' c(121.9201, -121.9203)),
-#  sensor = 25, duration = "hourly", dateStart = Sys.Date() - 5)
+#' c(-121.9201, -121.9203)),
+#' sensor = 25, duration = "hourly", dateStart = Sys.Date() - 5)
 #' }
 pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "daily"),
                      dateStart, dateEnd = NULL, temperatureUnits = c("C", "F"),
