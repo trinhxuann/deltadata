@@ -135,7 +135,19 @@ of the nearest CDEC gage.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="fu">pullCDEC</span><span class="op">(</span><span class="st">"MAL"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">pullCDEC</span><span class="op">(</span><span class="st">"MAL"</span>, <span class="fl">25</span>, <span class="st">"hourly"</span>, <span class="st">"06/13/1986"</span>, <span class="st">"06/14/1986"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># If coordinates are used instead, must specify the argument names.</span></span></span>
+<span class="r-in"><span><span class="fu">pullCDEC</span><span class="op">(</span>coordinates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">38.04281</span>, <span class="op">-</span><span class="fl">121.9201</span><span class="op">)</span>, sensor <span class="op">=</span> <span class="fl">25</span>,</span></span>
+<span class="r-in"><span>duration <span class="op">=</span> <span class="st">"hourly"</span>, dateStart <span class="op">=</span> <span class="st">"06/13/1986"</span>, dateEnd <span class="op">=</span> <span class="st">"06/14/1986"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Can specify multiple coordinates, just like you can with multiple station names</span></span></span>
+<span class="r-in"><span><span class="fu">pullCDEC</span><span class="op">(</span>coordinates <span class="op">=</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">38.04281</span>, <span class="fl">38.04281</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">121.9201</span>, <span class="op">-</span><span class="fl">121.9203</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>sensor <span class="op">=</span> <span class="fl">25</span>, duration <span class="op">=</span> <span class="st">"hourly"</span>, dateStart <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

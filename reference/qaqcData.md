@@ -107,3 +107,50 @@ protocol documentation. If not available, you can provide your own
 schedule. See the example on how to create such a table.
 
 ## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# You can create your own tow schedule with the following code:
+aTowSchedule <- data.frame(
+maxDepth = c(10, 15, 20, 25, 30, 35, Inf),
+depth = cut(c(10, 15, 20, 25, 30, 35, Inf),
+breaks = c(0, 10, 15, 20, 25, 30, 35, Inf), right = T, include.lowest = T),
+cableLength = c(0, 50, 100, 125, 150, 175, 200)
+)
+
+# An example using the CDFW 20 mm survey:
+# Download the file and extract the required relationship and data tables:
+# You will have to provide yourself with permissions to extract this table.
+
+# Grab relationship schema from the Access database for default joins
+tmmRelationship <- bridgeAccess(
+file = "https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
+tables = "MSysRelationships")[[1]]
+# Grab relational tables of interest. The minimum should include station,
+# tow, and water sample data. Other columns are preserved but are not used
+tmmTables <- bridgeAccess(file =
+"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
+tables = c("Station", "Survey", "Tow", "Gear"))
+tmmTables$`20mmStations` <- bridgeAccess(file =
+"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip",
+tables = c("20mmStations"))[[1]]
+officialGPS <- data.frame(
+station = tmmTables$`20mmStations`$Station,
+lat = decimalDegrees(paste(
+tmmTables$`20mmStations`$LatD,
+tmmTables$`20mmStations`$LatM,
+tmmTables$`20mmStations`$LatS), type = "dms"),
+lon = decimalDegrees(paste(
+tmmTables$`20mmStations`$LonD,
+tmmTables$`20mmStations`$LonM,
+tmmTables$`20mmStations`$LonS
+), type = "dms", isLongitude = T)
+)
+
+joinedTMM <- schemaJoin(tmmRelationship, tmmTables)
+tmmQAQC <- qaqcData(data = joinedTMM, year = 2023, survey = "20mm",
+ officialGPS = officialGPS, gpsDistance = 0.5, startingGPSFormat = "dms",
+ towSchedule = towSchedule$`20mm`,
+ meterSchedule = meterSchedule$`20mm`)
+} # }
+```

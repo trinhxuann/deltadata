@@ -87,3 +87,18 @@ are specifically only interested in the metadata of the nearest CDEC
 gage.
 
 ## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+pullCDEC("MAL")
+pullCDEC("MAL", 25, "hourly", "06/13/1986", "06/14/1986")
+# If coordinates are used instead, must specify the argument names.
+pullCDEC(coordinates = c(38.04281, -121.9201), sensor = 25,
+duration = "hourly", dateStart = "06/13/1986", dateEnd = "06/14/1986")
+# Can specify multiple coordinates, just like you can with multiple station names
+pullCDEC(coordinates =
+data.frame(c(38.04281, 38.04281),
+c(-121.9201, -121.9203)),
+sensor = 25, duration = "hourly", dateStart = Sys.Date() - 5)
+} # }
+```

@@ -149,7 +149,51 @@ such a table.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># You can create your own tow schedule with the following code:</span></span></span>
+<span class="r-in"><span><span class="va">aTowSchedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>maxDepth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span>, <span class="fl">35</span>, <span class="cn">Inf</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>depth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span>, <span class="fl">35</span>, <span class="cn">Inf</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span>, <span class="fl">35</span>, <span class="cn">Inf</span><span class="op">)</span>, right <span class="op">=</span> <span class="cn">T</span>, include.lowest <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>cableLength <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">125</span>, <span class="fl">150</span>, <span class="fl">175</span>, <span class="fl">200</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># An example using the CDFW 20 mm survey:</span></span></span>
+<span class="r-in"><span><span class="co"># Download the file and extract the required relationship and data tables:</span></span></span>
+<span class="r-in"><span><span class="co"># You will have to provide yourself with permissions to extract this table.</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Grab relationship schema from the Access database for default joins</span></span></span>
+<span class="r-in"><span><span class="va">tmmRelationship</span> <span class="op">&lt;-</span> <span class="fu"><a href="bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>file <span class="op">=</span> <span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span>,</span></span>
+<span class="r-in"><span>tables <span class="op">=</span> <span class="st">"MSysRelationships"</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="co"># Grab relational tables of interest. The minimum should include station,</span></span></span>
+<span class="r-in"><span><span class="co"># tow, and water sample data. Other columns are preserved but are not used</span></span></span>
+<span class="r-in"><span><span class="va">tmmTables</span> <span class="op">&lt;-</span> <span class="fu"><a href="bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span>file <span class="op">=</span></span></span>
+<span class="r-in"><span><span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span>,</span></span>
+<span class="r-in"><span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Station"</span>, <span class="st">"Survey"</span>, <span class="st">"Tow"</span>, <span class="st">"Gear"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span> <span class="op">&lt;-</span> <span class="fu"><a href="bridgeAccess.html">bridgeAccess</a></span><span class="op">(</span>file <span class="op">=</span></span></span>
+<span class="r-in"><span><span class="st">"https://filelib.wildlife.ca.gov/Public/Delta%20Smelt/20mm_New.zip"</span>,</span></span>
+<span class="r-in"><span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"20mmStations"</span><span class="op">)</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">officialGPS</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>station <span class="op">=</span> <span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">Station</span>,</span></span>
+<span class="r-in"><span>lat <span class="op">=</span> <span class="fu"><a href="decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LatD</span>,</span></span>
+<span class="r-in"><span><span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LatM</span>,</span></span>
+<span class="r-in"><span><span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LatS</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"dms"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>lon <span class="op">=</span> <span class="fu"><a href="decimalDegrees.html">decimalDegrees</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LonD</span>,</span></span>
+<span class="r-in"><span><span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LonM</span>,</span></span>
+<span class="r-in"><span><span class="va">tmmTables</span><span class="op">$</span><span class="va">`20mmStations`</span><span class="op">$</span><span class="va">LonS</span></span></span>
+<span class="r-in"><span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"dms"</span>, isLongitude <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">joinedTMM</span> <span class="op">&lt;-</span> <span class="fu"><a href="schemaJoin.html">schemaJoin</a></span><span class="op">(</span><span class="va">tmmRelationship</span>, <span class="va">tmmTables</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tmmQAQC</span> <span class="op">&lt;-</span> <span class="fu">qaqcData</span><span class="op">(</span>data <span class="op">=</span> <span class="va">joinedTMM</span>, year <span class="op">=</span> <span class="fl">2023</span>, survey <span class="op">=</span> <span class="st">"20mm"</span>,</span></span>
+<span class="r-in"><span> officialGPS <span class="op">=</span> <span class="va">officialGPS</span>, gpsDistance <span class="op">=</span> <span class="fl">0.5</span>, startingGPSFormat <span class="op">=</span> <span class="st">"dms"</span>,</span></span>
+<span class="r-in"><span> towSchedule <span class="op">=</span> <span class="va">towSchedule</span><span class="op">$</span><span class="va">`20mm`</span>,</span></span>
+<span class="r-in"><span> meterSchedule <span class="op">=</span> <span class="va">meterSchedule</span><span class="op">$</span><span class="va">`20mm`</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
