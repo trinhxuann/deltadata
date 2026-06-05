@@ -4,8 +4,8 @@ Version: 0.1.1
 Authors@R: c(
     person("Trinh", "Nguyen", email = "trinh.nguyen@wildlife.ca.gov", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-9523-1466")),
-           person("Lara", "Mitchell", role = "ctb")
-)
+    person("Lara", "Mitchell", role = "ctb")
+  )
 Description: Workflow functions for IEP surveys to more efficiently work through the QAQC and publication process.
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
