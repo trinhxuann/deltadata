@@ -2,8 +2,10 @@
 
 ## Authors
 
-- **Trinh Nguyen**. Author, maintainer.
+- **[Trinh Nguyen](https://github.com/trinhxuann)**. Author, maintainer.
   [](https://orcid.org/0000-0001-9523-1466)
+
+- **[Lara Mitchell](https://github.com/lmitchell4)**. Contributor.
 
 ## Citation
 
