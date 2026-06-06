@@ -39,3 +39,26 @@ scrapeForm(url, formIndex = NULL, ..., returnForm = F)
 An `rvest_session`
 
 ## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Find available fields and their options on this webpage:
+scrapeForm("https://www.cbr.washington.edu/sacramento/data/query_river_graph.html")
+
+# This specific query has duplicated field names across the checkboxes and a
+# select field. The function creates a generic label to make these unique,
+# however, these are uninformative labels. To know which ones you want,
+# you can look at the website or the form itself. Here, the latter works
+scrapeForm("https://www.cbr.washington.edu/sacramento/data/query_river_graph.html",
+returnForm = T)
+
+# we want "WaterTempAvg" as the 10 year avg value, which is `data[]_7`:
+
+scrapeForm("https://www.cbr.washington.edu/sacramento/data/query_river_graph.html",
+hafilter = "All", `year[]` = 2023, outputFormat = "graph", tempUnit = "C",
+`loc[]` = c("RDB", "WLK"), `data[]` = "WaterTemperature",
+avgyear = 2023, size = "large", `data[]_2` = F, `data[]_3` = F,
+`data[]_4` = F, `data[]_5` = F, `data[]_6` = F,
+monochrome = F, datalink = F)
+} # }
+```
