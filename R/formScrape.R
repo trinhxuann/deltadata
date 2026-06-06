@@ -113,7 +113,7 @@ uniqueNames <- function(x) {
 #' @examples
 #' \dontrun{
 #' # Find available fields and their options on this webpage:
-#' scrapeForm("https://www.cbr.washington.edu/sacramento/data/query_river_graph.html)"
+#' scrapeForm("https://www.cbr.washington.edu/sacramento/data/query_river_graph.html")
 #'
 #' # This specific query has duplicated field names across the checkboxes and a
 #' # select field. The function creates a generic label to make these unique,
