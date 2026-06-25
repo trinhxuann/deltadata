@@ -1015,6 +1015,8 @@ popCDEC <- function(df,
 #' server appears to be around 3-4 million rows. Defaults to 1 million. A larger
 #' value can be used but depending on internet speed may bog down.
 #' @param ... Any other arguments to be passed onto \code{\link{pullCDEC}}.
+#' @param cacheDir If specified, will save chunks to directory, checking to see
+#' if the data already exists first.
 #'
 #' @return A data frame of the request data pull.
 #' @export
@@ -1037,7 +1039,7 @@ popCDEC <- function(df,
 #' )
 #' }
 batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
-                      rowLimit = 2000000, ...) {
+                      rowLimit = 2000000, cacheDir = NULL, ...) {
 
   # --- Validation and preprocessing ---
   dateStart <- parseDate(dateStart)
@@ -1046,6 +1048,26 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
 
   if (is.na(dateStart) || is.na(dateEnd) || dateStart > dateEnd || is.infinite(dateStart) || is.infinite(dateEnd)) {
     stop("Invalid `dateStart` or `dateEnd` provided.", call. = FALSE)
+  }
+
+  # --- Cache directory setup ---
+  useDiskCache <- !is.null(cacheDir)
+  if (useDiskCache) {
+    if (!dir.exists(cacheDir)) {
+      dir.create(cacheDir, recursive = TRUE)
+      message(sprintf("Created cache directory: %s", cacheDir))
+    }
+    stationsSorted <- sort(station)
+    stationFingerprint <- sprintf("n%d_%s-%s",
+                                  length(stationsSorted),
+                                  stationsSorted[1],
+                                  stationsSorted[length(stationsSorted)])
+    chunkFile <- function(chunkStart, chunkEnd) {
+      file.path(cacheDir,
+                sprintf("cdec_s%s_%s_%s_%s_%s.rds",
+                        sensor, duration, stationFingerprint,
+                        chunkStart, chunkEnd))
+    }
   }
 
   # --- Dynamic pagination logic ---
@@ -1072,11 +1094,12 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
                 numChunks, chunkSizeInDays))
   } else {
     chunkSizeInDays <- as.numeric(difftime(dateEnd, dateStart, units = "days")) + 1
-    numChunks <- ceiling(totalEstimatedRows / rowLimit)
+    numChunks <- 1
   }
 
   # --- Pagination Loop ---
   allDataChunks <- list()
+  failedChunks <- list()
   currentDateStart <- dateStart
   chunk <- 1
 
@@ -1087,17 +1110,64 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
     cat(sprintf("--- Fetching data from %s to %s, Chunk %s/%s ---\n",
                 currentDateStart, currentDateEnd + 1, chunk, numChunks))
 
-    chunkDf <- pullCDEC( # I'd like to keep warnings form here if data were not downloaded for specific stations?
-      station = station,
-      sensor = sensor,
-      duration = duration,
-      dateStart = currentDateStart,
-      dateEnd = currentDateEnd,
-      ...
+    # --- Check cache before downloading ---
+    if (useDiskCache) {
+      cachedFile <- chunkFile(currentDateStart, currentDateEnd)
+      if (file.exists(cachedFile)) {
+        message(sprintf("Chunk %d: loading from cache (%s).",
+                        chunk, basename(cachedFile)))
+        chunkDf <- tryCatch(
+          readRDS(cachedFile),
+          error = function(e) {
+            warning(sprintf(
+              "Chunk %d: cache file is unreadable and will be re-downloaded.\n  Reason: %s",
+              chunk, conditionMessage(e)
+            ), call. = FALSE)
+            NULL
+          }
+        )
+        if (!is.null(chunkDf)) {
+          allDataChunks[[length(allDataChunks) + 1]] <- chunkDf
+          currentDateStart <- currentDateEnd + 1
+          chunk <- chunk + 1
+          next
+        }
+        # Falls through to a fresh download if the cached file was corrupt
+      }
+    }
+
+    # --- Download chunk ---
+    chunkDf <- tryCatch(
+      pullCDEC(
+        station = station,
+        sensor = sensor,
+        duration = duration,
+        dateStart = currentDateStart,
+        dateEnd = currentDateEnd,
+        ...
+      ),
+      error = function(e) {
+        warning(sprintf(
+          "Chunk %d/%d (%s to %s) failed and will be skipped.\n  Reason: %s",
+          chunk, numChunks, currentDateStart, currentDateEnd,
+          conditionMessage(e)
+        ), call. = FALSE)
+        NULL
+      }
     )
 
-    if (nrow(chunkDf) > 0) {
+    if (!is.null(chunkDf) && nrow(chunkDf) > 0) {
+      if (useDiskCache) {
+        saveRDS(chunkDf, file = cachedFile)
+        message(sprintf("Chunk %d: saved to cache (%s).", chunk, basename(cachedFile)))
+      }
       allDataChunks[[length(allDataChunks) + 1]] <- chunkDf
+    } else if (is.null(chunkDf)) {
+      failedChunks[[length(failedChunks) + 1]] <- list(
+        chunk = chunk,
+        dateStart = currentDateStart,
+        dateEnd = currentDateEnd
+      )
     }
 
     # The + 1 here replicates the pullCDEC function defaulting to adding a day for its pull
@@ -1106,6 +1176,20 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
   }
 
   # --- Final combination and cleaning ---
+  if (length(allDataChunks) == 0L) {
+    stop("All chunks failed to download. No data to return.", call. = FALSE)
+  }
+
+  if (length(failedChunks) > 0L) {
+    failedRanges <- vapply(failedChunks, function(x) {
+      sprintf("  Chunk %d: %s to %s", x$chunk, x$dateStart, x$dateEnd)
+    }, character(1))
+    warning(sprintf(
+      "%d of %d chunk(s) failed. The returned data covers only successful ranges.\n%s",
+      length(failedChunks), numChunks, paste(failedRanges, collapse = "\n")
+    ), call. = FALSE)
+  }
+
   cat("--- All phases complete. Combining data. ---\n")
   finalDf <- bind_rows(allDataChunks)
 
@@ -1251,6 +1335,10 @@ fetchCDECData <- function(station, currentSensor, currentDurationCode,
     names(df) <- gsub("((?<=[_\\s])+.)", "\\U\\1",
                       tolower(names(df)), perl = TRUE)
     names(df) <- gsub("_|\\s", "", names(df))
+    df$sensorNumber <- suppressWarnings(as.integer(df$sensorNumber))
+    df$value <- suppressWarnings(as.double(
+      ifelse(trimws(df$value) %in% c("---", ""), NA, df$value)
+    ))
     df$dateTime <- as.POSIXct(df[["dateTime"]], format = "%Y%m%d %H%M",
                               tz = "America/Los_Angeles")
   }
