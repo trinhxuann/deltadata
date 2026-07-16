@@ -1,3 +1,119 @@
+#' Download or access a local file, with robust handling for URLs.
+#'
+#' @description
+#' This function downloads a file from a URL or verifies the path to a local
+#' file. It avoids re-downloading if the file already exists in the temporary
+#' directory. It includes robust error handling, dynamic timeouts for large
+#' files, and the ability to unzip and find specific file types (e.g., Access
+#' databases). It is a modern replacement for the original getFile function,
+#' using the httr package to handle downloads reliably and avoid common SSL/TLS
+#' issues.
+#'
+#' @param file A character string: either a URL to a file or a local file path.
+#' @param open A logical value. If `TRUE`, the final file will be opened using
+#'   the system's default application.
+#' @param timeout A numeric value in seconds to override the download timeout.
+#'   If `NULL` (the default), the timeout is calculated dynamically based on
+#'   the file size, with R's global `getOption("timeout")` (defaulting to 60) used as the floor.
+#' @param targetExtension Extension of targeted file. Defaults to Access database
+#'
+#' @return The full path to the final, ready-to-use file (unzipped if necessary).
+#'
+#' @noRd
+#' @importFrom httr GET HEAD headers progress timeout write_disk stop_for_status
+#' @importFrom utils browseURL unzip
+#' @keywords internal
+getFile <- function(file, open = FALSE, timeout = NULL,
+                    targetExtension = c("accdb", "mdb")) {
+
+  isUrl <- grepl("^https?://", file, ignore.case = TRUE)
+  fileName <- basename(file)
+  filePath <- if (isUrl) file.path(tempdir(), fileName) else file
+  if (isUrl && !file.exists(filePath)) {
+    message("Downloading file from URL: ", sQuote(file))
+
+    defaultTimeout <- getOption("timeout", 60)
+    timeOut <- defaultTimeout
+    downloadUrl <- file
+
+    # Always attempt a HEAD request to resolve redirects and get file size
+    try({
+      head_response <- HEAD(file)
+
+      # Use the final redirected URL to avoid redirecting during GET()
+      if (!is.null(head_response$url)) {
+        downloadUrl <- head_response$url
+      }
+
+      if (is.null(timeout)) {
+        if (!is.null(headers(head_response)$`content-length`)) {
+          fileSize <- as.numeric(headers(head_response)$`content-length`) / 1024^2
+          timeOut  <- max(defaultTimeout, ceiling(fileSize))
+          message(sprintf("File size is approx %.2f MB. Setting download timeout to %d seconds.",
+                          fileSize, timeOut))
+        }
+      }
+    }, silent = TRUE)
+
+    if (!is.null(timeout)) {
+      timeOut <- as.numeric(timeout)
+      message(sprintf("Using user-specified download timeout of %d seconds.", timeOut))
+    }
+
+    tryCatch({
+      response <- GET(
+        url = downloadUrl,
+        write_disk(filePath, overwrite = TRUE),
+        progress(),
+        timeout(timeOut)
+      )
+    }, error = function(e) {
+      if (file.exists(filePath)) file.remove(filePath)
+      stop(sprintf("Failed to download file. Error: %s", conditionMessage(e)), call. = FALSE)
+    })
+  }
+  finalPath <- filePath
+
+  if (grepl("\\.zip$", fileName, ignore.case = TRUE)) {
+    zip_contents <- utils::unzip(filePath, list = TRUE)
+
+    # Strip any leading dots so c("tif") and c(".tif") both work
+    extPattern <- paste0("\\.(", paste(gsub("^\\.", "", targetExtension), collapse = "|"), ")$")
+    targetFile <- zip_contents$Name[grepl(extPattern, zip_contents$Name, ignore.case = TRUE)]
+
+    if (length(targetFile) == 0) {
+      stop(sprintf(
+        "No file with extension(s) %s was found in the .zip archive.",
+        paste(targetExtension, collapse = ", ")
+      ), call. = FALSE)
+    }
+    if (length(targetFile) > 1) {
+      warning(paste("Multiple matching files found; using the first:", targetFile[1]),
+              call. = FALSE)
+      targetFile <- targetFile[1]
+    }
+
+    extractedPath <- file.path(tempdir(), targetFile)
+
+    if (!file.exists(extractedPath)) {
+      message("Extracting: ", sQuote(targetFile), " from zip archive.")
+      utils::unzip(filePath, files = targetFile, exdir = tempdir(), overwrite = TRUE)
+    }
+
+    finalPath <- extractedPath
+  }
+  if (!file.exists(finalPath)) {
+    stop("Could not find the final file at path: ", finalPath, call. = FALSE)
+  }
+
+  if (isTRUE(open)) {
+    message("Opening file: ", sQuote(basename(finalPath)))
+    utils::browseURL(finalPath)
+  }
+
+  return(finalPath)
+}
+
 #' Parse the scope, identifier, and revision number from a valid EDI url
 #'
 #' @description
