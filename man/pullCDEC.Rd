@@ -14,7 +14,8 @@ pullCDEC(
   coordinates,
   verbose = T,
   maxAttempt = 3,
-  fallbackDuration = FALSE
+  fallbackDuration = FALSE,
+  ...
 )
 }
 \arguments{
@@ -44,6 +45,8 @@ Defaults to \code{TRUE}.}
 
 \item{fallbackDuration}{Logical. Should the function try to use a coarser
 duration if data cannot be found? Order is event > hourly > daily, in that order, never backwards.}
+
+\item{...}{Additional arguments to be passed to \code{calcNearestCDEC()}}
 }
 \value{
 A data frame of the requested data pull.

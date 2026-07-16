@@ -23,6 +23,7 @@
 #' @param maxAttempt Number of retries to attempt if a connection fails. Defaults to 3.
 #' @param fallbackDuration Logical. Should the function try to use a coarser
 #' duration if data cannot be found? Order is event > hourly > daily, in that order, never backwards.
+#' @param ... Additional arguments to be passed to \code{calcNearestCDEC()}
 #'
 #' @details
 #' The `coordinates` argument can be used in place of the `station` argument.
@@ -51,7 +52,8 @@
 #' }
 pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "daily"),
                      dateStart, dateEnd = NULL, temperatureUnits = c("C", "F"),
-                     coordinates, verbose = T, maxAttempt = 3, fallbackDuration = FALSE) {
+                     coordinates, verbose = T, maxAttempt = 3, fallbackDuration = FALSE,
+                     ...) {
 
   # --- Station or lat/lon ---
   if (!missing(coordinates) & !missing(station)) {
@@ -68,7 +70,9 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
     # Assuming calcNearestCDEC is defined elsewhere or will be provided
     cdecClosest <- calcNearestCDEC(data.frame(lat = coordinates[[1]],
                                               lon = coordinates[[2]]),
-                                   sensor = sensor)
+                                   sensor = sensor,
+                                   verbose = verbose,
+                                   ...)
 
     station <- unique(cdecClosest[["cdecGage"]])
   }
@@ -686,6 +690,12 @@ popCDEC <- function(df,
                                    ...)
   }
 
+  # --- PARAMETER SANITIZATION ---
+  # Separate spatial/routing arguments from downstream downloader arguments.
+  cdecParams <- c("distMethod", "waterRaster", "snapDist", "maxEuclideanDist",
+                  "hydroCandidates", "gridDistMaxIter", "hydroOrientation")
+  batchArgs <- userArguments[!names(userArguments) %in% cdecParams]
+
   # --- Pull the data, batch download ---
   dfSplitDuration <- split(cdecClosest, list(as.character(cdecClosest$duration),
                                              cdecClosest$sensorNumber),
@@ -713,13 +723,18 @@ popCDEC <- function(df,
         dateEnd = dateRange[2] # + 1 day buff now taken care of within pullCDEC
       )
     } else {
-      cdecData <- batchCDEC(
-        station = unique(durationSensorGroup$cdecGage),
-        sensor = unique(durationSensorGroup$sensorNumber),
-        duration = as.character(unique(durationSensorGroup$duration)),
-        dateStart = dateRange[1] - 1, # Add a 1-day buffers
-        dateEnd = dateRange[2] # + 1 day buff now taken care of within pullCDEC
+      batchCallArgs <- c(
+        list(
+          station = unique(durationSensorGroup$cdecGage),
+          sensor = unique(durationSensorGroup$sensorNumber),
+          duration = as.character(unique(durationSensorGroup$duration)),
+          dateStart = dateRange[1] - 1,
+          dateEnd = dateRange[2]
+        ),
+        batchArgs
       )
+      cdecData <- do.call(batchCDEC, batchCallArgs)
+
     }
 
     if (is.null(cdecData) || nrow(cdecData) == 0) return(NULL)
@@ -951,6 +966,26 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
   if (is.na(dateStart) || is.na(dateEnd) || dateStart > dateEnd || is.infinite(dateStart) || is.infinite(dateEnd)) {
     stop("Invalid `dateStart` or `dateEnd` provided.", call. = FALSE)
   }
+
+  # # --- Coordinate Resolution (Brings batchCDEC in parity with pullCDEC?) ---
+  # if (!missing(coordinates) & missing(station)) {
+  #   if (length(coordinates) != 2)
+  #     stop("`coordinates` should be a vector of two numbers, lat and lon.",
+  #          call. = FALSE)
+  #
+  #   cdecClosest <- calcNearestCDEC(
+  #     df = data.frame(lat = coordinates[[1]], lon = coordinates[[2]]),
+  #     sensor = sensor,
+  #     ...
+  #   )
+  #   station <- unique(cdecClosest[["cdecGage"]])
+  # }
+  #
+  # if (missing(station)) {
+  #   stop("Must provide either `station` or `coordinates` to pull CDEC data.", call. = FALSE)
+  # }
+  #
+  # station <- unique(station)
 
   # --- Cache directory setup ---
   useDiskCache <- !is.null(cacheDir)
