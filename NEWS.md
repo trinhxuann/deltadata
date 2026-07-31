@@ -1,3 +1,15 @@
+# deltadata 0.2.0
+
+### New functions
+
+*   `getCNRA()`: download data files from the CNRA data repository. Follows the workflow og `getEDI()`
+
+### New features
+
+*   `batcCDEC()`: support downloading data directly to the harddrive to be more robust against download failures, via `cacheDir` argument
+*   `calcNearestCDEC()`: supports hydrological distance via `distMethod` argument (before only Euclidean). This argument is supported in functions that utilizes this function, e.g., `pullCDEC()` and `batchCDEC()`.
+*   `getEDI()`: now supports the need for an Access Token to use the EDI API
+
 # deltadata 0.1.1
 
 ### Bug fixes

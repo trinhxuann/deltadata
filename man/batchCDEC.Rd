@@ -11,6 +11,7 @@ batchCDEC(
   dateStart,
   dateEnd = NULL,
   rowLimit = 2e+06,
+  cacheDir = NULL,
   ...
 )
 }
@@ -30,6 +31,9 @@ if left as \code{NULL}}
 \item{rowLimit}{Maximum number of rows to download at once. Maximum from the
 server appears to be around 3-4 million rows. Defaults to 1 million. A larger
 value can be used but depending on internet speed may bog down.}
+
+\item{cacheDir}{If specified, will save chunks to directory, checking to see
+if the data already exists first.}
 
 \item{...}{Any other arguments to be passed onto \code{\link{pullCDEC}}.}
 }

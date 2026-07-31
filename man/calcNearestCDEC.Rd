@@ -11,54 +11,165 @@ calcNearestCDEC(
   variable = c("temp", "turbidity", "ec"),
   waterColumn = c("top", "bottom"),
   method = c("fast", "accurate"),
-  verbose = T,
+  distMethod = c("euclidean", "hydrological"),
+  waterRaster = NULL,
+  snapDist = 200,
+  maxEuclideanDist = Inf,
+  hydroCandidates = 5,
+  gridDistMaxIter = 50,
+  hydroOrientation = c("auto", "point", "station"),
+  verbose = TRUE,
   cdecGPS = NULL,
   cdecMetadata = NULL
 )
 }
 \arguments{
-\item{df}{A data.frame with at least 'lat' and 'lon' columns. All other columns
-will be retained.}
+\item{df}{A data frame of query points with \code{lat} and
+\code{lon} columns, in decimal degrees (WGS84).}
 
-\item{n}{The rank of the nearest station to find (e.g., n = 1 for the closest).
-If n = "all", all applicable station and metadata will be returned in a nested format per point.}
+\item{n}{Integer, or the string \code{"all"}. Which rank of nearest
+station to return for each point (\code{n = 1} is closest,
+\code{n = 2} second-closest, etc.). If \code{"all"}, every candidate
+station is evaluated and returned, ranked, in a nested list-column.}
 
-\item{sensor}{An optional integer sensor number. If provided, this will override
-the 'variable' and 'waterColumn' arguments.}
+\item{sensor}{Optional CDEC sensor number. If supplied, overrides
+\code{variable}/\code{waterColumn} filtering and restricts candidate
+stations to those reporting this exact sensor.}
 
-\item{variable}{The type of sensor data required. One of "temp", "turbidity", "ec".
-Ignored if 'sensor' is provided.}
+\item{variable}{One of \code{"temp"}, \code{"turbidity"}, or
+\code{"ec"} (electrical conductivity). Ignored if \code{sensor} is
+supplied. Defaults to \code{"temp"} with a message if left
+unspecified.}
 
-\item{waterColumn}{The position of the sensor in the water column. One of "top" or "bottom".
-Ignored if 'sensor' is provided.}
+\item{waterColumn}{One of \code{"top"} or \code{"bottom"}, selecting
+surface vs. bottom-of-water-column sensors. Ignored if \code{sensor}
+is supplied. Defaults to \code{"top"} with a message if left
+unspecified.}
 
-\item{method}{Determines the distance calculation function. \code{fast} will utilize the
-Haversine method, while \code{accurate} the  Vincenty Ellipsoid method. For use within the Delta,
-the Haversine method is sufficient and is much less computationally intensive.
-Defaults to \code{fast}.}
+\item{method}{Distance algorithm for the Euclidean calculation:
+\code{"fast"} (Haversine, default) or \code{"accurate"} (Vincenty
+ellipsoid, slower but more precise). Also determines the lower-bound
+distances used for candidate selection and pruning when
+\code{distMethod = "hydrological"}.}
 
-\item{verbose}{Set to FALSE to disable specific messages. Defaults to TRUE.}
+\item{distMethod}{Distance method: \code{"euclidean"} (default) or
+\code{"hydrological"}, which routes through connected water cells.}
 
-\item{cdecGPS}{Internal package data with station GPS locations. Can provide this
-if the internal package data is not updated, although you will have to adhere to formatting.}
+\item{waterRaster}{A binary \code{SpatRaster} where \code{NA} = land and
+any non-\code{NA} value = navigable water, in a projected CRS. Can be
+built with \code{buildWaterMask()}. If \code{NULL}, the bundled Delta
+water mask is used. The bundled mask is developed from DWR's 10x10
+Lidar DEM of the Bay Delta, published March 2025, using wse = 1.25 m
+to specify the land/water boundary. Only relevant when
+\code{distMethod = "hydrological"}.}
 
-\item{cdecMetadata}{Internal package data with sensor metadata. Can provide this
-if the internal package data is not updated, although you will have to adhere to formatting.}
+\item{snapDist}{Maximum search radius in metres when a point or station
+falls on a land cell. Defaults to 200 m. Should generally be at least
+1.5-2x \code{waterRaster}'s resolution}
+
+\item{maxEuclideanDist}{Numeric, in miles. Global pre-filter: point-
+cdec station pairs farther apart than this (by straight-line distance) are
+excluded before any candidate selection. Defaults to \code{Inf} (no
+filtering).}
+
+\item{hydroCandidates}{Number of Euclidean-nearest stations per input
+point to evaluate hydrologically. Automatically expanded to
+\code{n + 2} if \code{n >= hydroCandidates}. Ignored when
+\code{n = "all"}.}
+
+\item{gridDistMaxIter}{Passed to \code{terra::gridDist()}'s
+\code{maxiter} argument. If a station's cost-distance surface fails
+to converge within this many iterations (more likely for large or
+geometrically complex cropped extents), some distances for that
+station may come back \code{NA} even where a valid, longer water path
+exists or a value is returned that is incorrect. A per-station warning
+identifies when this happens; increase this value if you see it often.
+Defaults to \code{50}, matching \code{terra::gridDist()}'s own default.}
+
+\item{hydroOrientation}{Where to focus distance calculation from, either from
+the point of interest or from the cdec station. Defaults to \code{auto} (choose
+whichever has lower number of points) but can be overriden to use \code{point}
+or \code{station}. Override exists because \code{auto} uses a simple
+heuristic that cannot guarantee an optimal choice.}
+
+\item{verbose}{Logical. Print progress and diagnostic messages.}
+
+\item{cdecGPS}{Optional override for the internal CDEC station GPS
+lookup table (defaults to \code{deltadata::cdecStation}).}
+
+\item{cdecMetadata}{Optional override for the internal CDEC sensor
+metadata lookup table (defaults to \code{deltadata::cdecMetadata}).}
 }
 \value{
-A data.frame containing the input point identifiers,
-the found CDEC station, the distance, and the sensor metadata.
+If \code{n} is a single integer: \code{df} with \code{cdecGage},
+\code{distance} (miles), and merged station-metadata columns appended;
+one row per input point.
+
+If \code{n = "all"}: \code{df} with a nested list-column \code{cdecGage},
+one data frame per input point ranking every evaluated station. Use
+\code{tidyr::unnest(result, cdecGage)} to expand.
 }
 \description{
-Identifies the n-th nearest CDEC station to one or more
-input coordinates. It can filter station based on a specific sensor number
-or by a general variable and water column combination. By default, all CDEC
-station are searched.
+For each input point, finds the Nth-nearest CDEC (California Data
+Exchange Center) monitoring station reporting a given sensor/variable,
+using either straight-line (Euclidean) distance or distance measured
+through the connected water network (hydrological).
 }
+\section{Hydrological candidate approximation}{
+When \code{distMethod = "hydrological"} and \code{n != "all"}, only the
+\code{hydroCandidates} Euclidean-nearest stations to each point are ever
+evaluated hydrologically (expanded to \code{n + 2} if needed). This
+keeps the search tractable, but it means the station returned is only
+guaranteed to be the true nth-nearest station \emph{among that
+Euclidean-nearest candidate set}, not necessarily the true global
+nth-nearest station by water. If you need an exhaustive, exact
+answer, use \code{n = "all"}, which evaluates every reachable station
+and is unaffected by this approximation, at a proportionally higher
+runtime cost.
+}
+
+\section{Local raster cropping}{
+For performance, every station's cost-distance surface
+(\code{terra::gridDist()}) is computed on a raster cropped to a padded
+bounding box around the station and its currently nominated points
+(all input points, when \code{n = "all"}), rather than on the full
+\code{waterRaster}. The padding is adaptive
+(\code{max(2000, 0.5 * euclidean distance)}) but not exhaustive: if the
+true water path between a station and a point requires a long detour
+beyond this padded extent (e.g. around a peninsula or island), that
+path will not be found, and the pair will be reported as unreachable
+even though a valid, longer route exists. This trade-off is deliberate
+for performance and is not currently configurable.
+}
+
+\section{Geographic scope}{
+Candidate selection and branch-and-bound pruning both rely on the fact
+that Euclidean (straight-line, geodesic) distance is always a valid
+lower bound on hydrological distance.
+}
+
 \examples{
 \dontrun{
-df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
+library(dplyr)
 
-calcNearestCDEC(df)
+# Build a hydrological cost surface from the Delta waterway layer once,
+# then reuse it across calls.
+deltaWaterMask <- buildWaterMask(
+  waterway = deltamapr::WW_Watershed,
+  resolution = 30
+)
+
+# Find the nearest station reporting sensor 20 (water temperature) to
+# each unique SLS station location, using hydrological distance.
+nearestStations <- LTMRdata::SLS \%>\%
+  distinct(Station, Latitude, Longitude) \%>\%
+  rename(lat = Latitude, lon = Longitude) \%>\%
+  calcNearestCDEC(
+    sensor = 20,
+    distMethod = "hydrological",
+    waterRaster = deltaWaterMask,
+    snapDist = 50
+  )
 }
+
 }

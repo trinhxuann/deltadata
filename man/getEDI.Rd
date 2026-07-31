@@ -4,7 +4,7 @@
 \alias{getEDI}
 \title{Pull files from an EDI package}
 \usage{
-getEDI(url, files, version = "newest", quiet = FALSE)
+getEDI(url, files, version = "newest", quiet = FALSE, key = ediKey())
 }
 \arguments{
 \item{url}{URL of the EDI package with the version number, i.e., the package URL you would access in the browser.}
@@ -17,6 +17,9 @@ is on the website. Leave this blank to see the options.}
 
 \item{quiet}{Defaults to FALSE. If TRUE, will not print the abbreviated table
 in the console.}
+
+\item{key}{EDI API Access Key. Defaults to \code{ediKey()}, which automatically checks
+environment variables (\code{EDI_KEY}) and R options.}
 }
 \value{
 A list of the data files requested. If it is a CSV, this will be
@@ -25,7 +28,13 @@ the file will be downloaded and the file path will be provided as an
 output for that element.
 }
 \description{
-This function works with the API provided by EDI to download the files of a package. The default behavior is to download the newest version of the data package, but this can be changed via the \code{version} argument. The function handles different file types differently, i.e., .csv files are read directly into R while all other file types are downloaded in the temporary folder and a file path to the file is returned. Bear in mind that the EDI servers are very slow and the execution of this code will be thus affected.
+This function works with the API provided by EDI to download the files of a package.
+The default behavior is to download the newest version of the data package,
+but this can be changed via the \code{version} argument. The function handles different
+file types differently, i.e., .csv files are read directly into R while all
+other file types are downloaded in the temporary folder and a file path to
+the file is returned. Bear in mind that the EDI servers are very slow and
+the execution of this code will be thus affected.
 }
 \examples{
 \dontrun{

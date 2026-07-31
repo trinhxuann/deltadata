@@ -4,7 +4,7 @@
 \alias{getMetadataEdi}
 \title{Grab metadata from an EDI package webpage}
 \usage{
-getMetadataEdi(url, version = "newest", all = FALSE)
+getMetadataEdi(url, version = "newest", all = FALSE, key = ediKey())
 }
 \arguments{
 \item{url}{URL to the EDI data package landing page}
@@ -14,6 +14,8 @@ you are interested in a specific version}
 
 \item{all}{Defaults to FALSE. If TRUE, will return the XML file of the metadata
 itself. If FALSE, provides only an opinionated set of parameters}
+
+\item{key}{EDI API Access Key. Defaults to \code{ediKey()}.}
 }
 \value{
 One of the following depending on all:

@@ -23,6 +23,7 @@
 #' @param maxAttempt Number of retries to attempt if a connection fails. Defaults to 3.
 #' @param fallbackDuration Logical. Should the function try to use a coarser
 #' duration if data cannot be found? Order is event > hourly > daily, in that order, never backwards.
+#' @param ... Additional arguments to be passed to \code{calcNearestCDEC()}
 #'
 #' @details
 #' The `coordinates` argument can be used in place of the `station` argument.
@@ -51,7 +52,8 @@
 #' }
 pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "daily"),
                      dateStart, dateEnd = NULL, temperatureUnits = c("C", "F"),
-                     coordinates, verbose = T, maxAttempt = 3, fallbackDuration = FALSE) {
+                     coordinates, verbose = T, maxAttempt = 3, fallbackDuration = FALSE,
+                     ...) {
 
   # --- Station or lat/lon ---
   if (!missing(coordinates) & !missing(station)) {
@@ -68,7 +70,9 @@ pullCDEC <- function(station, sensor = NULL, duration = c("event", "hourly", "da
     # Assuming calcNearestCDEC is defined elsewhere or will be provided
     cdecClosest <- calcNearestCDEC(data.frame(lat = coordinates[[1]],
                                               lon = coordinates[[2]]),
-                                   sensor = sensor)
+                                   sensor = sensor,
+                                   verbose = verbose,
+                                   ...)
 
     station <- unique(cdecClosest[["cdecGage"]])
   }
@@ -366,204 +370,106 @@ pullCoordinates <- function(cdecGage, maxAttempt = 3, timeout = 60) {
              longitude = regmatches(dataString, regexpr("(?<=Longitude)([\\d.-]+)", dataString, perl = T)))
 }
 
-#' Find the Nth nearest CDEC station with specific data
+#' Download a Delta DEM for use in hydrological distance calculations
 #'
-#' Identifies the n-th nearest CDEC station to one or more
-#' input coordinates. It can filter station based on a specific sensor number
-#' or by a general variable and water column combination. By default, all CDEC
-#' station are searched.
+#' @description
+#' Downloads the CNRA 10 m Delta DEM from the default URL or a user-supplied URL,
+#' extracts the raster, optionally saves it to a user-specified directory, and
+#' returns a \code{SpatRaster}. When \code{asMask = TRUE}, the raw elevation
+#' raster is binarized at the WSE threshold to produce the water mask expected by
+#' the \code{distMethod = "hydrological"} path in \code{\link{calcNearestCDEC}}.
 #'
-#' @param df A data.frame with at least 'lat' and 'lon' columns. All other columns
-#' will be retained.
-#' @param n The rank of the nearest station to find (e.g., n = 1 for the closest).
-#' If n = "all", all applicable station and metadata will be returned in a nested format per point.
-#' @param sensor An optional integer sensor number. If provided, this will override
-#'   the 'variable' and 'waterColumn' arguments.
-#' @param variable The type of sensor data required. One of "temp", "turbidity", "ec".
-#'   Ignored if 'sensor' is provided.
-#' @param waterColumn The position of the sensor in the water column. One of "top" or "bottom".
-#'   Ignored if 'sensor' is provided.
-#' @param method Determines the distance calculation function. `fast` will utilize the
-#' Haversine method, while `accurate` the  Vincenty Ellipsoid method. For use within the Delta,
-#' the Haversine method is sufficient and is much less computationally intensive.
-#' Defaults to `fast`.
-#' @param verbose Set to FALSE to disable specific messages. Defaults to TRUE.
-#' @param cdecGPS Internal package data with station GPS locations. Can provide this
-#' if the internal package data is not updated, although you will have to adhere to formatting.
-#' @param cdecMetadata Internal package data with sensor metadata. Can provide this
-#' if the internal package data is not updated, although you will have to adhere to formatting.
+#' @param url URL to the DEM file. Accepts a direct \code{.tif} URL or a
+#'   \code{.zip} archive containing a \code{.tif} or \code{.img}. Defaults to
+#'   the CNRA 10 m Bay Delta DEM (2025-03-12 release).
+#' @param destDir Character. Directory to save raster file for persistent storage
+#'   If \code{NULL} (default), the file lives only in the session's temporary
+#'   directory and is not available after R restarts.
+#' @param asMask Logical. If \code{TRUE}, returns a binary water mask
+#'   (NA = land, 1 = water) by applying the WSE threshold to the raw elevation.
+#'   If \code{FALSE} (default), returns the raw elevation raster.
+#' @param wse Water surface elevation threshold in metres. Cells above this value
+#'   are classified as land. Only used when \code{asMask = TRUE}. Defaults to
+#'   1.25 m.
+#' @param timeout Numeric. Override the download timeout in seconds. If
+#'   \code{NULL} (default), timeout is calculated dynamically from the file size.
 #'
-#' @return A data.frame containing the input point identifiers,
-#' the found CDEC station, the distance, and the sensor metadata.
+#' @return A \code{SpatRaster}. When \code{asMask = TRUE} and \code{destDir} is
+#'   supplied, the binary mask is also written to \code{destDir} as a compressed
+#'   \code{.tif} alongside the raw DEM.
+#'
 #' @export
 #'
-#' @importFrom geosphere distm distVincentyEllipsoid distHaversine
+#' @importFrom terra rast writeRaster
 #'
 #' @examples
 #' \dontrun{
-#' df <- data.frame(station = "306", lat = 38.00064, lon = -122.4136)
+#' # Raw DEM, kept in tempdir for the session
+#' dem <- downloadDEM()
 #'
-#' calcNearestCDEC(df)
+#' # Binary water mask saved to a project directory, ready for calcNearestCDEC
+#' waterMask <- downloadDEM(destDir = "data/dem", asMask = TRUE, wse = 1.25)
+#'
+#' nearestStation <- calcNearestCDEC(myPoints, sensor = 25,
+#'                                   distMethod = "hydrological",
+#'                                   dem = waterMask)
 #' }
-calcNearestCDEC <- function(df, n = 1,
-                            sensor = NULL,
-                            variable = c("temp", "turbidity", "ec"),
-                            waterColumn = c("top", "bottom"),
-                            method = c("fast", "accurate"),
-                            verbose = T,
-                            cdecGPS = NULL,
-                            cdecMetadata = NULL) {
+downloadDEM <- function(
+    url = NULL,
+    destDir = NULL,
+    asMask = FALSE,
+    wse = 1.25,
+    timeout = NULL) {
 
-  cdecGPS <- if (is.null(cdecGPS)) get("cdecStation", envir = asNamespace("deltadata"))
-  cdecMetadata <- if (is.null(cdecMetadata)) get("cdecMetadata", envir = asNamespace("deltadata"))
-  # cdecGPS <- if (is.null(cdecGPS)) cdecStation
-  # cdecMetadata <- if (is.null(cdecMetadata)) cdecMetadata
-
-  # --- Validation ---
-  if (!all(c("lat", "lon") %in% names(df))) {
-    stop("Input `df` must contain 'lat' and 'lon' columns.", call. = FALSE)
+  if (is.null(url)) {
+    url <- "https://data.cnra.ca.gov/dataset/f902e012-7d8d-429c-8a1a-2bf5b4312532/resource/d10040a8-4880-4f0e-90e7-86f57556bd9d/download/dem_delta_10m_20250312.zip"
   }
 
-  method <- match.arg(method)
-
-  # --- Filter available CDEC station ---
-  if (!is.null(sensor)) {
-    # --- Path 1: if sensor is provided ---
-    availableSensors <- cdecMetadata[cdecMetadata$sensorNumber == sensor, ]
-
-    if (nrow(availableSensors) == 0) {
-      stop(sprintf("The specified sensor '%s' was not found in the CDEC metadata.", sensor), call. = FALSE)
-    }
-
-  } else {
-    # --- Path 2: no sensors provided ---
-    if (verbose) {
-      if (length(variable) > 1) {
-        if (length(waterColumn) > 1) message("No variable or water column selected. Defaulting to `temp` and `top`.")
-        else message("No variable selected. Defaulting to `temp`.")
-      } else {
-        if (length(waterColumn) > 1) message("No water column selected. Defaulting to `top`.")
-      }
-    }
-
-    variable <- match.arg(variable)
-    waterColumn <- match.arg(waterColumn)
-
-    variableRegexMap <- list(
-      temp      = "(temp).*(water)",
-      turbidity = "turbidity",
-      ec        = "elec.* conduct.* micro"
-    )
-    variablePattern <- variableRegexMap[[variable]]
-    bottomPattern <- "(lower|bottom)"
-
-    availableSensors <- cdecMetadata
-    availableSensors <- availableSensors[grepl(variablePattern, availableSensors$sensorDescription, ignore.case = TRUE), ]
-
-    if (waterColumn == "top") {
-      availableSensors <- availableSensors[!grepl(bottomPattern, availableSensors$sensorDescription, ignore.case = TRUE), ]
-    } else {
-      availableSensors <- availableSensors[grepl(bottomPattern, availableSensors$sensorDescription, ignore.case = TRUE), ]
-    }
-
-    if (nrow(availableSensors) == 0) {
-      stop("No CDEC station found with the specified sensor criteria.", call. = FALSE)
-    }
-  }
-
-  # --- Post filter processing ---
-
-  availableSensors$duration <- gsub("\\(|\\)", "",
-                                    availableSensors[["duration"]])
-  validstation <- unique(availableSensors$gage)
-  cdecGpsFiltered <- cdecGPS[cdecGPS$station %in% validstation, ]
-
-  # --- Calculate distance matrix ---
-
-  distanceFunction <- if (method == "fast") {
-    distHaversine
-  } else {
-    distVincentyEllipsoid
-  }
-
-  distanceMatrixMeter <- distm(
-    df[, c("lon", "lat")],
-    cdecGpsFiltered[, c("longitude", "latitude")],
-    fun = distanceFunction
+  # Download and extract via the generalized getFile
+  rawPath <- getFile(
+    file = url,
+    open = FALSE,
+    timeout = timeout,
+    targetExtension  = c("tif", "img", "vrt")
   )
-  distanceMatrix <- distanceMatrixMeter / 1609.344
 
-  # --- Filter station by n and format output ---
-  # For n = "all", the output will be a nested data frame to keep a
-  # consistent output format (a data frame with each point being a row)
-
-  if (is.character(n) && n == "all") {
-    # --- Path 1: n = "all" ---
-    if (verbose) {
-      message("n = 'all': Returning a data frame with a nested list-column 'cdecGage'.")
-      message("Use `tidyr::unnest(yourObject, cdecGage)` to expand the results.")
-    }
-
-    # Use apply to process each input point (each row of the distance matrix)
-    rankedResults <- apply(distanceMatrix, 1, function(dist) {
-
-      # Create a data frame of all possible station and their distances
-      results <- data.frame(
-        cdecGage = cdecGpsFiltered$station,
-        distance = dist
-      )
-
-      # Order the results by distance
-      results <- results[order(results$distance), ]
-
-      # Merge in the sensor metadata for complete information
-      merge(results, availableSensors,
-            by.x = "cdecGage", by.y = "gage",
-            sort = F)
-    })
-
-    # Create the final data frame with the list-column
-    resultDf <- df
-    resultDf$cdecGage <- rankedResults
-
-    return(resultDf)
-
-  } else {
-    # --- Path 2: n is numeric ---
-    if(length(n) > 1) {
-      n <- n[1]
-      warning("n has length > 1. Using only the first element.\n")
-    }
-
-    indices <- apply(distanceMatrix, 1, function(row) order(row)[n])
-    nthStation <- cdecGpsFiltered[indices, ]
-    nthDistance <- distanceMatrix[cbind(1:nrow(df), indices)]
-
-    resultDf <- cbind(
-      df,
-      cdecGage = nthStation$station,
-      distance = nthDistance,
-      rowIndex = 1:nrow(df)
-    )
-
-    mergedDf <- merge(
-      resultDf,
-      availableSensors,
-      by.x = "cdecGage",
-      by.y = "gage",
-      all.x = TRUE
-    )
-
-    # Will return only 1 data row, prioritizing: event > hourly > daily
-    # There's a decision between the different sensor types, but will deal with that as necessary
-    mergedDf$duration <- factor(mergedDf$duration, levels = c("event", "hourly", "daily"))
-    mergedDf <- mergedDf[order(mergedDf$rowIndex, mergedDf$duration, -mergedDf$sensorNumber), ]
-    # Seems a bit loose but I think this works fine if the goal is to get the first row regardless of sensorNumber
-    resultDf <- mergedDf[!duplicated(mergedDf$rowIndex), ]
-    resultDf$rowIndex <- NULL
-
-    return(resultDf)
+  # Persist to tempdir instead of destDir to isolate raw file
+  tempPath <- file.path(tempdir(), basename(rawPath))
+  if (!file.exists(tempPath)) {
+    message("Copying raw raster to temporary directory: ", tempPath)
+    file.copy(rawPath, tempPath)
   }
+  rawPath <- tempPath
+
+  message("Loading raster: ", basename(rawPath))
+  dem <- terra::rast(rawPath)
+
+  if (!asMask) return(dem)
+
+  # Derive binary water mask from the raw elevation
+  message(sprintf("Applying WSE threshold (%.2f m) to derive binary water mask.", wse))
+  waterMask <- dem
+  waterMask[waterMask > wse] <- NA
+  waterMask[!is.na(waterMask)] <- 1
+
+  # Only save the resulting mask raster to the user-specified directory
+  if (!is.null(destDir)) {
+    if (!dir.exists(destDir)) {
+      dir.create(destDir, recursive = TRUE)
+      message("Created directory: ", destDir)
+    }
+
+    rawName <- tools::file_path_sans_ext(basename(rawPath))
+    maskPath <- file.path(destDir, paste0(rawName, "_waterMask.tif"))
+    message("Writing water mask to destination: ", maskPath)
+
+    terra::writeRaster(waterMask, maskPath,
+                       datatype = "INT1U",
+                       gdal     = c("COMPRESS=DEFLATE", "PREDICTOR=2"),
+                       overwrite = TRUE)
+  }
+
+  waterMask
 }
 
 #' Find the n-th closest CDEC gage
@@ -784,6 +690,12 @@ popCDEC <- function(df,
                                    ...)
   }
 
+  # --- PARAMETER SANITIZATION ---
+  # Separate spatial/routing arguments from downstream downloader arguments.
+  cdecParams <- c("distMethod", "waterRaster", "snapDist", "maxEuclideanDist",
+                  "hydroCandidates", "gridDistMaxIter", "hydroOrientation")
+  batchArgs <- userArguments[!names(userArguments) %in% cdecParams]
+
   # --- Pull the data, batch download ---
   dfSplitDuration <- split(cdecClosest, list(as.character(cdecClosest$duration),
                                              cdecClosest$sensorNumber),
@@ -811,13 +723,18 @@ popCDEC <- function(df,
         dateEnd = dateRange[2] # + 1 day buff now taken care of within pullCDEC
       )
     } else {
-      cdecData <- batchCDEC(
-        station = unique(durationSensorGroup$cdecGage),
-        sensor = unique(durationSensorGroup$sensorNumber),
-        duration = as.character(unique(durationSensorGroup$duration)),
-        dateStart = dateRange[1] - 1, # Add a 1-day buffers
-        dateEnd = dateRange[2] # + 1 day buff now taken care of within pullCDEC
+      batchCallArgs <- c(
+        list(
+          station = unique(durationSensorGroup$cdecGage),
+          sensor = unique(durationSensorGroup$sensorNumber),
+          duration = as.character(unique(durationSensorGroup$duration)),
+          dateStart = dateRange[1] - 1,
+          dateEnd = dateRange[2]
+        ),
+        batchArgs
       )
+      cdecData <- do.call(batchCDEC, batchCallArgs)
+
     }
 
     if (is.null(cdecData) || nrow(cdecData) == 0) return(NULL)
@@ -1015,6 +932,8 @@ popCDEC <- function(df,
 #' server appears to be around 3-4 million rows. Defaults to 1 million. A larger
 #' value can be used but depending on internet speed may bog down.
 #' @param ... Any other arguments to be passed onto \code{\link{pullCDEC}}.
+#' @param cacheDir If specified, will save chunks to directory, checking to see
+#' if the data already exists first.
 #'
 #' @return A data frame of the request data pull.
 #' @export
@@ -1037,7 +956,7 @@ popCDEC <- function(df,
 #' )
 #' }
 batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
-                      rowLimit = 2000000, ...) {
+                      rowLimit = 2000000, cacheDir = NULL, ...) {
 
   # --- Validation and preprocessing ---
   dateStart <- parseDate(dateStart)
@@ -1046,6 +965,46 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
 
   if (is.na(dateStart) || is.na(dateEnd) || dateStart > dateEnd || is.infinite(dateStart) || is.infinite(dateEnd)) {
     stop("Invalid `dateStart` or `dateEnd` provided.", call. = FALSE)
+  }
+
+  # # --- Coordinate Resolution (Brings batchCDEC in parity with pullCDEC?) ---
+  # if (!missing(coordinates) & missing(station)) {
+  #   if (length(coordinates) != 2)
+  #     stop("`coordinates` should be a vector of two numbers, lat and lon.",
+  #          call. = FALSE)
+  #
+  #   cdecClosest <- calcNearestCDEC(
+  #     df = data.frame(lat = coordinates[[1]], lon = coordinates[[2]]),
+  #     sensor = sensor,
+  #     ...
+  #   )
+  #   station <- unique(cdecClosest[["cdecGage"]])
+  # }
+  #
+  # if (missing(station)) {
+  #   stop("Must provide either `station` or `coordinates` to pull CDEC data.", call. = FALSE)
+  # }
+  #
+  # station <- unique(station)
+
+  # --- Cache directory setup ---
+  useDiskCache <- !is.null(cacheDir)
+  if (useDiskCache) {
+    if (!dir.exists(cacheDir)) {
+      dir.create(cacheDir, recursive = TRUE)
+      message(sprintf("Created cache directory: %s", cacheDir))
+    }
+    stationsSorted <- sort(station)
+    stationFingerprint <- sprintf("n%d_%s-%s",
+                                  length(stationsSorted),
+                                  stationsSorted[1],
+                                  stationsSorted[length(stationsSorted)])
+    chunkFile <- function(chunkStart, chunkEnd) {
+      file.path(cacheDir,
+                sprintf("cdec_s%s_%s_%s_%s_%s.rds",
+                        sensor, duration, stationFingerprint,
+                        chunkStart, chunkEnd))
+    }
   }
 
   # --- Dynamic pagination logic ---
@@ -1072,11 +1031,12 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
                 numChunks, chunkSizeInDays))
   } else {
     chunkSizeInDays <- as.numeric(difftime(dateEnd, dateStart, units = "days")) + 1
-    numChunks <- ceiling(totalEstimatedRows / rowLimit)
+    numChunks <- 1
   }
 
   # --- Pagination Loop ---
   allDataChunks <- list()
+  failedChunks <- list()
   currentDateStart <- dateStart
   chunk <- 1
 
@@ -1087,17 +1047,64 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
     cat(sprintf("--- Fetching data from %s to %s, Chunk %s/%s ---\n",
                 currentDateStart, currentDateEnd + 1, chunk, numChunks))
 
-    chunkDf <- pullCDEC( # I'd like to keep warnings form here if data were not downloaded for specific stations?
-      station = station,
-      sensor = sensor,
-      duration = duration,
-      dateStart = currentDateStart,
-      dateEnd = currentDateEnd,
-      ...
+    # --- Check cache before downloading ---
+    if (useDiskCache) {
+      cachedFile <- chunkFile(currentDateStart, currentDateEnd)
+      if (file.exists(cachedFile)) {
+        message(sprintf("Chunk %d: loading from cache (%s).",
+                        chunk, basename(cachedFile)))
+        chunkDf <- tryCatch(
+          readRDS(cachedFile),
+          error = function(e) {
+            warning(sprintf(
+              "Chunk %d: cache file is unreadable and will be re-downloaded.\n  Reason: %s",
+              chunk, conditionMessage(e)
+            ), call. = FALSE)
+            NULL
+          }
+        )
+        if (!is.null(chunkDf)) {
+          allDataChunks[[length(allDataChunks) + 1]] <- chunkDf
+          currentDateStart <- currentDateEnd + 1
+          chunk <- chunk + 1
+          next
+        }
+        # Falls through to a fresh download if the cached file was corrupt
+      }
+    }
+
+    # --- Download chunk ---
+    chunkDf <- tryCatch(
+      pullCDEC(
+        station = station,
+        sensor = sensor,
+        duration = duration,
+        dateStart = currentDateStart,
+        dateEnd = currentDateEnd,
+        ...
+      ),
+      error = function(e) {
+        warning(sprintf(
+          "Chunk %d/%d (%s to %s) failed and will be skipped.\n  Reason: %s",
+          chunk, numChunks, currentDateStart, currentDateEnd,
+          conditionMessage(e)
+        ), call. = FALSE)
+        NULL
+      }
     )
 
-    if (nrow(chunkDf) > 0) {
+    if (!is.null(chunkDf) && nrow(chunkDf) > 0) {
+      if (useDiskCache) {
+        saveRDS(chunkDf, file = cachedFile)
+        message(sprintf("Chunk %d: saved to cache (%s).", chunk, basename(cachedFile)))
+      }
       allDataChunks[[length(allDataChunks) + 1]] <- chunkDf
+    } else if (is.null(chunkDf)) {
+      failedChunks[[length(failedChunks) + 1]] <- list(
+        chunk = chunk,
+        dateStart = currentDateStart,
+        dateEnd = currentDateEnd
+      )
     }
 
     # The + 1 here replicates the pullCDEC function defaulting to adding a day for its pull
@@ -1106,6 +1113,20 @@ batchCDEC <- function(station, sensor, duration, dateStart, dateEnd = NULL,
   }
 
   # --- Final combination and cleaning ---
+  if (length(allDataChunks) == 0L) {
+    stop("All chunks failed to download. No data to return.", call. = FALSE)
+  }
+
+  if (length(failedChunks) > 0L) {
+    failedRanges <- vapply(failedChunks, function(x) {
+      sprintf("  Chunk %d: %s to %s", x$chunk, x$dateStart, x$dateEnd)
+    }, character(1))
+    warning(sprintf(
+      "%d of %d chunk(s) failed. The returned data covers only successful ranges.\n%s",
+      length(failedChunks), numChunks, paste(failedRanges, collapse = "\n")
+    ), call. = FALSE)
+  }
+
   cat("--- All phases complete. Combining data. ---\n")
   finalDf <- bind_rows(allDataChunks)
 
@@ -1251,6 +1272,10 @@ fetchCDECData <- function(station, currentSensor, currentDurationCode,
     names(df) <- gsub("((?<=[_\\s])+.)", "\\U\\1",
                       tolower(names(df)), perl = TRUE)
     names(df) <- gsub("_|\\s", "", names(df))
+    df$sensorNumber <- suppressWarnings(as.integer(df$sensorNumber))
+    df$value <- suppressWarnings(as.double(
+      ifelse(trimws(df$value) %in% c("---", ""), NA, df$value)
+    ))
     df$dateTime <- as.POSIXct(df[["dateTime"]], format = "%Y%m%d %H%M",
                               tz = "America/Los_Angeles")
   }
@@ -1432,4 +1457,872 @@ readCdecSensorList <- function(url = "https://cdec.water.ca.gov/reportapp/javare
   }, error = function(e) {
     stop("Failed to read or process data from URL: ", e$message)
   })
+}
+
+#' Build a binary water mask raster from a waterway shapefile
+#'
+#' Rasterizes a waterway polygon or line layer into the binary
+#' \code{NA} = land / \code{1} = water format expected by
+#' \code{calcNearestCDEC(distMethod = "hydrological")}, and validates that
+#' the result is in a projected CRS.
+#'
+#' @param waterway A waterway polygon or line layer, supplied as a file path
+#'   (readable by \code{sf::st_read}), an \code{sf}/\code{sfc} object, or a
+#'   \code{terra::SpatVector}.
+#' @param resolution Numeric. Grid cell size in the map units of the target
+#'   CRS (metres, for a typical UTM projection).
+#' @param crs Optional target CRS for the output raster (anything accepted
+#'   by \code{sf::st_crs()}, e.g. \code{"EPSG:26910"} or a numeric EPSG
+#'   code). If \code{NULL} (default), the CRS of \code{waterway} is used
+#'   as-is, and must already be projected.
+#' @param verbose Logical. Print progress and diagnostic messages. Defaults
+#'   to \code{TRUE}.
+#'
+#' @details
+#' The mask returned always follows the strict binary contract expected by
+#' \code{calcNearestCDEC()}: \code{NA} for land, \code{1} for water,
+#' regardless of how \code{waterway} is structured.
+#'
+#' Resolution is deliberately not defaulted. Too coarse a grid can erase
+#' narrow channels or connections between waterways, producing spurious
+#' "unreachable" stations or points several calls downstream in
+#' \code{calcNearestCDEC()}; too fine a grid makes \code{gridDist()}
+#' disproportionately expensive. Choose the coarsest resolution that still
+#' preserves every channel width relevant to your points of interest.
+#'
+#' @return A binary \code{SpatRaster} (\code{NA} = land, \code{1} = water)
+#'   in the target projected CRS, suitable for use as \code{waterRaster} in
+#'   \code{calcNearestCDEC()}.
+#'
+#' @importFrom sf st_read st_as_sf st_transform st_crs st_is_longlat st_bbox
+#' @importFrom terra vect rast rasterize ext
+#' @export
+buildWaterMask <- function(waterway, resolution, crs = NULL, verbose = TRUE) {
+
+  if (missing(resolution) || !is.numeric(resolution) || length(resolution) != 1 ||
+      resolution <= 0) {
+    stop("`resolution` must be a single positive number, in the map units ",
+         "of the target CRS.", call. = FALSE)
+  }
+
+  # --- Load waterway into sf ---
+  waterwaySf <- if (is.character(waterway)) {
+    if (!file.exists(waterway)) {
+      stop(sprintf("`waterway` file not found: %s", waterway), call. = FALSE)
+    }
+    sf::st_read(waterway, quiet = !verbose)
+  } else if (inherits(waterway, c("sf", "sfc"))) {
+    sf::st_as_sf(waterway)
+  } else if (inherits(waterway, "SpatVector")) {
+    sf::st_as_sf(waterway)
+  } else {
+    stop("`waterway` must be a file path, an sf/sfc object, or a ",
+         "terra::SpatVector.", call. = FALSE)
+  }
+
+  waterwayCrs <- sf::st_crs(waterwaySf)
+  if (is.na(waterwayCrs)) {
+    stop("`waterway` has no CRS assigned. Assign one with ",
+         "`sf::st_set_crs()` before calling `buildWaterMask()`, or supply ",
+         "`crs` explicitly if the geometry is already in the correct ",
+         "projection.", call. = FALSE)
+  }
+
+  # --- Resolve and validate target CRS ---
+  targetCrs <- if (!is.null(crs)) sf::st_crs(crs) else waterwayCrs
+
+  if (is.na(targetCrs)) {
+    stop("`crs` could not be resolved to a valid CRS.", call. = FALSE)
+  }
+
+  if (sf::st_is_longlat(targetCrs)) {
+    stop(
+      "The target CRS is unprojected (is longitude/latitude). Supply a projected `crs`.",
+      call. = FALSE
+    )
+  }
+
+  if (!isTRUE(waterwayCrs == targetCrs)) {
+    if (verbose) message("Reprojecting waterway to target CRS...")
+    waterwaySf <- sf::st_transform(waterwaySf, targetCrs)
+  }
+
+  # --- Combined extent ---
+  waterwayBox <- sf::st_bbox(waterwaySf)
+  templateExt <- terra::ext(waterwayBox)
+
+  # --- Build template raster and rasterize ---
+  template <- terra::rast(
+    resolution = resolution,
+    extent = templateExt,
+    crs = targetCrs$wkt
+  )
+
+  waterwayVect <- terra::vect(waterwaySf)
+  waterMask <- terra::rasterize(waterwayVect, template, field = 1,
+                                background = NA_integer_)
+
+  # Enforce the binary contract explicitly (rather than trusting
+  # rasterize()'s field/background arguments alone) so a future change to
+  # rasterize()'s defaults can't silently produce a non-binary mask.
+  waterMask[!is.na(waterMask)] <- 1
+  waterMask
+}
+
+#' Extracts raster cell of a point, snapping to water if needed.
+#'
+#' @param pt Point of interest, sampling point
+#' @param costRast A binary cost raster
+#' @param snapDist Buffer radius in map units for land-cell fallback.
+#'
+#' @noRd
+#' @keywords internal
+snapCellToWater <- function(pt, costRast, snapDist) {
+
+  valCol <- names(costRast)[1]
+
+  # Direct hit
+  extracted <- terra::extract(costRast, pt, cells = TRUE, ID = FALSE)
+  if (nrow(extracted) > 0 && !is.na(extracted[[valCol]][1])) {
+    return(list(cell = extracted$cell[1], snapped = FALSE))
+  }
+
+  # Buffer search: terra returns cells in scan order, not proximity order,
+  # so explicit distances are required to identify the true nearest water cell
+  ptBuffer <- terra::buffer(pt, width = snapDist)
+  buffered <- terra::extract(costRast, ptBuffer, cells = TRUE, xy = TRUE, ID = FALSE)
+  buffered <- buffered[!is.na(buffered[[valCol]]), , drop = FALSE]
+
+  if (nrow(buffered) > 0) {
+    ptCoords <- terra::crds(pt)
+    dists <- sqrt((buffered$x - ptCoords[1, 1])^2 +
+                       (buffered$y - ptCoords[1, 2])^2)
+    bestIdx <- which.min(dists)
+    return(list(cell = buffered$cell[bestIdx], snapped = TRUE))
+  }
+
+  list(cell = NA_integer_, snapped = FALSE)
+}
+
+#' Extract a hydrological distance at a point, snapping to water if needed
+#'
+#' @param distRast SpatRaster: distance surface produced by gridDist.
+#' @param pt SpatVector: a single point.
+#' @param snapDist Buffer radius in map units for land-cell fallback.
+#'
+#' @return A list: `dist` (numeric or NA) and `snapped` (logical).
+#' @noRd
+#' @keywords internal
+extractWithSnap <- function(distRast, pt, snapDist) {
+
+  valCol <- names(distRast)[1]
+
+  # Direct extraction
+  val <- terra::extract(distRast, pt, ID = FALSE)[1, 1]
+  if (!is.na(val)) return(list(dist = val, snapped = FALSE))
+
+  # Buffer extraction: same scan-order issue as snapCellToWater;
+  # use explicit distances to pick the nearest reachable cell
+  ptBuffer <- terra::buffer(pt, width = snapDist)
+  buffered <- terra::extract(distRast, ptBuffer, cells = TRUE, xy = TRUE, ID = FALSE)
+  buffered <- buffered[!is.na(buffered[[valCol]]), , drop = FALSE]
+
+  if (nrow(buffered) > 0) {
+    ptCoords <- terra::crds(pt)
+    dists <- sqrt((buffered$x - ptCoords[1, 1])^2 +
+                       (buffered$y - ptCoords[1, 2])^2)
+    bestIdx <- which.min(dists)
+    return(list(dist = buffered[[valCol]][bestIdx], snapped = TRUE))
+  }
+
+  list(dist = NA_real_, snapped = FALSE)
+}
+
+#' Compute hydrological distances from one source to many targets
+#'
+#' Internal helper shared by every orientation of the hydrological search in
+#' \code{calcNearestCDEC()} (station-centric or point-centric, ranked or
+#' \code{n = "all"}): crops the cost surface to a local extent around the
+#' source and its targets, snaps the source onto water, runs a single
+#' \code{terra::gridDist()} call from it, and batch-extracts distances at
+#' every target, falling back to a snap search for any target that lands
+#' on a land cell.
+#'
+#' @param sourceVect SpatVector, single point/station: the gridDist() origin.
+#' @param targetVect SpatVector: locations to extract distances at.
+#' @param targetEuclidMeter Numeric vector, same length/order as
+#'   \code{targetVect}: straight-line distance (meters) from source to each
+#'   target, used only to size the crop buffer.
+#' @param costSurf Full SpatRaster cost surface.
+#' @param snapDist,gridDistMaxIter,verbose See \code{calcNearestCDEC()}.
+#' @param sourceDesc Character, used as a prefix in progress/warning
+#'   messages, e.g. \code{"Station 5/62: SBS"} or \code{"Point 1/1"}.
+#'
+#' @return Numeric vector, same length as \code{targetVect}: distance in
+#'   meters, or \code{NA} where the source or that specific target could not
+#'   be reached (matching the Inf/NA contract documented in
+#'   \code{calcNearestCDEC()}: this function only ever returns \code{NA},
+#'   never \code{Inf} as every value here reflects an evaluation that was
+#'   actually attempted).
+#' @noRd
+#' @keywords internal
+hydroDistFromSource <- function(sourceVect, targetVect, targetEuclidMeter,
+                                costSurf, snapDist, gridDistMaxIter, verbose,
+                                sourceDesc) {
+
+  result <- rep(NA_real_, length(targetVect))
+
+  allCoords <- rbind(terra::crds(sourceVect), terra::crds(targetVect))
+  cropBuffer <- max(2000, max(targetEuclidMeter) * 0.5)
+  cropExt <- terra::ext(
+    min(allCoords[, 1]), max(allCoords[, 1]),
+    min(allCoords[, 2]), max(allCoords[, 2])
+  ) + cropBuffer
+
+  localCost <- tryCatch(
+    terra::crop(costSurf, cropExt),
+    error = function(e) {
+      warning(sprintf("%s -- could not crop raster (%s).",
+                      sourceDesc, conditionMessage(e)), call. = FALSE)
+      NULL
+    }
+  )
+  if (is.null(localCost)) return(result)
+
+  sourceSnap <- snapCellToWater(sourceVect, localCost, snapDist)
+  if (is.na(sourceSnap$cell)) {
+    warning(sprintf("%s -- could not be placed on water within %d m.",
+                    sourceDesc, snapDist), call. = FALSE)
+    return(result)
+  }
+  if (sourceSnap$snapped && verbose)
+    message(sprintf("    %s snapped to nearest water cell.", sourceDesc))
+
+  localCost[sourceSnap$cell] <- 2
+  distRast <- tryCatch(
+    withCallingHandlers(
+      terra::gridDist(localCost, target = 2, maxiter = gridDistMaxIter),
+      warning = function(w) {
+        # Re-tag terra's generic "did not converge" warning with the
+        # specific source it applies to, so it's traceable
+        if (grepl("did not converge", conditionMessage(w), fixed = TRUE)) {
+          warning(sprintf(
+            paste0(
+              "%s -- gridDist() did not converge within maxiter = %d. ",
+              "Some distances from this source may be inaccurate or ",
+              "missing. Consider increasing `gridDistMaxIter`."
+            ),
+            sourceDesc, gridDistMaxIter
+          ), call. = FALSE)
+          invokeRestart("muffleWarning")
+        }
+      }
+    ),
+    error = function(e) {
+      warning(sprintf("%s -- gridDist failed (%s).",
+                      sourceDesc, conditionMessage(e)), call. = FALSE)
+      NULL
+    }
+  )
+  if (is.null(distRast)) return(result)
+
+  batchVals <- terra::extract(distRast, targetVect, ID = FALSE)[, 1]
+
+  for (idx in seq_along(targetVect)) {
+    val <- batchVals[idx]
+    if (!is.na(val)) {
+      result[idx] <- val
+    } else {
+      # Direct extraction landed on a land cell; fall back to a snap search
+      # around this specific target
+      snapped <- extractWithSnap(distRast, targetVect[idx, ], snapDist)
+      result[idx] <- snapped$dist
+    }
+  }
+
+  result
+}
+
+#' Find the Nth nearest CDEC station with specific data
+#'
+#' For each input point, finds the Nth-nearest CDEC (California Data
+#' Exchange Center) monitoring station reporting a given sensor/variable,
+#' using either straight-line (Euclidean) distance or distance measured
+#' through the connected water network (hydrological).
+#'
+#' @param df A data frame of query points with \code{lat} and
+#'   \code{lon} columns, in decimal degrees (WGS84).
+#' @param n Integer, or the string \code{"all"}. Which rank of nearest
+#'   station to return for each point (\code{n = 1} is closest,
+#'   \code{n = 2} second-closest, etc.). If \code{"all"}, every candidate
+#'   station is evaluated and returned, ranked, in a nested list-column.
+#' @param sensor Optional CDEC sensor number. If supplied, overrides
+#'   \code{variable}/\code{waterColumn} filtering and restricts candidate
+#'   stations to those reporting this exact sensor.
+#' @param variable One of \code{"temp"}, \code{"turbidity"}, or
+#'   \code{"ec"} (electrical conductivity). Ignored if \code{sensor} is
+#'   supplied. Defaults to \code{"temp"} with a message if left
+#'   unspecified.
+#' @param waterColumn One of \code{"top"} or \code{"bottom"}, selecting
+#'   surface vs. bottom-of-water-column sensors. Ignored if \code{sensor}
+#'   is supplied. Defaults to \code{"top"} with a message if left
+#'   unspecified.
+#' @param method Distance algorithm for the Euclidean calculation:
+#'   \code{"fast"} (Haversine, default) or \code{"accurate"} (Vincenty
+#'   ellipsoid, slower but more precise). Also determines the lower-bound
+#'   distances used for candidate selection and pruning when
+#'   \code{distMethod = "hydrological"}.
+#' @param distMethod Distance method: \code{"euclidean"} (default) or
+#'   \code{"hydrological"}, which routes through connected water cells.
+#' @param waterRaster A binary \code{SpatRaster} where \code{NA} = land and
+#'   any non-\code{NA} value = navigable water, in a projected CRS. Can be
+#'   built with \code{buildWaterMask()}. If \code{NULL}, the bundled Delta
+#'   water mask is used. The bundled mask is developed from DWR's 10x10
+#'   Lidar DEM of the Bay Delta, published March 2025, using wse = 1.25 m
+#'   to specify the land/water boundary. Only relevant when
+#'   \code{distMethod = "hydrological"}.
+#' @param snapDist Maximum search radius in metres when a point or station
+#'   falls on a land cell. Defaults to 200 m. Should generally be at least
+#'   1.5-2x \code{waterRaster}'s resolution
+#' @param maxEuclideanDist Numeric, in miles. Global pre-filter: point-
+#'   cdec station pairs farther apart than this (by straight-line distance) are
+#'   excluded before any candidate selection. Defaults to \code{Inf} (no
+#'   filtering).
+#' @param hydroCandidates Number of Euclidean-nearest stations per input
+#'   point to evaluate hydrologically. Automatically expanded to
+#'   \code{n + 2} if \code{n >= hydroCandidates}. Ignored when
+#'   \code{n = "all"}.
+#' @param gridDistMaxIter Passed to \code{terra::gridDist()}'s
+#'   \code{maxiter} argument. If a station's cost-distance surface fails
+#'   to converge within this many iterations (more likely for large or
+#'   geometrically complex cropped extents), some distances for that
+#'   station may come back \code{NA} even where a valid, longer water path
+#'   exists or a value is returned that is incorrect. A per-station warning
+#'   identifies when this happens; increase this value if you see it often.
+#'   Defaults to \code{50}, matching \code{terra::gridDist()}'s own default.
+#' @param hydroOrientation Where to focus distance calculation from, either from
+#' the point of interest or from the cdec station. Defaults to \code{auto} (choose
+#' whichever has lower number of points) but can be overriden to use \code{point}
+#' or \code{station}. Override exists because \code{auto} uses a simple
+#' heuristic that cannot guarantee an optimal choice.
+#' @param verbose Logical. Print progress and diagnostic messages.
+#' @param cdecGPS Optional override for the internal CDEC station GPS
+#'   lookup table (defaults to \code{deltadata::cdecStation}).
+#' @param cdecMetadata Optional override for the internal CDEC sensor
+#'   metadata lookup table (defaults to \code{deltadata::cdecMetadata}).
+#'
+#' @details
+#' # Hydrological candidate approximation
+#' When \code{distMethod = "hydrological"} and \code{n != "all"}, only the
+#' \code{hydroCandidates} Euclidean-nearest stations to each point are ever
+#' evaluated hydrologically (expanded to \code{n + 2} if needed). This
+#' keeps the search tractable, but it means the station returned is only
+#' guaranteed to be the true nth-nearest station \emph{among that
+#' Euclidean-nearest candidate set}, not necessarily the true global
+#' nth-nearest station by water. If you need an exhaustive, exact
+#' answer, use \code{n = "all"}, which evaluates every reachable station
+#' and is unaffected by this approximation, at a proportionally higher
+#' runtime cost.
+#'
+#' # Local raster cropping
+#' For performance, every station's cost-distance surface
+#' (\code{terra::gridDist()}) is computed on a raster cropped to a padded
+#' bounding box around the station and its currently nominated points
+#' (all input points, when \code{n = "all"}), rather than on the full
+#' \code{waterRaster}. The padding is adaptive
+#' (\code{max(2000, 0.5 * euclidean distance)}) but not exhaustive: if the
+#' true water path between a station and a point requires a long detour
+#' beyond this padded extent (e.g. around a peninsula or island), that
+#' path will not be found, and the pair will be reported as unreachable
+#' even though a valid, longer route exists. This trade-off is deliberate
+#' for performance and is not currently configurable.
+#'
+#' # Geographic scope
+#' Candidate selection and branch-and-bound pruning both rely on the fact
+#' that Euclidean (straight-line, geodesic) distance is always a valid
+#' lower bound on hydrological distance.
+#'
+#' @return
+#' If \code{n} is a single integer: \code{df} with \code{cdecGage},
+#' \code{distance} (miles), and merged station-metadata columns appended;
+#' one row per input point.
+#'
+#' If \code{n = "all"}: \code{df} with a nested list-column \code{cdecGage},
+#' one data frame per input point ranking every evaluated station. Use
+#' \code{tidyr::unnest(result, cdecGage)} to expand.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#'
+#' # Build a hydrological cost surface from the Delta waterway layer once,
+#' # then reuse it across calls.
+#' deltaWaterMask <- buildWaterMask(
+#'   waterway = deltamapr::WW_Watershed,
+#'   resolution = 30
+#' )
+#'
+#' # Find the nearest station reporting sensor 20 (water temperature) to
+#' # each unique SLS station location, using hydrological distance.
+#' nearestStations <- LTMRdata::SLS %>%
+#'   distinct(Station, Latitude, Longitude) %>%
+#'   rename(lat = Latitude, lon = Longitude) %>%
+#'   calcNearestCDEC(
+#'     sensor = 20,
+#'     distMethod = "hydrological",
+#'     waterRaster = deltaWaterMask,
+#'     snapDist = 50
+#'   )
+#' }
+#'
+#' @importFrom geosphere distm distVincentyEllipsoid distHaversine
+#' @importFrom terra rast crop gridDist extract ext vect crs minmax crds
+#'   is.lonlat res buffer
+#' @importFrom sf st_as_sf st_transform
+#' @export
+calcNearestCDEC <- function(df, n = 1,
+                            sensor = NULL,
+                            variable = c("temp", "turbidity", "ec"),
+                            waterColumn = c("top", "bottom"),
+                            method = c("fast", "accurate"),
+                            distMethod = c("euclidean", "hydrological"),
+                            waterRaster = NULL,
+                            snapDist = 200,
+                            maxEuclideanDist = Inf,
+                            hydroCandidates = 5,
+                            gridDistMaxIter = 50,
+                            hydroOrientation = c("auto", "point", "station"),
+                            verbose = TRUE,
+                            cdecGPS = NULL,
+                            cdecMetadata = NULL) {
+
+  cdecGPS <- if (is.null(cdecGPS)) get("cdecStation", envir = asNamespace("deltadata"))
+  cdecMetadata <- if (is.null(cdecMetadata)) get("cdecMetadata", envir = asNamespace("deltadata"))
+
+  # --- Validation ---
+  if (!all(c("lat", "lon") %in% names(df))) {
+    stop("Input `df` must contain 'lat' and 'lon' columns.", call. = FALSE)
+  }
+
+  if (!is.numeric(gridDistMaxIter) || length(gridDistMaxIter) != 1 ||
+      gridDistMaxIter <= 0) {
+    stop("`gridDistMaxIter` must be a single positive number.", call. = FALSE)
+  }
+
+  method <- match.arg(method)
+  distMethod <- match.arg(distMethod)
+  hydroOrientation <- match.arg(hydroOrientation)
+
+  # Defined once, up front, since it's needed by both the hydrological
+  # block and the final ranking block below (regardless of distMethod).
+  isNAll <- is.character(n) && n == "all"
+
+  # Initialize an empty vector to store removed stations
+  removedStations <- character(0)
+
+  # --- Sensor / variable filtering ---
+  if (!is.null(sensor)) {
+    availableSensors <- cdecMetadata[cdecMetadata$sensorNumber == sensor, ]
+    if (nrow(availableSensors) == 0)
+      stop(sprintf("Sensor '%s' was not found in the CDEC metadata.", sensor), call. = FALSE)
+  } else {
+    if (verbose) {
+      if (length(variable) > 1) {
+        if (length(waterColumn) > 1) message("No variable or water column selected. Defaulting to `temp` and `top`.")
+        else message("No variable selected. Defaulting to `temp`.")
+      } else {
+        if (length(waterColumn) > 1) message("No water column selected. Defaulting to `top`.")
+      }
+    }
+
+    variable <- match.arg(variable)
+    waterColumn <- match.arg(waterColumn)
+
+    variableRegexMap <- list(
+      temp = "(temp).*(water)",
+      turbidity = "turbidity",
+      ec = "elec.* conduct.* micro"
+    )
+    bottomPattern <- "(lower|bottom)"
+
+    availableSensors <- cdecMetadata
+    availableSensors <- availableSensors[
+      grepl(variableRegexMap[[variable]], availableSensors$sensorDescription,
+            ignore.case = TRUE), ]
+
+    if (waterColumn == "top") {
+      availableSensors <- availableSensors[
+        !grepl(bottomPattern, availableSensors$sensorDescription, ignore.case = TRUE), ]
+    } else {
+      availableSensors <- availableSensors[
+        grepl(bottomPattern, availableSensors$sensorDescription, ignore.case = TRUE), ]
+    }
+
+    if (nrow(availableSensors) == 0)
+      stop("No CDEC stations found with the specified sensor criteria.", call. = FALSE)
+  }
+
+  availableSensors$duration <- gsub("\\(|\\)", "", availableSensors[["duration"]])
+  cdecGpsFiltered <- cdecGPS[cdecGPS$station %in% unique(availableSensors$gage), ]
+
+  # --- Euclidean distance matrix ---
+  distanceFunction <- if (method == "fast") distHaversine else distVincentyEllipsoid
+
+  distanceMatrixMeter <- distm(
+    df[, c("lon", "lat"), drop = FALSE],
+    cdecGpsFiltered[, c("longitude", "latitude"), drop = FALSE],
+    fun = distanceFunction
+  )
+  distanceMatrix <- distanceMatrixMeter / 1609.344
+
+  # Global Euclidean threshold filter
+  distanceMatrixMeterRanking <- distanceMatrixMeter
+  if (is.finite(maxEuclideanDist)) {
+    maxEuclideanDistMeter <- maxEuclideanDist * 1609.344
+    distanceMatrixMeterRanking[distanceMatrixMeter > maxEuclideanDistMeter] <- Inf
+    distanceMatrix[distanceMatrix > maxEuclideanDist] <- Inf
+  }
+
+  # --- Hydrological distance (station-centric) ---
+  if (distMethod == "hydrological") {
+
+    # Prepare cost surface
+    if (is.null(waterRaster)) {
+      costSurf <- terra::rast(system.file("extdata", "waterMask.tif",
+                                          package = "deltadata"))
+      if (verbose) message("Using bundled Delta water mask.")
+    } else {
+      costSurf <- waterRaster
+      rasterMax <- terra::minmax(costSurf)[2, 1]
+      if (rasterMax > 1) {
+        warning(
+          "The supplied raster has values > 1. A binary water mask is expected ",
+          "(NA = land, any non-NA = water). Binarize first:\n",
+          "  r[r > wse] <- NA\n  r[!is.na(r)] <- 1 or use `buildWaterMask()`.",
+          call. = FALSE
+        )
+      }
+    }
+
+    # --- Validate the cost surface is in a projected CRS ---
+    lonlat <- terra::is.lonlat(costSurf)
+    if (isTRUE(lonlat)) {
+      stop(
+        "`waterRaster` must be in a projected CRS (e.g. a UTM zone, in ",
+        "metres) for hydrological distance calculations to be valid.",
+        call. = FALSE
+      )
+    } else if (is.na(lonlat)) {
+      warning(
+        "Could not determine whether `waterRaster` has a projected CRS. ",
+        call. = FALSE
+      )
+    }
+
+    # --- Warn if the raster is coarser than the snap search radius ---
+    # A point genuinely adjacent to water can still fail to find a wet
+    # cell within `snapDist` purely from grid quantization if the cell
+    # size approaches or exceeds `snapDist`.
+    cellRes <- terra::res(costSurf)
+    if (any(cellRes > snapDist)) {
+      warning(sprintf(
+        paste0(
+          "`waterRaster` resolution (%s m) is coarser than `snapDist` (%d m). ",
+          "Consider a `snapDist` of at least 1.5-2x the raster resolution."
+        ),
+        paste(round(cellRes, 1), collapse = " x "), snapDist
+      ), call. = FALSE)
+    }
+
+    demCrs <- terra::crs(costSurf)
+
+    # Project points into DEM CRS
+    # Can stay in terra, but terra::project() requires firewall interactions
+    cdecVect <- terra::vect(sf::st_transform(
+      sf::st_as_sf(cdecGpsFiltered, coords = c("longitude", "latitude"), crs = 4326),
+      demCrs))
+    inputVect <- terra::vect(sf::st_transform(
+      sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326),
+      demCrs))
+
+    # --- Pre-filter stations that cannot reach water at all ---
+    valColStation <- names(costSurf)[1]
+    cdecVectBuffered <- terra::buffer(cdecVect, width = snapDist)
+    reachableExtract <- terra::extract(costSurf, cdecVectBuffered, ID = TRUE)
+    hasWater <- tapply(!is.na(reachableExtract[[valColStation]]), reachableExtract$ID, any)
+
+    stationReachable <- rep(FALSE, nrow(cdecGpsFiltered))
+    stationReachable[as.integer(names(hasWater))] <- hasWater
+
+    # Store full list of removed stations before modifying cdecGpsFiltered
+    removedStations <- cdecGpsFiltered$station[!stationReachable]
+
+    if (verbose && length(removedStations) > 0) {
+      maxPrint <- 5
+      if (length(removedStations) <= maxPrint) {
+        stationsString <- paste(removedStations, collapse = ", ")
+      } else {
+        stationsString <- sprintf(
+          "%s ... (%d more; see 'unreachableStations' attribute for the complete list)",
+          paste(removedStations[1:maxPrint], collapse = ", "),
+          length(removedStations) - maxPrint
+        )
+      }
+      message(sprintf(
+        "%d of %d candidate station(s) have no water within %d m and will be removed from evaluation: %s",
+        length(removedStations), length(stationReachable), snapDist, stationsString
+      ))
+    }
+
+    # --- HARD FILTER: Remove unreachable stations from datasets ---
+    cdecGpsFiltered <- cdecGpsFiltered[stationReachable, ]
+    cdecVect <- cdecVect[stationReachable, ]
+    distanceMatrix <- distanceMatrix[, stationReachable, drop = FALSE]
+    distanceMatrixMeter <- distanceMatrixMeter[, stationReachable, drop = FALSE]
+    distanceMatrixMeterRanking <- distanceMatrixMeterRanking[, stationReachable, drop = FALSE]
+
+    # Guard against case where no viable stations remain
+    if (nrow(cdecGpsFiltered) == 0) {
+      stop("All candidate stations were removed because none were within the required `snapDist` of water.", call. = FALSE)
+    }
+
+    # Contract: Inf = candidate never evaluated for this point (pruned, or
+    # never nominated); NA = evaluated but this station could not be
+    # reached from this point (e.g. failed to snap, gridDist failed, or no
+    # water within `snapDist` of the point).
+    hydroDistMatrix <- matrix(Inf, nrow = nrow(df), ncol = nrow(cdecGpsFiltered))
+
+    if (isNAll) {
+
+      # --- n = "all": choose an evaluation orientation ---
+      # A full ranking needs every station's real distance to every point,
+      # no pruning
+      # Fewer gridDist() calls (the "auto" signal below) is not the same
+      # thing as less total work, though; every call's crop is bounded by
+      # its *entire* target set's geographic footprint, not just its count.
+      nPoints <- nrow(df)
+      nStationsAll <- nrow(cdecGpsFiltered)
+
+      pointCentric <- switch(hydroOrientation,
+                             point = TRUE,
+                             station = FALSE,
+                             # "auto": fewer calls is a reasonable default signal, but it's only
+                             # part of the real cost
+                             auto = nPoints < nStationsAll
+      )
+
+      if (verbose) {
+        message(sprintf(
+          paste0(
+            "n = 'all': %d point(s), %d station(s) -- using %s-centric ",
+            "evaluation (%s)."
+          ),
+          nPoints, nStationsAll, if (pointCentric) "point" else "station",
+          if (hydroOrientation == "auto") "auto-selected by count" else "set via `hydroOrientation`"
+        ))
+      }
+
+      if (pointCentric) {
+        for (i in seq_len(nPoints)) {
+          progressLabel <- sprintf("Point %d/%d", i, nPoints)
+          if (verbose) message(sprintf(
+            "  %s (serving %d station(s))...", progressLabel, nStationsAll
+          ))
+
+          hydroDistMatrix[i, ] <- hydroDistFromSource(
+            sourceVect = inputVect[i, ],
+            targetVect = cdecVect,
+            targetEuclidMeter = distanceMatrixMeter[i, ],
+            costSurf = costSurf,
+            snapDist = snapDist,
+            gridDistMaxIter = gridDistMaxIter,
+            verbose = verbose,
+            sourceDesc = progressLabel
+          )
+        }
+      } else {
+        for (j in seq_len(nStationsAll)) {
+          stationName <- cdecGpsFiltered$station[j]
+          progressLabel <- sprintf("Station %d/%d: %s", j, nStationsAll, stationName)
+          if (verbose) message(sprintf(
+            "  %s (serving %d point(s))...", progressLabel, nPoints
+          ))
+
+          hydroDistMatrix[, j] <- hydroDistFromSource(
+            sourceVect = cdecVect[j, ],
+            targetVect = inputVect,
+            targetEuclidMeter = distanceMatrixMeter[, j],
+            costSurf = costSurf,
+            snapDist = snapDist,
+            gridDistMaxIter = gridDistMaxIter,
+            verbose = verbose,
+            sourceDesc = progressLabel
+          )
+        }
+      }
+
+    } else {
+
+      # --- Ranked (n != "all"): station-centric, with candidate narrowing
+      # and branch-and-bound pruning ---
+      nVal <- as.integer(n)
+
+      # Track best hydrological distances found so far for branch-and-bound pruning
+      bestHydroList <- lapply(seq_len(nrow(df)), function(i) rep(Inf, nVal))
+
+      nCandidates <- hydroCandidates
+      if (nVal >= nCandidates) {
+        nCandidates <- nVal + 2
+        if (verbose) message(sprintf(
+          "`hydroCandidates` expanded to %d to accommodate n = %d.", nCandidates, nVal
+        ))
+      }
+
+      # Top nCandidates station indices per input point: nCandidates x nrow(df)
+      pointCandidates <- apply(distanceMatrixMeterRanking, 1, function(row) {
+        order(row)[seq_len(min(nCandidates, length(row)))]
+      })
+      if (!is.matrix(pointCandidates)) {
+        pointCandidates <- matrix(pointCandidates, nrow = nCandidates)
+      }
+
+      # Transpose trick: order candidateStationIdx by natural rank priority,
+      # so pruning bounds tighten early rather than only late in the loop
+      candidateStationIdx <- unique(as.vector(t(pointCandidates)))
+
+      # Invert nomination map
+      nominatedByStation <- lapply(candidateStationIdx, function(j) {
+        which(colSums(pointCandidates == j) > 0L)
+      })
+
+      nStations <- length(candidateStationIdx)
+
+      for (s in seq_along(candidateStationIdx)) {
+
+        j <- candidateStationIdx[s]
+        nominatedPts <- nominatedByStation[[s]]
+        stationName <- cdecGpsFiltered$station[j]
+
+        # --- Dynamic branch-and-bound pruning ---
+        activeNominatedPts <- c()
+        for (i in nominatedPts) {
+          euclDistMeter <- distanceMatrixMeter[i, j]
+          # Prune if Euclidean distance exceeds current n-th best hydrological distance (converted to meters)
+          nThBestHydroMeter <- bestHydroList[[i]][nVal] * 1609.344
+
+          if (euclDistMeter < nThBestHydroMeter) {
+            activeNominatedPts <- c(activeNominatedPts, i)
+          }
+        }
+
+        # If all points can be pruned for this station, skip the computation completely
+        if (length(activeNominatedPts) == 0L) {
+          if (verbose) message(sprintf(
+            "  Station %d/%d: %s -- Pruned (Euclidean distance exceeds current best hydro bounds). Skipping.",
+            s, nStations, stationName
+          ))
+          # Left at Inf, not NA: these points were never evaluated against
+          # this station (they were pruned, not found-unreachable), and may
+          # still be reached via another candidate station.
+          next
+        }
+
+        # Focus only on points that survived pruning
+        nominatedPts <- activeNominatedPts
+
+        progressLabel <- sprintf("Station %d/%d: %s", s, nStations, stationName)
+        if (verbose) message(sprintf(
+          "  %s (serving %d active input point(s))...",
+          progressLabel, length(nominatedPts)
+        ))
+
+        distsMeter <- hydroDistFromSource(
+          sourceVect = cdecVect[j, ],
+          targetVect = inputVect[nominatedPts, ],
+          targetEuclidMeter = distanceMatrixMeter[nominatedPts, j],
+          costSurf = costSurf,
+          snapDist = snapDist,
+          gridDistMaxIter = gridDistMaxIter,
+          verbose = verbose,
+          sourceDesc = progressLabel
+        )
+
+        hydroDistMatrix[nominatedPts, j] <- distsMeter
+
+        # Update pruning bounds with whatever came back reachable
+        for (idx in seq_along(nominatedPts)) {
+          val <- distsMeter[idx]
+          if (!is.na(val)) {
+            i <- nominatedPts[idx]
+            valInMiles <- val / 1609.344
+            bestHydroList[[i]] <- sort(c(bestHydroList[[i]], valInMiles))[1:nVal]
+          }
+        }
+      }
+    }
+
+    # Convert metres to miles to match Euclidean distanceMatrix units
+    distanceMatrix <- hydroDistMatrix / 1609.344
+  }
+
+  # --- n-based ranking and return ---
+  if (isNAll) {
+    if (verbose) {
+      message("n = 'all': Returning a data frame with a nested list-column 'cdecGage'.")
+      message("Use `tidyr::unnest(yourObject, cdecGage)` to expand the results.")
+    }
+
+    rankedResults <- apply(distanceMatrix, 1, function(dist) {
+      results <- data.frame(cdecGage = cdecGpsFiltered$station, distance = dist)
+      results <- results[order(results$distance), ]
+      merge(results, availableSensors, by.x = "cdecGage", by.y = "gage", sort = FALSE)
+    })
+
+    resultDf <- df
+    resultDf$cdecGage <- rankedResults
+
+    # Attach unreachable stations as an attribute
+    attr(resultDf, "unreachableStations") <- removedStations
+
+    return(resultDf)
+  }
+
+  if (length(n) > 1) {
+    n <- n[1]
+    warning("n has length > 1. Using only the first element.\n")
+  }
+
+  indices <- apply(distanceMatrix, 1, function(row) order(row)[n])
+  nthDistance <- distanceMatrix[cbind(seq_len(nrow(df)), indices)]
+  unreachable <- !is.finite(nthDistance)
+
+  nthStation <- cdecGpsFiltered[indices, ]
+  nthStation$station[unreachable] <- NA_character_
+  nthDistance[unreachable] <- NA_real_
+
+  if (verbose && any(unreachable)) {
+    message(sprintf(
+      "%d input point(s) had no reachable station at rank n = %s; returning NA.",
+      sum(unreachable), n
+    ))
+  }
+
+  resultDf <- cbind(df,
+                    cdecGage = nthStation$station,
+                    distance = nthDistance,
+                    rowIndex = seq_len(nrow(df)))
+
+  mergedDf <- merge(resultDf, availableSensors,
+                    by.x = "cdecGage", by.y = "gage", all.x = TRUE)
+
+  mergedDf$duration <- factor(mergedDf$duration, levels = c("event", "hourly", "daily"))
+  mergedDf <- mergedDf[order(mergedDf$rowIndex, mergedDf$duration,
+                              -mergedDf$sensorNumber), ]
+  resultDf <- mergedDf[!duplicated(mergedDf$rowIndex), ]
+  resultDf$rowIndex <- NULL
+
+  # Attach unreachable stations as an attribute
+  attr(resultDf, "unreachableStations") <- removedStations
+
+  resultDf
 }

@@ -1,6 +1,6 @@
 Package: deltadata
 Title: Various functions for acquiring data within the SFE
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: c(
     person("Trinh", "Nguyen", email = "trinh.nguyen@wildlife.ca.gov", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-9523-1466")),
@@ -14,6 +14,8 @@ Imports:
     DBI,
     odbc,
     httr,
+    sf,
+    terra,
     geosphere,
     leaflet,
     rvest,
