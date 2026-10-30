@@ -2326,3 +2326,423 @@ calcNearestCDEC <- function(df, n = 1,
 
   resultDf
 }
+
+#' Locate and explore CDEC stations within a spatial area
+#'
+#' @description
+#' Identifies CDEC monitoring stations situated within a user-defined spatial
+#' area (polygon, bounding box, or coordinates). Can filter stations reporting
+#' specific sensors or water quality variables. By default, returns a character
+#' vector of station IDs; setting \code{map = TRUE} renders an interactive Leaflet
+#' map detailing station metadata and sensor descriptions in popups.
+#'
+#' **Developed with Gemini 3.8 Flash**
+#'
+#' @param area Spatial boundary of interest. Accepts an \code{sf} or \code{sfc}
+#'   polygon/multipolygon, an \code{sf::st_bbox}, a \code{terra::SpatVector},
+#'   or a numeric vector of 4 coordinates formatted as \code{c(xmin, ymin, xmax, ymax)}.
+#'   If omitted, prints usage guidelines and returns all available stations invisibly.
+#' @param sensor Optional numeric CDEC sensor number (e.g. 25, 20, 100), or
+#'   \code{"all"} to return all stations regardless of sensor type.
+#' @param variable Water quality parameter of interest: \code{"temp"},
+#'   \code{"turbidity"}, or \code{"ec"}. Alternatively, accepts a custom regex
+#'   string to search \code{sensorDescription} (e.g., \code{"dissolved oxygen"}).
+#'   Ignored if \code{sensor} is provided.
+#' @param waterColumn Selection of sensor water column position: \code{"all"} (default),
+#'   \code{"top"}, or \code{"bottom"}. Only applicable when \code{variable} is used.
+#' @param map Logical. If \code{FALSE} (default), returns a character vector of
+#'   CDEC station IDs. If \code{TRUE}, returns an interactive \code{leaflet} map.
+#' @param addStations Character vector of additional CDEC station code(s) to
+#'   plot on the map for spatial comparison (e.g., \code{c("RVB", "MAL")}).
+#'   Only applicable when \code{map = TRUE}.
+#' @param add Alias for \code{addStations}.
+#' @param verbose Logical. Print informative guidance and summaries. Defaults to \code{TRUE}.
+#' @param cdecGPS Optional override for the internal CDEC station GPS coordinates table
+#'   (defaults to \code{deltadata::cdecStation}).
+#' @param cdecMetadata Optional override for the internal CDEC sensor metadata lookup table
+#'   (defaults to \code{deltadata::cdecMetadata}).
+#'
+#' @return
+#' \itemize{
+#'   \item If \code{map = FALSE}: A character vector of matching CDEC station codes.
+#'   \item If \code{map = TRUE}: An interactive \code{leaflet} map widget.
+#'   \item If arguments are missing: A metadata summary table returned invisibly
+#'     with console guidance.
+#' }
+#'
+#' @export
+#'
+#' @importFrom sf st_as_sf st_as_sfc st_bbox st_crs st_transform st_intersects st_union st_geometry
+#' @importFrom leaflet leaflet addTiles addProviderTiles addPolygons addCircleMarkers addLayersControl addLegend layersControlOptions providers
+#'
+#' @examples
+#' \dontrun{
+#' # 1. Self-directing check (omitting area shows guidance):
+#' findCDEC()
+#'
+#' # 2. Using an EDSM Subregion and adding Rio Vista (RVB) for comparison:
+#' deltamapr::R_EDSM_Subregions_Mahardja_FLOAT %>%
+#'   dplyr::filter(SubRegion == "Upper Sacramento River Ship Channel") %>%
+#'   findCDEC(variable = "temp", map = TRUE, add = "RVB")
+#' }
+findCDEC <- function(area = NULL,
+                     sensor = NULL,
+                     variable = NULL,
+                     waterColumn = c("all", "top", "bottom"),
+                     map = FALSE,
+                     addStations = NULL,
+                     add = NULL,
+                     verbose = TRUE,
+                     cdecGPS = NULL,
+                     cdecMetadata = NULL) {
+
+  cdecGPS <- if (is.null(cdecGPS)) get("cdecStation", envir = asNamespace("deltadata"))
+  cdecMetadata <- if (is.null(cdecMetadata)) get("cdecMetadata", envir = asNamespace("deltadata"))
+
+  # Resolve alias for addStations
+  if (is.null(addStations) && !is.null(add)) {
+    addStations <- add
+  }
+
+  # -------------------------------------------------------------------------
+  # 1. Sanitize CDEC Coordinates (Removes unparsed DMS anomalies)
+  # -------------------------------------------------------------------------
+  validGps <- cdecGPS[
+    !is.na(cdecGPS$latitude) & !is.na(cdecGPS$longitude) &
+      is.finite(cdecGPS$latitude) & is.finite(cdecGPS$longitude) &
+      abs(cdecGPS$latitude) <= 90 & abs(cdecGPS$longitude) <= 180,
+  ]
+
+  # Ensure western longitudes in California carry negative sign
+  validGps$longitude <- ifelse(
+    validGps$longitude > 0 & validGps$latitude > 0,
+    -validGps$longitude,
+    validGps$longitude
+  )
+
+  # -------------------------------------------------------------------------
+  # 2. Self-Directing Guidance if `area` is Missing
+  # -------------------------------------------------------------------------
+  if (missing(area) || is.null(area)) {
+    if (isTRUE(verbose)) {
+      message("Please provide a spatial `area` to query CDEC stations.")
+      message("Supported formats:")
+      message("  1. An `sf` or `sfc` polygon/multipolygon (e.g. deltamapr::R_EDSM_Subregions_Mahardja_FLOAT)")
+      message("  2. An `sf::st_bbox` object")
+      message("  3. A `terra::SpatVector` object")
+      message("  4. A numeric vector of 4 coordinates: c(xmin, ymin, xmax, ymax)")
+      cat("\nListing available stations in deltadata registry (total:", nrow(validGps), "valid stations):\n")
+      print(utils::head(validGps, 8))
+      cat("... [truncated; returning full station table invisibly]\n")
+    }
+    return(invisible(validGps))
+  }
+
+  # -------------------------------------------------------------------------
+  # 3. Standardize Input `area` into WGS84 `sfc`
+  # -------------------------------------------------------------------------
+  areaSf <- tryCatch({
+    if (inherits(area, "SpatVector")) {
+      sf::st_as_sf(area)
+    } else if (inherits(area, "bbox")) {
+      sf::st_as_sfc(area)
+    } else if (is.numeric(area) && length(area) == 4) {
+      if (all(c("xmin", "ymin", "xmax", "ymax") %in% names(area))) {
+        sf::st_as_sfc(sf::st_bbox(area, crs = sf::st_crs(4326)))
+      } else if (all(c("lonMin", "latMin", "lonMax", "latMax") %in% names(area))) {
+        sf::st_as_sfc(sf::st_bbox(c(
+          xmin = area[["lonMin"]], ymin = area[["latMin"]],
+          xmax = area[["lonMax"]], ymax = area[["latMax"]]
+        ), crs = sf::st_crs(4326)))
+      } else {
+        # Default order: xmin, ymin, xmax, ymax
+        sf::st_as_sfc(sf::st_bbox(c(
+          xmin = area[1], ymin = area[2],
+          xmax = area[3], ymax = area[4]
+        ), crs = sf::st_crs(4326)))
+      }
+    } else if (inherits(area, c("sf", "sfc"))) {
+      sf::st_geometry(area)
+    } else {
+      stop("`area` format is not recognized. Please provide an sf/sfc object, SpatVector, or bbox vector.", call. = FALSE)
+    }
+  }, error = function(e) {
+    stop("Could not parse `area`: ", conditionMessage(e), call. = FALSE)
+  })
+
+  # Ensure area is projected to WGS84 (EPSG:4326)
+  if (is.na(sf::st_crs(areaSf))) {
+    warning("`area` has no CRS assigned. Assuming WGS84 (EPSG:4326).", call. = FALSE)
+    areaSf <- sf::st_set_crs(areaSf, 4326)
+  } else if (sf::st_crs(areaSf) != sf::st_crs(4326)) {
+    areaSf <- sf::st_transform(areaSf, 4326)
+  }
+
+  # -------------------------------------------------------------------------
+  # 4. Spatial Intersect: Locate CDEC Stations Inside Area
+  # -------------------------------------------------------------------------
+  stationsSf <- sf::st_as_sf(validGps, coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+  unionArea <- sf::st_union(areaSf)
+  insideIdx <- which(lengths(sf::st_intersects(stationsSf, unionArea)) > 0)
+
+  stationsInArea <- stationsSf[insideIdx, ]
+  stationCodesInArea <- stationsInArea$station
+
+  # -------------------------------------------------------------------------
+  # 5. Self-Directing Guidance if Sensor/Variable is Omitted
+  # -------------------------------------------------------------------------
+  isAllRequested <- (!is.null(sensor) && identical(sensor, "all")) ||
+    (!is.null(variable) && identical(variable, "all"))
+
+  if (is.null(sensor) && is.null(variable) && !isAllRequested) {
+    if (length(insideIdx) == 0) {
+      if (isTRUE(verbose)) message("No CDEC stations found within the specified area.")
+      return(character(0))
+    }
+
+    metaInArea <- cdecMetadata[cdecMetadata$gage %in% stationCodesInArea, ]
+
+    sensorSummary <- aggregate(
+      gage ~ sensorNumber + sensorDescription,
+      data = metaInArea,
+      FUN = function(x) length(unique(x))
+    )
+    names(sensorSummary)[3] <- "stationCount"
+    sensorSummary <- sensorSummary[order(-sensorSummary$stationCount, sensorSummary$sensorNumber), ]
+    rownames(sensorSummary) <- NULL
+
+    if (isTRUE(verbose)) {
+      cat(sprintf("Found %d CDEC station(s) within the specified area.\n", length(stationCodesInArea)))
+      cat("No `sensor` or `variable` specified. Showing available sensors in this area:\n\n")
+      print(sensorSummary, row.names = FALSE)
+      message("\nNext steps:")
+      message("  - To filter: provide `sensor = <number>` (e.g. sensor = 25)")
+      message("  - Or provide: `variable = '<temp|turbidity|ec>'`")
+      message("  - To return all stations in this area: specify `sensor = 'all'`")
+      message("  - Set `map = TRUE` to view interactively.")
+    }
+    return(invisible(sensorSummary))
+  }
+
+  # -------------------------------------------------------------------------
+  # 6. Filter Stations by Sensor / Variable
+  # -------------------------------------------------------------------------
+  if (isAllRequested) {
+    matchedGages <- stationCodesInArea
+  } else if (!is.null(sensor)) {
+    matchedSensors <- cdecMetadata[cdecMetadata$sensorNumber %in% sensor &
+                                     cdecMetadata$gage %in% stationCodesInArea, ]
+    matchedGages <- unique(matchedSensors$gage)
+  } else {
+    waterColumn <- match.arg(waterColumn)
+    variableRegexMap <- list(
+      temp = "(temp).*(water)",
+      turbidity = "turbidity",
+      ec = "elec.* conduct.* micro"
+    )
+
+    pattern <- if (variable %in% names(variableRegexMap)) {
+      variableRegexMap[[variable]]
+    } else {
+      variable # custom user regex
+    }
+
+    matchedSensors <- cdecMetadata[grepl(pattern, cdecMetadata$sensorDescription, ignore.case = TRUE) &
+                                     cdecMetadata$gage %in% stationCodesInArea, ]
+
+    if (waterColumn == "top") {
+      matchedSensors <- matchedSensors[!grepl("(lower|bottom)", matchedSensors$sensorDescription, ignore.case = TRUE), ]
+    } else if (waterColumn == "bottom") {
+      matchedSensors <- matchedSensors[grepl("(lower|bottom)", matchedSensors$sensorDescription, ignore.case = TRUE), ]
+    }
+
+    matchedGages <- unique(matchedSensors$gage)
+  }
+
+  finalStationsSf <- stationsInArea[stationsInArea$station %in% matchedGages, ]
+
+  # -------------------------------------------------------------------------
+  # 7. Process Additional Comparative Station(s)
+  # -------------------------------------------------------------------------
+  addedStationsSf <- stationsSf[0, ] # Empty template
+  if (!is.null(addStations) && length(addStations) > 0) {
+    addStations <- unique(as.character(addStations))
+    foundIdx <- which(stationsSf$station %in% addStations)
+
+    if (length(foundIdx) > 0) {
+      addedStationsSf <- stationsSf[foundIdx, ]
+      # Remove any overlap so an added station is uniquely highlighted as an added station
+      finalStationsSf <- finalStationsSf[!finalStationsSf$station %in% addedStationsSf$station, ]
+    }
+
+    missingAdd <- setdiff(addStations, stationsSf$station)
+    if (length(missingAdd) > 0) {
+      warning("The following `addStations` could not be found in CDEC station registry: ",
+              paste(sQuote(missingAdd), collapse = ", "), call. = FALSE)
+    }
+  }
+
+  # Guard check if both final area stations and added stations are empty
+  if (nrow(finalStationsSf) == 0 && nrow(addedStationsSf) == 0) {
+    if (isTRUE(verbose)) message("No matching stations found within the specified area.")
+    return(character(0))
+  }
+
+  if (isTRUE(verbose) && !map) {
+    if (nrow(finalStationsSf) > 0) {
+      message(sprintf("Found %d matching CDEC station(s) in area: %s",
+                      nrow(finalStationsSf),
+                      paste(finalStationsSf$station, collapse = ", ")))
+    } else {
+      message("Found 0 matching CDEC stations in area.")
+    }
+    if (!is.null(addStations)) {
+      message("Note: `addStations` is only plotted when `map = TRUE`.")
+    }
+  }
+
+  # -------------------------------------------------------------------------
+  # 8. Return Station ID Vector or Leaflet Map
+  # -------------------------------------------------------------------------
+  if (!isTRUE(map)) {
+    return(finalStationsSf$station)
+  }
+
+  # Helper function to generate clean popup HTML
+  generatePopupHtml <- function(stnCode, isAdded = FALSE) {
+    stnMeta <- cdecMetadata[cdecMetadata$gage == stnCode, ]
+    if (nrow(stnMeta) > 0) {
+      stnMeta$durationClean <- gsub("\\(|\\)", "", stnMeta$duration)
+      sensorLines <- sprintf("<li><b>#%s:</b> %s (<i>%s</i>)</li>",
+                             stnMeta$sensorNumber,
+                             stnMeta$sensorDescription,
+                             stnMeta$durationClean)
+      sensorListHtml <- paste0("<ul style='max-height: 140px; overflow-y: auto; padding-left: 18px; margin: 4px 0;'>",
+                               paste(sensorLines, collapse = ""),
+                               "</ul>")
+    } else {
+      sensorListHtml <- "<em>No sensor metadata recorded</em>"
+    }
+
+    headerColor <- if (isAdded) "#e6550d" else "#08519c"
+    subtitle <- if (isAdded) "<span style='color: #e6550d; font-weight: bold;'>[Added Comparison Station]</span><br>" else ""
+
+    sprintf(
+      paste0(
+        "<div style='font-family: sans-serif; font-size: 12px; line-height: 1.4;'>",
+        "<h4 style='margin: 0 0 2px 0; color: %s;'>Station: %s</h4>",
+        "%s",
+        "<b>Lat:</b> %.4f | <b>Lon:</b> %.4f<br>",
+        "<b>Available Sensors:</b>%s",
+        "<a href='https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=%s' target='_blank'>View on CDEC Webpage &rarr;</a>",
+        "</div>"
+      ),
+      headerColor,
+      stnCode,
+      subtitle,
+      validGps$latitude[validGps$station == stnCode][1],
+      validGps$longitude[validGps$station == stnCode][1],
+      sensorListHtml,
+      stnCode
+    )
+  }
+
+  # Build Leaflet Map
+  m <- leaflet::leaflet()
+
+  # Clean muted gray canvas (default, free, no API key)
+  m <- leaflet::addProviderTiles(
+    m,
+    provider = leaflet::providers$Esri.WorldGrayCanvas,
+    group = "Gray Canvas"
+  )
+  # Standard OpenStreetMap
+  m <- leaflet::addTiles(
+    m,
+    group = "OpenStreetMap"
+  )
+  # Satellite imagery
+  m <- leaflet::addProviderTiles(
+    m,
+    provider = leaflet::providers$Esri.WorldImagery,
+    group = "Satellite"
+  )
+
+  # Add search boundary polygon
+  m <- leaflet::addPolygons(
+    m,
+    data = areaSf,
+    color = "#2b8cbe",
+    weight = 2,
+    fillOpacity = 0.08,
+    group = "Search Boundary"
+  )
+
+  activeOverlays <- c("Search Boundary")
+
+  # Add stations inside area (Blue)
+  if (nrow(finalStationsSf) > 0) {
+    areaPopups <- vapply(finalStationsSf$station, generatePopupHtml,
+                         isAdded = FALSE, character(1), USE.NAMES = FALSE)
+
+    m <- leaflet::addCircleMarkers(
+      m,
+      data = finalStationsSf,
+      lng = ~longitude,
+      lat = ~latitude,
+      radius = 6,
+      color = "#08519c",
+      weight = 1.5,
+      fillColor = "#3182bd",
+      fillOpacity = 0.85,
+      label = unname(as.character(finalStationsSf$station)),
+      popup = unname(areaPopups),
+      group = "CDEC Stations (Area)"
+    )
+    activeOverlays <- c(activeOverlays, "CDEC Stations (Area)")
+  }
+
+  # Add comparison stations (Orange/Vermilion)
+  if (nrow(addedStationsSf) > 0) {
+    addedPopups <- vapply(addedStationsSf$station, generatePopupHtml,
+                          isAdded = TRUE, character(1), USE.NAMES = FALSE)
+
+    m <- leaflet::addCircleMarkers(
+      m,
+      data = addedStationsSf,
+      lng = ~longitude,
+      lat = ~latitude,
+      radius = 7,
+      color = "#a63603",
+      weight = 2,
+      fillColor = "#e6550d",
+      fillOpacity = 0.90,
+      label = unname(sprintf("%s (Added)", addedStationsSf$station)),
+      popup = unname(addedPopups),
+      group = "Added Stations"
+    )
+    activeOverlays <- c(activeOverlays, "Added Stations")
+  }
+
+  # Add informative legend if comparison stations are present
+  if (nrow(finalStationsSf) > 0 && nrow(addedStationsSf) > 0) {
+    m <- leaflet::addLegend(
+      m,
+      position = "bottomright",
+      colors = c("#3182bd", "#e6550d"),
+      labels = c("Stations in Area", "Added Station(s)"),
+      opacity = 0.9,
+      title = "Station Type"
+    )
+  }
+
+  m <- leaflet::addLayersControl(
+    m,
+    baseGroups = c("Gray Canvas", "OpenStreetMap", "Satellite"),
+    overlayGroups = activeOverlays,
+    options = leaflet::layersControlOptions(collapsed = FALSE)
+  )
+
+  m
+}
