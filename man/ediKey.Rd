@@ -31,6 +31,7 @@ ediKey()
 
 # Set key for current R session
 ediKey("YOUR_EDI_ACCESS_KEY")
+# The key should begin with a dash followed by 26 characters, e.g., "-XXX..."
 
 # Set key and save permanently to ~/.Renviron
 ediKey("YOUR_EDI_ACCESS_KEY", install = TRUE)

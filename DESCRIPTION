@@ -23,7 +23,8 @@ Imports:
     dplyr,
     lifecycle,
     xml2,
-    rlang
+    rlang,
+    jsonlite
 Suggests: 
     knitr,
     rmarkdown,
